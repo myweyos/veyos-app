@@ -25,7 +25,11 @@ jobs:
       - name: Lint
         run: cd services/engine && python -m ruff check .
       - name: Types
-        run: cd services/engine && python -m mypy veyos_engine
+        run: cd services/engine && python -m mypy veyos_engine backtest
+      - name: Backtest smoke run
+        # Cheap grid. Catches a harness that has drifted from the engine's trace format or a
+        # sweep that no longer reaches every enabled rule.
+        run: cd services/engine && python -m backtest run --synthetic --grid quick --quiet
 
   contract:
     name: Contract (schema is the source of truth)

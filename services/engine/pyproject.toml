@@ -6,7 +6,15 @@ requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff>=0.5", "mypy>=1.10", "types-PyYAML>=6.0"]
+dev = [
+  "pytest>=8.0",
+  "jsonschema>=4.21",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "types-PyYAML>=6.0",
+  # backtest/runner.py imports jsonschema under --validate, and backtest is type-checked.
+  "types-jsonschema>=4.21",
+]
 
 [project.scripts]
 veyos-engine = "veyos_engine.cli:main"
@@ -16,7 +24,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["veyos_engine"]
+packages = ["veyos_engine", "backtest"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
