@@ -1,0 +1,95 @@
+{
+  "$comment": "Base snapshots for the three demo personas, in canonical SignalSnapshot form. Golden fixtures reference a persona + a state and then deep-merge overrides. All signal values here are SIMULATED — no real subject data has ever been in this repo and none may be.",
+
+  "sarah": {
+    "calm": {
+      "schema_version": 1,
+      "subject_ref": "sub_persona01",
+      "as_of": "2026-09-01",
+      "timezone": "Europe/London",
+      "constitution": { "dosha": "vata" },
+      "biometrics": { "hrv_ms": 61, "rhr_bpm": 57, "sleep_deep_rem_pct": 71, "wrist_temp_delta_c": 0.0, "steps": 9400, "source": "simulated" },
+      "baselines": { "hrv_ms": 60, "hrv_sd": 6, "rhr_bpm": 57, "rhr_sd": 3, "sleep_deep_rem_pct": 72, "days_of_history": 90, "window_days": 14 },
+      "cycle": { "cycle_day": 20, "cycle_length": 28, "tracked": true },
+      "environment": { "ambient_temp_c": 17, "moon_phase": "waxing", "season": "summer", "wind_kph": 9 },
+      "planned_activity": { "type": "hiit", "intensity": "high", "location": "indoor" },
+      "planned_meals": [
+        { "slot": "breakfast", "items": [
+          { "name": "overnight oats", "tags": ["cold", "complex_carbs"] },
+          { "name": "black coffee", "tags": ["caffeine"] }
+        ] },
+        { "slot": "lunch", "items": [
+          { "name": "kale salad", "tags": ["raw", "cold", "astringent"] },
+          { "name": "lentil soup", "tags": ["warm", "grounding", "high_protein"] }
+        ] },
+        { "slot": "dinner", "items": [
+          { "name": "sweet potato mash", "tags": ["warm", "heavy", "complex_carbs"] }
+        ] }
+      ]
+    },
+    "crash": {
+      "biometrics": { "hrv_ms": 46.8, "rhr_bpm": 62, "sleep_deep_rem_pct": 68, "wrist_temp_delta_c": 0.1, "steps": 3100 }
+    }
+  },
+
+  "james": {
+    "calm": {
+      "schema_version": 1,
+      "subject_ref": "sub_persona02",
+      "as_of": "2026-09-01",
+      "timezone": "Europe/London",
+      "constitution": { "dosha": "kapha" },
+      "biometrics": { "hrv_ms": 55, "rhr_bpm": 62, "sleep_deep_rem_pct": 66, "wrist_temp_delta_c": 0.0, "steps": 11200, "source": "simulated" },
+      "baselines": { "hrv_ms": 54, "hrv_sd": 5, "rhr_bpm": 62, "rhr_sd": 3, "sleep_deep_rem_pct": 65, "days_of_history": 120, "window_days": 14 },
+      "cycle": null,
+      "environment": { "ambient_temp_c": 19, "moon_phase": "waning", "season": "summer", "wind_kph": 12, "pollen_index": 3 },
+      "planned_activity": { "type": "run", "intensity": "moderate", "location": "outdoor" },
+      "planned_meals": [
+        { "slot": "breakfast", "items": [
+          { "name": "full-fat yoghurt granola", "tags": ["dairy", "heavy", "sweet"] }
+        ] },
+        { "slot": "lunch", "items": [
+          { "name": "chicken and quinoa bowl", "tags": ["light", "high_protein"] }
+        ] },
+        { "slot": "dinner", "items": [
+          { "name": "grilled fish and greens", "tags": ["light", "warm"] }
+        ] }
+      ]
+    },
+    "crash": {
+      "biometrics": { "hrv_ms": 53, "rhr_bpm": 78, "wrist_temp_delta_c": 0.1, "steps": 2100 },
+      "environment": { "pollen_index": 8 }
+    }
+  },
+
+  "alex": {
+    "calm": {
+      "schema_version": 1,
+      "subject_ref": "sub_persona03",
+      "as_of": "2026-09-01",
+      "timezone": "America/New_York",
+      "constitution": { "dosha": "pitta" },
+      "biometrics": { "hrv_ms": 71, "rhr_bpm": 60, "sleep_deep_rem_pct": 80, "sleep_score": 84, "wrist_temp_delta_c": 0.0, "steps": 8700, "source": "simulated" },
+      "baselines": { "hrv_ms": 70, "hrv_sd": 7, "rhr_bpm": 60, "rhr_sd": 3, "sleep_deep_rem_pct": 82, "days_of_history": 150, "window_days": 14 },
+      "cycle": null,
+      "environment": { "ambient_temp_c": 30, "moon_phase": "new", "season": "summer", "wind_kph": 6 },
+      "planned_activity": { "type": "lifting", "intensity": "high", "location": "outdoor_midday" },
+      "planned_meals": [
+        { "slot": "breakfast", "items": [
+          { "name": "chilli scrambled eggs", "tags": ["spicy", "hot", "high_protein"] }
+        ] },
+        { "slot": "lunch", "items": [
+          { "name": "kimchi rice bowl", "tags": ["fermented", "spicy", "complex_carbs"] },
+          { "name": "cucumber salad", "tags": ["cooling", "hydrating", "raw"] }
+        ] },
+        { "slot": "dinner", "items": [
+          { "name": "grilled chicken", "tags": ["high_protein", "warm"] }
+        ] }
+      ]
+    },
+    "crash": {
+      "$comment": "sleep_deep_rem_pct is deliberately null: the persona brief supplies a composite sleep score of 48, and rule 1.2 is written against deep/REM stage percentages. Carrying the composite in sleep_score (display only) keeps the ambiguity visible instead of quietly firing 1.2 on the wrong measurement. rhr_bpm was ADDED to complete the signal set — the original persona brief gives Alex a temperature rise with no RHR, which cannot satisfy 1.3's dual gate.",
+      "biometrics": { "hrv_ms": 50.4, "rhr_bpm": 66, "sleep_deep_rem_pct": null, "sleep_score": 48, "wrist_temp_delta_c": 0.8, "steps": 4200 }
+    }
+  }
+}

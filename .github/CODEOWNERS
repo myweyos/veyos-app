@@ -1,0 +1,12 @@
+# Every PR needs a review. These paths need a specific one.
+
+*                              @veyos/engineering
+
+# The rulebook and the contract are the two places a quiet change does the most damage.
+/config/rules/                 @veyos/product-owner
+/packages/shared-schema/       @veyos/engineering-lead
+/services/engine/tests/        @veyos/engineering-lead
+/CLAUDE.md                     @veyos/engineering-lead
+/docs/adr/                     @veyos/engineering-lead
+
+# Replace these team handles with real GitHub usernames when the org is created.

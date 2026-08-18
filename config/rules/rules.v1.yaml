@@ -1,0 +1,273 @@
+# Veyos rulebook — version 1
+#
+# THIS FILE IS THE RULEBOOK. Code interprets it; code does not contain rules.
+# Changing a threshold here requires: (1) a backtest, (2) a golden fixture, (3) a version bump
+# if the change alters any existing fixture's expected output.
+#
+# Precedence: Layer 1 > Layer 5 > Layer 2 > Layer 3 > Layer 4
+#             (safety > diagnosed labs > hormonal > constitution > environment)
+# Lower `priority` number wins. 1.x=10s, 5.x=20s, 2.x=30s, 3.x=40s, 4.x=50s.
+
+version: 1
+effective_from: "2026-08-18"
+
+features:
+  # Default ON in product; flipped OFF to demonstrate "validated biometrics only"
+  # (L1 biometric / L2 hormonal / L5 lab) to clinical, regulatory and investor audiences.
+  # Fixture F11 proves the separation is real. Do not couple suppressed layers into others.
+  elemental_layer: true
+  # Layers that survive when elemental_layer is OFF. Explicit so the demo mode is testable
+  # rather than implied.
+  # OPEN QUESTION for JB: rule 4.2 (heat-wave) is genuinely environmental safety, not
+  # astrology, but it lives in L4 and is therefore suppressed in validated-only mode.
+  # Options: (a) accept — it's a demo mode; (b) promote 4.2 into L1 as a safety rule.
+  # Do not resolve this in code.
+  validated_only_layers: [1, 2, 5]
+
+baseline:
+  # OPEN DECISION (see CLAUDE.md): the rulebook is written in % below baseline; the patent
+  # recites (current - trailing_ma) / historical_sd. Both are implemented. Pick on backtest
+  # evidence, not preference. Switching this must not change any fixture silently.
+  comparison_mode: percent      # percent | zscore
+  trailing_window_days: 14
+  min_days_for_baseline: 28     # cold start below this → engine returns insufficient_baseline
+
+layers:
+  1: { name: "Biometric Override",    always_on: false, description: "Live telemetry beats calendar and baseline." }
+  2: { name: "Hormonal Master-Clock", always_on: false, description: "Female personas, 28-day cycle. Exactly one fires." }
+  3: { name: "Ayurvedic Baseline",    always_on: true,  description: "Persistent dietary filter. The persona's dosha always fires." }
+  4: { name: "Macro-Environmental",   always_on: false, description: "Independent modifiers. Gated by features.elemental_layer for astro rules." }
+  5: { name: "Functional Lab",        always_on: false, description: "Only fires when a lab value is present AND abnormal." }
+
+rules:
+
+  # ---------------------------------------------------------------- Layer 1
+  - id: "1.1"
+    name: "Sympathetic Overload"
+    layer: 1
+    priority: 10
+    when:
+      all:
+        - { signal: hrv_ms, op: pct_below_baseline_gte, value: 20 }
+    effects:
+      activity: { verdict: substitute, block_intensities: [high, max], block_types: [hiit, lifting], mandate_category: parasympathetic, suggestions: ["restorative yoga", "box breathing 10 min"] }
+      food:     { add_tags: [magnesium_rich] }
+      message:  "Your nervous system is running hot. Today is for recovery, not output."
+
+  - id: "1.2"
+    name: "Sleep Debt / Cortisol Dysregulation"
+    layer: 1
+    priority: 11
+    when:
+      all:
+        # OPEN SPEC QUESTION: written against deep/REM stage %, but personas supply a
+        # composite sleep score. `signal` is deliberately explicit so the ambiguity is visible.
+        - { signal: sleep_deep_rem_pct, op: pct_of_baseline_lt, value: 60 }
+    effects:
+      food: { block_tags: [caffeine_after_noon], mandate_tags: [high_protein, grounding] }
+      constraints: { no_caffeine_after: "12:00", breakfast_within_min_of_waking: 60 }
+      message: "Sleep architecture was poor. Protein early, no caffeine after midday."
+
+  - id: "1.3"
+    name: "Immune / Inflammatory Spike"
+    layer: 1
+    priority: 12
+    when:
+      all:
+        # DUAL GATE. This is the James gap: elevated RHR alone fires nothing.
+        # Candidate rule 1.4 (Cardiovascular Load) is proposed and UNAPPROVED — see below.
+        - { signal: wrist_temp_delta_c, op: gte, value: 0.5 }
+        - { signal: rhr_bpm, op: pct_above_baseline_gte, value: 5 }
+    effects:
+      activity: { verdict: rest, block_intensities: [low, moderate, high, max], mandate_category: rest }
+      food:
+        add_tags: [immunity_basket]
+        # Items carry their own tags so the engine can detect that a mandated L1 item
+        # collides with a lower-layer block (the ginger-for-a-Pitta case). L1 wins by
+        # precedence and the collision is surfaced as a warning, not silently resolved.
+        add_items:
+          - { name: "bone broth", tags: [warm, heavy, immunity_basket] }
+          - { name: "ginger tea", tags: [hot, warming, immunity_basket] }
+      supplements: [zinc, vitamin_c]
+      message: "Your body is fighting something. Full rest today."
+
+  # PROPOSED, NOT APPROVED. Enable only with JB's sign-off; fixture F5b flips from xfail to pass.
+  - id: "1.4"
+    name: "Cardiovascular Load (elevated RHR alone)"
+    layer: 1
+    priority: 13
+    enabled: false
+    when:
+      all:
+        - { signal: rhr_bpm, op: pct_above_baseline_gte, value: 15 }
+    effects:
+      activity: { verdict: substitute, block_intensities: [high, max], mandate_category: low_intensity, suggestions: ["zone 2 walk 30 min"] }
+      message: "Resting heart rate is well above your baseline. Keep it easy today."
+
+  # ---------------------------------------------------------------- Layer 2
+  - id: "2.1"
+    name: "Follicular"
+    layer: 2
+    priority: 30
+    when:
+      all:
+        - { signal: cycle_day, op: in_range, value: [6, 13] }   # 1–5 belongs to 2.4
+    effects:
+      activity: { verdict: allow, allow_intensities: [high, max] }
+      food:     { mandate_tags: [light, fermented] }
+      message:  "Rising oestrogen — good window for intensity."
+
+  - id: "2.2"
+    name: "Ovulatory"
+    layer: 2
+    priority: 31
+    when:
+      all:
+        - { signal: cycle_day, op: in_range, value: [14, 15] }
+    effects:
+      activity: { verdict: allow, allow_intensities: [high, max] }
+      food:     { mandate_tags: [cooling, raw] }
+      message:  "Peak output window."
+
+  - id: "2.3"
+    name: "Luteal"
+    layer: 2
+    priority: 32
+    when:
+      all:
+        - { signal: cycle_day, op: in_range, value: [16, 28] }
+    effects:
+      activity: { verdict: downgrade, block_types: [hiit], downgrade_to: ["pilates", "walking"] }
+      food:     { mandate_tags: [complex_carbs], kcal_delta: [150, 250] }
+      message:  "Luteal phase — steady effort and more fuel."
+
+  - id: "2.4"
+    name: "Menstrual"
+    layer: 2
+    priority: 29                      # beats 2.1 so days 1–5 resolve correctly
+    when:
+      all:
+        - { signal: cycle_day, op: in_range, value: [1, 5] }
+    effects:
+      activity: { verdict: downgrade, block_intensities: [high, max], downgrade_to: ["gentle stretch", "walking"] }
+      food:     { mandate_tags: [warming, iron_rich] }
+      message:  "Recovery phase."
+
+  # ---------------------------------------------------------------- Layer 3
+  - id: "3.1"
+    name: "Vata"
+    layer: 3
+    priority: 40
+    when:
+      all:
+        - { signal: dosha, op: eq, value: vata }
+    effects:
+      food: { block_tags: [raw, cold, astringent], mandate_tags: [warm, heavy, grounding, oily] }
+
+  - id: "3.2"
+    name: "Pitta"
+    layer: 3
+    priority: 41
+    when:
+      all:
+        - { signal: dosha, op: eq, value: pitta }
+    effects:
+      food: { block_tags: [hot, spicy, fermented, acidic], mandate_tags: [cooling, hydrating, sweet, bitter] }
+
+  - id: "3.3"
+    name: "Kapha"
+    layer: 3
+    priority: 42
+    when:
+      all:
+        - { signal: dosha, op: eq, value: kapha }
+    effects:
+      food: { block_tags: [heavy, sweet, oily, dairy], mandate_tags: [light, dry, warm, stimulating] }
+
+  # ---------------------------------------------------------------- Layer 4
+  - id: "4.1"
+    name: "Full Moon"
+    layer: 4
+    priority: 50
+    elemental: true                   # documentation only; suppression is layer-based (see features)
+    when:
+      all:
+        - { signal: moon_phase, op: eq, value: full }
+    effects:
+      food: { sodium_pct_delta: -20 }
+      message: "Sodium dialled down today."
+
+  - id: "4.2"
+    name: "Heat-Wave"
+    layer: 4
+    priority: 51
+    elemental: false                  # environmental, not astrological — see the open question in features
+    when:
+      all:
+        - { signal: ambient_temp_c, op: gt, value: 25 }
+    effects:
+      activity: { verdict: relocate, block_locations: [outdoor_midday], relocate_to: indoor }
+      food:     { mandate_tags: [cooling], hydration_pct_delta: 40 }
+      message:  "Heat — move the session indoors and drink more."
+
+  - id: "4.3"
+    name: "Autumn / High Wind"
+    layer: 4
+    priority: 52
+    elemental: true                   # documentation only
+    when:
+      any:
+        - { signal: season, op: eq, value: autumn }
+        - { signal: wind_kph, op: gte, value: 30 }
+    effects:
+      food: { mandate_tags: [grounding, heavy_fats] }
+
+  # PROPOSED, NOT APPROVED. Pollen / air quality is currently not a signal in the model at all.
+  - id: "4.4"
+    name: "Air Quality / Pollen Load"
+    layer: 4
+    priority: 53
+    elemental: false                  # documentation only
+    enabled: false
+    when:
+      any:
+        - { signal: pollen_index, op: gte, value: 7 }
+        - { signal: aqi, op: gte, value: 100 }
+    effects:
+      activity: { verdict: relocate, block_locations: [outdoor], relocate_to: indoor }
+      food:     { add_tags: [antihistamine_support] }
+
+  # ---------------------------------------------------------------- Layer 5
+  - id: "5.1"
+    name: "Adrenal Fatigue"
+    layer: 5
+    priority: 20
+    when:
+      all:
+        - { signal: lab_pm_cortisol, op: lab_status_eq, value: high }
+    effects:
+      supplements: [l_theanine, ashwagandha]
+      constraints: { digital_sundown: "20:00" }
+
+  - id: "5.2"
+    name: "Systemic Inflammation"
+    layer: 5
+    priority: 21
+    when:
+      all:
+        - { signal: lab_hs_crp, op: lab_status_eq, value: high }
+    effects:
+      food: { block_tags: [refined_sugar, seed_oils] }
+      supplements: [omega_3, curcumin]
+
+  - id: "5.3"
+    name: "Blood Sugar Dysregulation"
+    layer: 5
+    priority: 22
+    when:
+      any:
+        - { signal: lab_hba1c, op: lab_status_eq, value: high }
+        - { signal: lab_fasting_glucose, op: lab_status_eq, value: high }
+    effects:
+      food: { block_tags: [high_glycemic, complex_carbs], min_protein_g: 30, min_fiber_g: 10 }
+      message: "Glycaemic control takes precedence over carb loading today."

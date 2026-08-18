@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: Engine (golden fixtures)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -e "services/engine[dev]"
+      - name: Golden fixtures
+        run: cd services/engine && python -m pytest -v
+      - name: Lint
+        run: cd services/engine && python -m ruff check .
+      - name: Types
+        run: cd services/engine && python -m mypy veyos_engine
+
+  contract:
+    name: Contract (schema is the source of truth)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci || npm install
+      - name: Typecheck all workspaces
+        run: npm run typecheck
+      - name: Schemas are valid JSON Schema
+        run: |
+          npx --yes ajv-cli compile -s packages/shared-schema/schemas/signal-snapshot.schema.json --spec=draft2020
+          npx --yes ajv-cli compile -s packages/shared-schema/schemas/decision.schema.json --spec=draft2020
+
+  guardrails:
+    name: Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No rule logic outside the engine
+        # The rulebook is config. A threshold comparison against a hard-coded number in the
+        # client or the API means someone reimplemented a rule where it cannot be tested.
+        run: |
+          if grep -rnE "(hrv|rhr|cortisol|hba1c)[^\n]{0,40}(0\.[0-9]|[0-9]{2,})" \
+               --include="*.ts" --include="*.tsx" apps services/api 2>/dev/null; then
+            echo "::error::Possible rule logic outside services/engine. Rules live in config/rules/."
+            exit 1
+          fi
+      - name: No raw biometrics in log statements
+        run: |
+          if grep -rnE "console\.(log|info|warn)\([^)]*(snapshot|biometrics|hrv|rhr)" \
+               --include="*.ts" --include="*.tsx" apps services 2>/dev/null; then
+            echo "::error::Logging biometric data. Log rule ids and deltas only."
+            exit 1
+          fi

@@ -1,0 +1,36 @@
+[project]
+name = "veyos-engine"
+version = "0.1.0"
+description = "Veyos arbitration engine — pure, deterministic, config-driven"
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff>=0.5", "mypy>=1.10", "types-PyYAML>=6.0"]
+
+[project.scripts]
+veyos-engine = "veyos_engine.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["veyos_engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+# Fixtures are untyped data by design.
+exclude = "tests/fixtures"

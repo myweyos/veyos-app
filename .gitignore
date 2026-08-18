@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+.expo/
+ios/
+android/
+*.log
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+
+# Never commit real subject data. Simulated personas live in tests/fixtures and are the
+# only signal data allowed in this repo.
+data/
+*.subject.json
+*.export.csv

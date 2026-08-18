@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Veyos",
+    "slug": "veyos",
+    "scheme": "veyos",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "bundleIdentifier": "app.veyos.client",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Veyos reads your heart-rate variability, resting heart rate, sleep and temperature to decide what your body needs today.",
+        "NSHealthUpdateUsageDescription": "Veyos writes completed sessions back to Health so your record stays in one place.",
+        "NSBluetoothAlwaysUsageDescription": "Veyos connects to your chest strap for real-time heart-rate variability.",
+        "UIBackgroundModes": ["bluetooth-central", "fetch", "processing"]
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
+      }
+    },
+    "android": {
+      "package": "app.veyos.client",
+      "permissions": [
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_SKIN_TEMPERATURE",
+        "android.permission.health.READ_STEPS"
+      ]
+    },
+    "plugins": ["expo-router"],
+    "extra": {
+      "$comment": "eas.projectId is added by `eas init`. Do not hand-write it.",
+      "apiBaseUrl": "http://localhost:3000"
+    }
+  }
+}

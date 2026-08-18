@@ -1,0 +1,13 @@
+{
+  "name": "veyos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Veyos monorepo",
+  "workspaces": ["packages/*", "services/api", "apps/mobile"],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": { "node": ">=20" }
+}

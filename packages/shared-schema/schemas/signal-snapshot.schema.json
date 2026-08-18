@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.veyos.app/v1/signal-snapshot.json",
+  "title": "SignalSnapshot",
+  "description": "The canonical normalised signal payload. Every source (HealthKit, Health Connect, BLE chest strap, manual lab entry) normalises INTO this shape at ingestion. Nothing downstream ever sees a vendor-specific field. This schema is the contract between mobile, api and engine.",
+  "type": "object",
+  "required": ["schema_version", "subject_ref", "as_of", "constitution"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "subject_ref": {
+      "type": "string",
+      "description": "Pseudonymous subject reference. NEVER a name, email or device id. Art.9 special-category data is keyed by this and nothing else.",
+      "pattern": "^sub_[a-zA-Z0-9]{8,}$"
+    },
+    "as_of": { "type": "string", "format": "date", "description": "Local date the snapshot describes." },
+    "timezone": { "type": "string", "description": "IANA tz of the subject at as_of." },
+
+    "biometrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "All fields optional: cold start and partial-permission states are normal, not errors.",
+      "properties": {
+        "hrv_ms":                    { "type": ["number", "null"], "minimum": 0, "description": "RMSSD, milliseconds." },
+        "rhr_bpm":                   { "type": ["number", "null"], "minimum": 0 },
+        "sleep_deep_rem_pct":        { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Combined deep+REM as % of total sleep. NOT a vendor composite sleep score — see open spec question on rule 1.2." },
+        "sleep_score":               { "type": ["number", "null"], "minimum": 0, "maximum": 100, "description": "Vendor composite, carried for display only. Rules must not read this." },
+        "wrist_temp_delta_c":        { "type": ["number", "null"], "description": "Deviation from the subject's own temperature baseline, degrees C." },
+        "steps":                     { "type": ["integer", "null"], "minimum": 0 },
+        "source":                    { "type": "string", "enum": ["healthkit", "health_connect", "ble", "manual", "simulated"] },
+        "captured_at":               { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "baselines": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Trailing baselines computed on device. Required for any percent/zscore comparison; absent baselines make the dependent rules unevaluable rather than false.",
+      "properties": {
+        "hrv_ms":             { "type": ["number", "null"] },
+        "hrv_sd":             { "type": ["number", "null"], "description": "Historical SD, for zscore comparison mode." },
+        "rhr_bpm":            { "type": ["number", "null"] },
+        "rhr_sd":             { "type": ["number", "null"] },
+        "sleep_deep_rem_pct": { "type": ["number", "null"] },
+        "days_of_history":    { "type": "integer", "minimum": 0 },
+        "window_days":        { "type": "integer", "minimum": 1, "default": 14 }
+      }
+    },
+
+    "cycle": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "cycle_day":    { "type": ["integer", "null"], "minimum": 1, "description": "1-indexed. Values > 28 are currently UNDEFINED in the rulebook — the engine returns an unresolved-input warning rather than guessing." },
+        "cycle_length": { "type": ["integer", "null"], "minimum": 20, "maximum": 45 },
+        "tracked":      { "type": "boolean", "default": false }
+      }
+    },
+
+    "constitution": {
+      "type": "object",
+      "required": ["dosha"],
+      "additionalProperties": false,
+      "properties": {
+        "dosha": { "type": "string", "enum": ["vata", "pitta", "kapha"] }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ambient_temp_c": { "type": ["number", "null"] },
+        "moon_phase":     { "type": ["string", "null"], "enum": ["new", "waxing", "full", "waning", null] },
+        "season":         { "type": ["string", "null"], "enum": ["spring", "summer", "autumn", "winter", null] },
+        "wind_kph":       { "type": ["number", "null"], "minimum": 0 },
+        "pollen_index":   { "type": ["number", "null"], "minimum": 0, "maximum": 10, "description": "Carried but NOT consumed by any enabled rule. Candidate rule 4.4." },
+        "aqi":            { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+
+    "labs": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Layer 5 fires only when a value is present AND flagged abnormal. Absent != normal.",
+      "properties": {
+        "pm_cortisol":     { "$ref": "#/$defs/labValue" },
+        "hs_crp":          { "$ref": "#/$defs/labValue" },
+        "hba1c":           { "$ref": "#/$defs/labValue" },
+        "fasting_glucose": { "$ref": "#/$defs/labValue" }
+      }
+    },
+
+    "planned_activity": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "type":      { "type": "string", "description": "e.g. hiit, lifting, run, yoga, pilates, walking" },
+        "intensity": { "type": "string", "enum": ["rest", "low", "moderate", "high", "max"] },
+        "location":  { "type": "string", "enum": ["indoor", "outdoor", "outdoor_midday"] },
+        "planned_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "planned_meals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slot", "items"],
+        "additionalProperties": false,
+        "properties": {
+          "slot":  { "type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"] },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "tags"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "tags": { "type": "array", "items": { "type": "string" }, "description": "Controlled vocabulary — see packages/shared-schema/schemas/food-tags.json" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "labValue": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "value":     { "type": ["number", "null"] },
+        "unit":      { "type": ["string", "null"] },
+        "status":    { "type": "string", "enum": ["normal", "high", "low", "unknown"] },
+        "collected_on": { "type": ["string", "null"], "format": "date" }
+      }
+    }
+  }
+}

@@ -1,0 +1,211 @@
+# Golden fixtures — the regression net for a system that gives health-adjacent advice.
+#
+# Every rulebook change ships with a fixture. A fixture is DATA: persona + state +
+# overrides + expectations. If you find yourself wanting to express an expectation this
+# format can't hold, extend the runner (tests/test_golden.py), don't write a bespoke test.
+#
+# `xfail` marks behaviour that is WRONG BUT CURRENT. These are the open spec questions.
+# An xfail that starts passing is a signal that someone resolved a spec question in code —
+# the runner fails loudly on that (strict xfail).
+
+- id: F1
+  description: "Sarah, crash day. Canonical multi-layer intervention: sympathetic overload + luteal + Vata."
+  persona: sarah
+  state: crash
+  expect:
+    state: intervention
+    fired: ["1.1", "2.3", "3.1"]
+    activity_verdict: substitute
+    activity_prescribed: "restorative yoga"
+    activity_decided_by: "1.1"
+    blocked_tags_include: [raw, cold, astringent]
+    mandated_tags_include: [complex_carbs, magnesium_rich, grounding]
+    food_removed_include: ["kale salad", "overnight oats"]
+
+- id: F2
+  description: "James, ordinary day. TRUE calm state — only the always-on L3 dosha fires."
+  persona: james
+  state: calm
+  expect:
+    state: calm
+    fired: ["3.3"]
+    activity_verdict: allow
+    activity_prescribed: "run"
+
+- id: F3
+  description: "Menstrual beats follicular on day 3. Resolves the 1–13 vs 6–13 ambiguity in the source doc."
+  persona: sarah
+  state: calm
+  overrides:
+    cycle: { cycle_day: 3 }
+  expect:
+    state: intervention
+    fired: ["2.4", "3.1"]
+    activity_verdict: downgrade
+    activity_prescribed: "gentle stretch"
+
+- id: F4
+  description: "Follicular day 10 allows planned intensity — L2 can permit as well as restrict."
+  persona: sarah
+  state: calm
+  overrides:
+    cycle: { cycle_day: 10 }
+  expect:
+    state: intervention
+    fired: ["2.1", "3.1"]
+    activity_verdict: allow
+    activity_prescribed: "hiit"
+
+- id: F5
+  description: >
+    THE JAMES GAP. RHR 26% above baseline, steps collapsed, but only L3 fires because 1.3
+    needs temperature AND RHR. The engine therefore reports 'in balance today' to a man
+    whose cardiovascular signal is clearly off. This fixture asserts the CURRENT behaviour
+    so it cannot change silently — it is a known product defect awaiting a rule decision,
+    not a passing test to feel good about.
+  persona: james
+  state: crash
+  expect:
+    state: calm
+    fired: ["3.3"]
+
+- id: F5b
+  description: "Candidate rule 1.4 (Cardiovascular Load) would close the James gap. Rule is disabled pending sign-off."
+  persona: james
+  state: crash
+  xfail: "rule 1.4 is proposed and disabled — enable it in the rulebook to make this pass"
+  expect:
+    state: intervention
+    fired: ["1.4", "3.3"]
+    activity_verdict: substitute
+
+- id: F6
+  description: "Heat-wave relocates rather than cancels. Alex on a 30C day."
+  persona: alex
+  state: calm
+  expect:
+    state: intervention
+    fired: ["3.2", "4.2"]
+    activity_verdict: relocate
+    activity_location: indoor
+    hydration_pct_delta: 40
+    food_removed_include: ["chilli scrambled eggs", "kimchi rice bowl"]
+
+- id: F7
+  description: "Full moon applies a modifier without touching activity."
+  persona: james
+  state: calm
+  overrides:
+    environment: { moon_phase: full }
+  expect:
+    state: intervention
+    fired: ["3.3", "4.1"]
+    activity_verdict: allow
+    sodium_pct_delta: -20
+
+- id: F8
+  description: "Lab layer fires only on a present-and-abnormal value, and contributes supplements plus a constraint."
+  persona: james
+  state: calm
+  overrides:
+    labs: { pm_cortisol: { status: high, value: 8.1, unit: "ng/mL" } }
+  expect:
+    state: intervention
+    fired: ["3.3", "5.1"]
+    supplements_include: [l_theanine, ashwagandha]
+    constraints_include: { digital_sundown: "20:00" }
+
+- id: F9
+  description: >
+    PROTECT THIS ONE. Luteal mandates complex carbs; an elevated HbA1c blocks them.
+    L5 outranks L2, so the carbs are blocked and the mandate is withdrawn. This proves
+    cross-layer precedence is real rather than decorative — if F9 goes red the arbitration
+    is broken no matter what else passes.
+  persona: sarah
+  state: crash
+  overrides:
+    labs: { hba1c: { status: high, value: 6.1, unit: "%" } }
+  expect:
+    state: intervention
+    fired: ["1.1", "2.3", "3.1", "5.3"]
+    blocked_tags_include: [complex_carbs, high_glycemic]
+    mandated_tags_exclude: [complex_carbs]
+    min_protein_g: 30
+    min_fiber_g: 10
+    food_removed_include: ["sweet potato mash"]
+
+- id: F10
+  description: >
+    GINGER FOR A PITTA. L1's immunity basket mandates warming ginger while L3 Pitta blocks
+    hot foods. L1 outranks L3 so the ginger stays — correct per spec, reads badly in the UI
+    on a 30C day. The engine must SURFACE the collision, not resolve it silently.
+  persona: alex
+  state: crash
+  expect:
+    state: intervention
+    fired: ["1.1", "1.3", "3.2", "4.2"]
+    activity_verdict: rest
+    activity_decided_by: "1.3"
+    item_present: "ginger tea"
+    warnings_match: "ginger tea"
+
+- id: F11
+  description: >
+    PROTECT THIS ONE. Alex's exact state with the elemental layer OFF. Only L1/L2/L5 may
+    fire — no dosha, no heat-wave, no moon. This is the 'validated biometrics only' mode
+    shown to clinical, regulatory and investor audiences. If F11 goes red, the layer
+    separation has leaked and the claim is no longer true.
+  persona: alex
+  state: crash
+  elemental_layer: false
+  expect:
+    state: intervention
+    fired: ["1.1", "1.3"]
+    activity_verdict: rest
+    blocked_tags_exclude: [hot, spicy, fermented, acidic]
+    item_present: "ginger tea"
+
+- id: F12
+  description: "Cold start. Fewer days of history than the baseline minimum degrades to insufficient_baseline rather than pretending."
+  persona: sarah
+  state: calm
+  overrides:
+    baselines: { days_of_history: 10 }
+  expect:
+    state: insufficient_baseline
+    warnings_match: "cold start"
+
+- id: F13
+  description: "cycle_day 31 is undefined in the 28-day model. No L2 rule fires and the engine says so instead of guessing."
+  persona: sarah
+  state: calm
+  overrides:
+    cycle: { cycle_day: 31 }
+  expect:
+    state: calm
+    fired: ["3.1"]
+    warnings_match: "UNDEFINED"
+
+- id: F14
+  description: "Missing HRV makes 1.1 unevaluable, not false. The rule is skipped and the gap is traced."
+  persona: sarah
+  state: crash
+  overrides:
+    biometrics: { hrv_ms: null }
+  expect:
+    state: intervention
+    fired: ["2.3", "3.1"]
+    trace_match: "unevaluable"
+
+- id: F15
+  description: "Blood sugar override sets macro floors and blocks high-glycaemic items independently of any hormonal input."
+  persona: james
+  state: calm
+  overrides:
+    labs: { fasting_glucose: { status: high, value: 6.4, unit: "mmol/L" } }
+  expect:
+    state: intervention
+    fired: ["3.3", "5.3"]
+    min_protein_g: 30
+    min_fiber_g: 10
+    blocked_tags_include: [high_glycemic]

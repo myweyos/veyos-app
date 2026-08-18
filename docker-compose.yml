@@ -1,0 +1,23 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: veyos
+      POSTGRES_PASSWORD: veyos_local_only
+      POSTGRES_DB: veyos
+    ports: ["5432:5432"]
+    volumes: ["veyos_pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veyos"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+volumes:
+  veyos_pgdata:
+
+# Local only. Nothing here is a production topology and no real subject data may ever be
+# loaded into it — use the simulated personas in services/engine/tests/fixtures.

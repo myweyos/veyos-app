@@ -1,0 +1,11 @@
+{
+  "$comment": "Controlled vocabulary for food item tags. The rulebook may only block or mandate tags listed here. Adding a tag is a contract change: update this file, the rulebook, and the fixture that proves the new tag resolves.",
+  "version": 1,
+  "thermal": ["warm", "hot", "cold", "cooling", "warming"],
+  "texture_weight": ["heavy", "light", "dry", "oily"],
+  "taste": ["sweet", "bitter", "astringent", "acidic", "spicy", "salty", "sour"],
+  "preparation": ["raw", "cooked", "fermented"],
+  "macro": ["complex_carbs", "high_glycemic", "high_protein", "refined_sugar", "seed_oils", "heavy_fats"],
+  "functional": ["grounding", "hydrating", "stimulating", "magnesium_rich", "iron_rich", "immunity_basket", "antihistamine_support"],
+  "category": ["dairy", "caffeine", "caffeine_after_noon"]
+}

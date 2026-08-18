@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.veyos.app/v1/decision.json",
+  "title": "Decision",
+  "description": "The engine's output. Every field is explainable: no value appears here without a rule id in `trace` that produced it. This is what the execution layer turns into notifications and what the UI renders.",
+  "type": "object",
+  "required": ["schema_version", "subject_ref", "as_of", "rulebook_version", "state", "fired_rules", "activity", "food", "supplements", "trace"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version":   { "const": 1 },
+    "subject_ref":      { "type": "string" },
+    "as_of":            { "type": "string", "format": "date" },
+    "rulebook_version": { "type": "integer" },
+    "elemental_layer_enabled": { "type": "boolean" },
+
+    "state": {
+      "type": "string",
+      "enum": ["calm", "intervention", "insufficient_baseline"],
+      "description": "`calm` == only the always-on L3 baseline fired: show 'in balance today', no intervention. `insufficient_baseline` == cold start."
+    },
+
+    "fired_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "layer", "priority"],
+        "additionalProperties": false,
+        "properties": {
+          "rule_id":  { "type": "string" },
+          "name":     { "type": "string" },
+          "layer":    { "type": "integer", "minimum": 1, "maximum": 5 },
+          "priority": { "type": "integer" },
+          "because":  { "type": "array", "items": { "type": "string" }, "description": "Human-readable condition evaluations. Deltas and thresholds only — never a raw value tied to a subject." }
+        }
+      }
+    },
+
+    "activity": {
+      "type": "object",
+      "required": ["verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "verdict":       { "type": "string", "enum": ["allow", "downgrade", "substitute", "relocate", "rest"] },
+        "planned":       { "type": ["string", "null"] },
+        "prescribed":    { "type": ["string", "null"] },
+        "location":      { "type": ["string", "null"] },
+        "decided_by":    { "type": ["string", "null"], "description": "Rule id that won activity resolution." }
+      }
+    },
+
+    "food": {
+      "type": "object",
+      "required": ["meals"],
+      "additionalProperties": false,
+      "properties": {
+        "meals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slot", "items", "removed"],
+            "additionalProperties": false,
+            "properties": {
+              "slot":    { "type": "string" },
+              "items":   { "type": "array", "items": { "type": "object" } },
+              "removed": { "type": "array", "items": { "type": "object" }, "description": "Each removal carries the rule id that removed it." }
+            }
+          }
+        },
+        "mandated_tags":      { "type": "array", "items": { "type": "string" } },
+        "blocked_tags":       { "type": "array", "items": { "type": "string" } },
+        "sodium_pct_delta":   { "type": ["number", "null"] },
+        "hydration_pct_delta":{ "type": ["number", "null"] },
+        "kcal_delta":         { "type": ["array", "null"], "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+        "min_protein_g":      { "type": ["number", "null"] },
+        "min_fiber_g":        { "type": ["number", "null"] }
+      }
+    },
+
+    "supplements": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "object", "additionalProperties": true },
+    "messages":    { "type": "array", "items": { "type": "string" } },
+
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Non-fatal input problems the product must surface rather than swallow — e.g. cycle_day > 28, missing baseline for an otherwise-firing rule."
+    },
+
+    "trace": {
+      "type": "array",
+      "description": "Ordered log of every mutation applied during resolution, each with the rule id responsible. This is the audit trail; it is what makes the engine defensible in a regulatory conversation.",
+      "items": {
+        "type": "object",
+        "required": ["step", "rule_id", "detail"],
+        "additionalProperties": false,
+        "properties": {
+          "step":    { "type": "string", "enum": ["evaluate", "activity", "food", "supplements", "constraints"] },
+          "rule_id": { "type": "string" },
+          "detail":  { "type": "string" }
+        }
+      }
+    }
+  }
+}
