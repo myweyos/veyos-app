@@ -26,7 +26,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
-from veyos_engine.config import Rulebook
+from weyos_engine.config import Rulebook
 
 from .runner import LoadError, SnapshotOutcome
 

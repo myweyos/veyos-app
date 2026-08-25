@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from veyos_engine.config import Rulebook
+from weyos_engine.config import Rulebook
 
 from .metrics import STATUS_DISABLED, STATUS_SUPPRESSED, RunResult
 
@@ -312,7 +312,7 @@ def raise_observations(book: Rulebook, result: RunResult) -> list[Question]:
             Question(
                 id="any-rules-cannot-resolve-false-on-partial-input",
                 title="An `any` rule stays UNKNOWN unless every signal it references is present",
-                source="backtest observation (new) — veyos_engine/evaluate.py:rule_fires",
+                source="backtest observation (new) — weyos_engine/evaluate.py:rule_fires",
                 detail=(
                     "For `any`, rule_fires returns TRUE on the first true condition, but otherwise "
                     "degrades to UNKNOWN if ANY condition was UNKNOWN. So a rule reading two signals "
@@ -347,7 +347,7 @@ def raise_observations(book: Rulebook, result: RunResult) -> list[Question]:
                     "docs/engine.md promises a warning on UNKNOWN conditions; the engine only "
                     "warns on a missing baseline"
                 ),
-                source="backtest observation (new) — docs/engine.md vs veyos_engine/evaluate.py",
+                source="backtest observation (new) — docs/engine.md vs weyos_engine/evaluate.py",
                 detail=(
                     "docs/engine.md: 'Rules containing an UNKNOWN condition do not fire, and the "
                     "decision carries a warning so the client can say \"still learning your baseline\"'. "

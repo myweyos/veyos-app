@@ -14,7 +14,7 @@ engine-test: ## Golden fixtures. This suite must never go red.
 	cd services/engine && python3 -m pytest
 
 engine-lint: ## ruff + mypy on the engine
-	cd services/engine && python3 -m ruff check . && python3 -m mypy veyos_engine backtest
+	cd services/engine && python3 -m ruff check . && python3 -m mypy weyos_engine backtest
 
 backtest: ## Rulebook backtest over the synthetic sweep, e.g. make backtest GRID=quick
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary)
@@ -29,10 +29,10 @@ typecheck: ## TypeScript across all workspaces
 	npm run typecheck
 
 decision: ## Print a decision trace, e.g. make decision PERSONA=alex STATE=crash
-	cd services/engine && python3 -m veyos_engine.cli --persona $(or $(PERSONA),sarah) --state $(or $(STATE),crash)
+	cd services/engine && python3 -m weyos_engine.cli --persona $(or $(PERSONA),sarah) --state $(or $(STATE),crash)
 
 decision-validated: ## Same, in validated-biometrics-only mode
-	cd services/engine && python3 -m veyos_engine.cli --persona $(or $(PERSONA),alex) --state $(or $(STATE),crash) --no-elemental
+	cd services/engine && python3 -m weyos_engine.cli --persona $(or $(PERSONA),alex) --state $(or $(STATE),crash) --no-elemental
 
 infra-up: ## Postgres/Timescale + Redis
 	docker compose up -d

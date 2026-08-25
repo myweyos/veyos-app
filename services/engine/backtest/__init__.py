@@ -1,4 +1,4 @@
-"""Backtest harness for the Veyos rulebook.
+"""Backtest harness for the Weyos rulebook.
 
 Runs the *existing* rulebook over a corpus of snapshots and reports, per rule, how often
 it fired and which other rules it fired alongside. It is a measurement instrument: it does

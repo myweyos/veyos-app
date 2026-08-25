@@ -17,7 +17,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from veyos_engine.config import REPO_ROOT, Rulebook, load_rulebook
+from weyos_engine.config import REPO_ROOT, Rulebook, load_rulebook
 
 from .generate import AXIS_PARSERS, DEFAULT_GRID, GRIDS, SYNTHETIC_AS_OF, apply_overrides, generate
 from .metrics import aggregate
@@ -62,7 +62,7 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m backtest",
-        description="Run the Veyos rulebook over a corpus and report per-rule firing and co-firing.",
+        description="Run the Weyos rulebook over a corpus and report per-rule firing and co-firing.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

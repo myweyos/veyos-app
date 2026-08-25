@@ -52,7 +52,7 @@ def render_text(result: RunResult, questions: list[Question], observations: list
     add = lines.append
 
     add("=" * 104)
-    add("VEYOS RULEBOOK BACKTEST")
+    add("WEYOS RULEBOOK BACKTEST")
     add("=" * 104)
     add(f"corpus            : {result.corpus_label}")
     add(f"snapshots         : {result.total}")

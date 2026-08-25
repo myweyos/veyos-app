@@ -25,7 +25,7 @@ jobs:
       - name: Lint
         run: cd services/engine && python -m ruff check .
       - name: Types
-        run: cd services/engine && python -m mypy veyos_engine backtest
+        run: cd services/engine && python -m mypy weyos_engine backtest
       - name: Backtest smoke run
         # Cheap grid. Catches a harness that has drifted from the engine's trace format or a
         # sweep that no longer reaches every enabled rule.

@@ -1,4 +1,4 @@
-"""Veyos arbitration engine.
+"""Weyos arbitration engine.
 
 Pure, deterministic, config-driven. Takes a canonical SignalSnapshot, returns a Decision
 with a full trace. No network, no database, no clock, no randomness — see CLAUDE.md.

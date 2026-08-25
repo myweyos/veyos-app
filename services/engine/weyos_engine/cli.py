@@ -1,8 +1,8 @@
 """Human-readable decision trace.
 
-    python -m veyos_engine.cli --persona alex --state crash
-    python -m veyos_engine.cli --persona alex --state crash --no-elemental
-    python -m veyos_engine.cli --snapshot path/to/snapshot.json --json
+    python -m weyos_engine.cli --persona alex --state crash
+    python -m weyos_engine.cli --persona alex --state crash --no-elemental
+    python -m weyos_engine.cli --snapshot path/to/snapshot.json --json
 
 Exists so a non-engineer can see, in one screen, exactly why the engine said what it said.
 That is worth more in an investor or clinical conversation than any dashboard.
@@ -93,7 +93,7 @@ def render(decision: dict[str, Any]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the Veyos arbitration engine")
+    parser = argparse.ArgumentParser(description="Run the Weyos arbitration engine")
     parser.add_argument("--persona", choices=["sarah", "james", "alex"])
     parser.add_argument("--state", choices=["calm", "crash"], default="calm")
     parser.add_argument("--snapshot", type=Path, help="path to a SignalSnapshot JSON file")

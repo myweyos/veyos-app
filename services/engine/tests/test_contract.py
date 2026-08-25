@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from veyos_engine.config import RulebookError, load_rulebook
+from weyos_engine.config import RulebookError, load_rulebook
 
 from .test_golden import GOLDEN, build_snapshot, run
 

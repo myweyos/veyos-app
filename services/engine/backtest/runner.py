@@ -26,9 +26,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from veyos_engine.config import Rulebook
-from veyos_engine.engine import decide
-from veyos_engine.models import Snapshot
+from weyos_engine.config import Rulebook
+from weyos_engine.engine import decide
+from weyos_engine.models import Snapshot
 
 TRACE_STEP_EVALUATE = "evaluate"
 TRACE_FIRED = "fired"

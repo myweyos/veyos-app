@@ -15,9 +15,9 @@ from typing import Any
 import pytest
 import yaml
 
-from veyos_engine.config import load_rulebook
-from veyos_engine.engine import decide
-from veyos_engine.models import Snapshot
+from weyos_engine.config import load_rulebook
+from weyos_engine.engine import decide
+from weyos_engine.models import Snapshot
 
 FIXTURES = Path(__file__).parent / "fixtures"
 PERSONAS = json.loads((FIXTURES / "personas.json").read_text(encoding="utf-8"))

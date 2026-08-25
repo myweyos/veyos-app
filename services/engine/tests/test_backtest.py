@@ -47,9 +47,9 @@ from backtest.runner import (
     iter_outcomes,
     load_directory,
 )
-from veyos_engine.config import load_rulebook
-from veyos_engine.engine import decide
-from veyos_engine.models import Snapshot
+from weyos_engine.config import load_rulebook
+from weyos_engine.engine import decide
+from weyos_engine.models import Snapshot
 
 SCHEMAS = Path(__file__).resolve().parents[3] / "packages" / "shared-schema" / "schemas"
 SNAPSHOT_SCHEMA = json.loads((SCHEMAS / "signal-snapshot.schema.json").read_text(encoding="utf-8"))
