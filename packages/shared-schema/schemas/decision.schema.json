@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schema.veyos.app/v1/decision.json",
+  "$id": "https://schema.weyos.app/v1/decision.json",
   "title": "Decision",
   "description": "The engine's output. Every field is explainable: no value appears here without a rule id in `trace` that produced it. This is what the execution layer turns into notifications and what the UI renders.",
   "type": "object",

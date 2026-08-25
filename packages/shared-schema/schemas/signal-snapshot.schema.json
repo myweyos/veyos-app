@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schema.veyos.app/v1/signal-snapshot.json",
+  "$id": "https://schema.weyos.app/v1/signal-snapshot.json",
   "title": "SignalSnapshot",
   "description": "The canonical normalised signal payload. Every source (HealthKit, Health Connect, BLE chest strap, manual lab entry) normalises INTO this shape at ingestion. Nothing downstream ever sees a vendor-specific field. This schema is the contract between mobile, api and engine.",
   "type": "object",
