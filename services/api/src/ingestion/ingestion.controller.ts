@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
-import type { Decision, SignalSnapshot } from "@veyos/shared-schema";
+import type { Decision, SignalSnapshot } from "@weyos/shared-schema";
 
 import { SnapshotValidator } from "./snapshot.validator";
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { Injectable } from "@nestjs/common";
 import Ajv, { type ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
-import type { SignalSnapshot } from "@veyos/shared-schema";
+import type { SignalSnapshot } from "@weyos/shared-schema";
 
 const SCHEMA_PATH = join(
   __dirname,

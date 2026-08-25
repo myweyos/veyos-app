@@ -47,5 +47,5 @@ plugins/      config plugins — entitlements, Info.plist keys, Android manifest
   decision, and it is also a privacy posture: less raw data leaves the device.
 - The client does **not** implement any rule from the rulebook. Ever. If you find yourself
   writing `if (hrv < baseline * 0.8)` in a component, that logic belongs in the engine.
-- All payloads are built to `@veyos/shared-schema`. No vendor-shaped objects past the
+- All payloads are built to `@weyos/shared-schema`. No vendor-shaped objects past the
   normalisation layer.

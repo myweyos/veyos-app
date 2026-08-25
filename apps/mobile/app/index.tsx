@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
  * Placeholder home screen.
  *
  * The first real screen is the daily decision view, and it should render a Decision from
- * @veyos/shared-schema — including the `because` reasons. Showing the user why beats
+ * @weyos/shared-schema — including the `because` reasons. Showing the user why beats
  * showing them what; it is also the thing that makes the product defensible.
  *
  * Do not build UI against invented data shapes. Run the engine CLI, paste a real Decision

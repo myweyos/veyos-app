@@ -1,8 +1,8 @@
 {
-  "name": "@veyos/api",
+  "name": "@weyos/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Veyos ingestion + orchestration API",
+  "description": "Weyos ingestion + orchestration API",
   "scripts": {
     "build": "nest build",
     "start": "nest start",

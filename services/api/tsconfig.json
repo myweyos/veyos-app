@@ -15,7 +15,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@veyos/shared-schema": ["../../packages/shared-schema/src/index.ts"]
+      "@weyos/shared-schema": ["../../packages/shared-schema/src/index.ts"]
     }
   },
   "include": ["src/**/*"]

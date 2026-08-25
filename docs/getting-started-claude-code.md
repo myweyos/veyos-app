@@ -134,7 +134,7 @@ picks up on day 1 has a contract and a test suite waiting for it.
 > Build the daily decision screen against a real `Decision` produced by
 > `python -m veyos_engine.cli --persona sarah --state crash --json`. Show the prescribed
 > activity, the meal changes with the reason for each removal, and the `because` lines.
-> Showing why is the product. Do not invent data shapes — use `@veyos/shared-schema`.
+> Showing why is the product. Do not invent data shapes — use `@weyos/shared-schema`.
 
 ---
 

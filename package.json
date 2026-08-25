@@ -1,8 +1,8 @@
 {
-  "name": "veyos",
+  "name": "weyos",
   "version": "0.1.0",
   "private": true,
-  "description": "Veyos monorepo",
+  "description": "Weyos monorepo",
   "workspaces": ["packages/*", "services/api", "apps/mobile"],
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",

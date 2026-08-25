@@ -46,7 +46,7 @@ Adding a rule:
 `packages/shared-schema/schemas/*.json` is the source of truth. Changing it means:
 
 1. An ADR in `docs/adr/` — what changed, why, what breaks.
-2. Regenerate TS types (`npm run generate -w @veyos/shared-schema`).
+2. Regenerate TS types (`npm run generate -w @weyos/shared-schema`).
 3. Engine contract tests pass (`services/engine/tests/test_contract.py`).
 4. Bump `schema_version` if the change is not backwards compatible, and say how old clients
    are handled. Phones in the field do not update on your schedule.

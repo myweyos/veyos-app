@@ -1,8 +1,8 @@
 {
-  "name": "@veyos/shared-schema",
+  "name": "@weyos/shared-schema",
   "version": "1.0.0",
   "private": true,
-  "description": "The Veyos contract. JSON Schema is the source of truth; TS types are its projection.",
+  "description": "The Weyos contract. JSON Schema is the source of truth; TS types are its projection.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "files": ["src", "schemas"],

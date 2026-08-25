@@ -23,7 +23,7 @@ backtest-validated: ## Same, in validated-biometrics-only mode
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary) --no-elemental
 
 api-test: ## API unit tests
-	npm run test --workspace @veyos/api --if-present
+	npm run test --workspace @weyos/api --if-present
 
 typecheck: ## TypeScript across all workspaces
 	npm run typecheck
@@ -41,6 +41,6 @@ infra-down:
 	docker compose down
 
 dev: infra-up ## Infra + API in watch mode
-	npm run dev --workspace @veyos/api
+	npm run dev --workspace @weyos/api
 
 .PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated infra-up infra-down dev
