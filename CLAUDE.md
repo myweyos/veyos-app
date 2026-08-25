@@ -5,7 +5,7 @@ honestly to humans too.
 
 ## What this project is
 
-Veyos ingests biometric signals (HRV, RHR, sleep stages, wrist temperature, steps, plus
+Weyos ingests biometric signals (HRV, RHR, sleep stages, wrist temperature, steps, plus
 optional lab values), normalises them into one canonical schema, and runs them through a
 deterministic 5-layer rulebook that produces exactly one daily intervention. There is no ML
 in the MVP. Every output must be explainable as "rule X fired because signal Y crossed

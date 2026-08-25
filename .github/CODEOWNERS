@@ -9,4 +9,11 @@
 /CLAUDE.md                     @veyos/engineering-lead
 /docs/adr/                     @veyos/engineering-lead
 
-# Replace these team handles with real GitHub usernames when the org is created.
+# TODO: replace these team handles with real GitHub usernames when the org is created.
+#
+# DELIBERATELY NOT RENAMED in the 2026-08-25 Veyos -> Weyos pass. These are GitHub org team
+# handles, not product strings. The teams do not exist, so they already match nothing, and the
+# real org is `myweyos` -- renaming them to @weyos/* would produce handles that are wrong in a
+# different way while looking correct. CODEOWNERS fails silently when a team is missing: no
+# error, no warning, required review just stops applying. Fix this by creating the teams (or
+# substituting usernames), not by find-and-replace.

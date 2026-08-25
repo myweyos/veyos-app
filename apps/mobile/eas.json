@@ -10,12 +10,12 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api-staging.veyos.app" }
+      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api-staging.weyos.app" }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
-      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.veyos.app" }
+      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.weyos.app" }
     }
   },
   "submit": { "production": {} }

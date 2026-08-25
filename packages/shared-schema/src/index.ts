@@ -1,5 +1,5 @@
 /**
- * Veyos shared contract — TypeScript view.
+ * Weyos shared contract — TypeScript view.
  *
  * The JSON Schema files in ../schemas are the SOURCE OF TRUTH. These types are the
  * TypeScript projection of them and must be regenerated, not hand-edited, when the

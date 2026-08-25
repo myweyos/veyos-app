@@ -1,8 +1,13 @@
-# Getting Veyos into GitHub and moving — first five days
+# Getting Weyos into GitHub and moving — first five days
 
 Written for JB, 2026-08-18. This is what one person can do with Claude Code while the second
 engineer is still ramping, ordered so that nothing you build now gets thrown away when they
 arrive.
+
+> **Historical.** Day 0 is a record of setup that has already happened; the commands are kept
+> so the configuration is auditable, not so they get run again. They originally named
+> `veyos/veyos`, which never matched the actual remote — they now name the real one,
+> `myweyos/weyos-app`. Updated 2026-08-25 in the Veyos → Weyos rename.
 
 ---
 
@@ -11,18 +16,18 @@ arrive.
 ```bash
 # 1. Create the org and repo (private).
 gh auth login
-gh repo create veyos/veyos --private --description "Veyos — biometric arbitration platform"
+gh repo create myweyos/weyos-app --private --description "Weyos — biometric arbitration platform"
 
 # 2. Push this bootstrap.
-cd veyos
+cd weyos-app
 git init -b main
 git add .
 git commit -m "chore: bootstrap monorepo, rulebook v1, arbitration engine, golden fixtures"
-git remote add origin git@github.com:veyos/veyos.git
+git remote add origin git@github.com:myweyos/weyos-app.git
 git push -u origin main
 
 # 3. Protect main before anyone can push to it by accident.
-gh api -X PUT repos/veyos/veyos/branches/main/protection \
+gh api -X PUT repos/myweyos/weyos-app/branches/main/protection \
   -f 'required_status_checks[strict]=true' \
   -f 'required_status_checks[contexts][]=Engine (golden fixtures)' \
   -f 'required_status_checks[contexts][]=Contract (schema is the source of truth)' \
@@ -106,7 +111,7 @@ picks up on day 1 has a contract and a test suite waiting for it.
 
 **B2. Python contract models**
 > Generate Pydantic models from the same JSON Schemas into
-> `packages/shared-schema/python/veyos_schema/` and make the engine's `Snapshot.from_dict`
+> `packages/shared-schema/python/weyos_schema/` and make the engine's `Snapshot.from_dict`
 > validate against them at the boundary in a debug mode. Keep the engine's runtime
 > dependency on Pydantic optional — the engine must stay importable with PyYAML alone.
 
@@ -132,7 +137,7 @@ picks up on day 1 has a contract and a test suite waiting for it.
 
 **D2. Decision screen against real engine output**
 > Build the daily decision screen against a real `Decision` produced by
-> `python -m veyos_engine.cli --persona sarah --state crash --json`. Show the prescribed
+> `python -m weyos_engine.cli --persona sarah --state crash --json`. Show the prescribed
 > activity, the meal changes with the reason for each removal, and the `because` lines.
 > Showing why is the product. Do not invent data shapes — use `@weyos/shared-schema`.
 

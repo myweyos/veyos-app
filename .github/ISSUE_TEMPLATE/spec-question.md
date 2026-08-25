@@ -12,7 +12,7 @@ labels: ["spec-question", "needs-decision"]
 ## Where it bites
 
 <!-- Which persona / signal combination exposes it? Paste the decision trace:
-     cd services/engine && python -m veyos_engine.cli --persona X --state crash -->
+     cd services/engine && python -m weyos_engine.cli --persona X --state crash -->
 
 ## Current behaviour
 

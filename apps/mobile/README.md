@@ -1,4 +1,4 @@
-# Veyos mobile (Expo)
+# Weyos mobile (Expo)
 
 ## Expo Go will not work. Ever.
 

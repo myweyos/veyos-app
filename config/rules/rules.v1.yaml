@@ -1,4 +1,4 @@
-# Veyos rulebook — version 1
+# Weyos rulebook — version 1
 #
 # THIS FILE IS THE RULEBOOK. Code interprets it; code does not contain rules.
 # Changing a threshold here requires: (1) a backtest, (2) a golden fixture, (3) a version bump

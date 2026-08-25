@@ -10,12 +10,12 @@ import { StyleSheet, Text, View } from "react-native";
  * Do not build UI against invented data shapes. Run the engine CLI, paste a real Decision
  * into a fixture, and build against that:
  *
- *   python -m veyos_engine.cli --persona sarah --state crash --json
+ *   python -m weyos_engine.cli --persona sarah --state crash --json
  */
 export default function Home() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Veyos</Text>
+      <Text style={styles.title}>Weyos</Text>
       <Text style={styles.subtitle}>Dev build works. Now prove a real sensor read.</Text>
     </View>
   );

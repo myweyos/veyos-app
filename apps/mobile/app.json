@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Veyos",
-    "slug": "veyos",
-    "scheme": "veyos",
+    "name": "Weyos",
+    "slug": "weyos",
+    "scheme": "weyos",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
-      "bundleIdentifier": "app.veyos.client",
+      "bundleIdentifier": "app.weyos.client",
       "supportsTablet": false,
       "infoPlist": {
-        "NSHealthShareUsageDescription": "Veyos reads your heart-rate variability, resting heart rate, sleep and temperature to decide what your body needs today.",
-        "NSHealthUpdateUsageDescription": "Veyos writes completed sessions back to Health so your record stays in one place.",
-        "NSBluetoothAlwaysUsageDescription": "Veyos connects to your chest strap for real-time heart-rate variability.",
+        "NSHealthShareUsageDescription": "Weyos reads your heart-rate variability, resting heart rate, sleep and temperature to decide what your body needs today.",
+        "NSHealthUpdateUsageDescription": "Weyos writes completed sessions back to Health so your record stays in one place.",
+        "NSBluetoothAlwaysUsageDescription": "Weyos connects to your chest strap for real-time heart-rate variability.",
         "UIBackgroundModes": ["bluetooth-central", "fetch", "processing"]
       },
       "entitlements": {
@@ -22,7 +22,7 @@
       }
     },
     "android": {
-      "package": "app.veyos.client",
+      "package": "app.weyos.client",
       "permissions": [
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.BLUETOOTH_CONNECT",
