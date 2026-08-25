@@ -1,0 +1,9 @@
+{
+  "$comment": "Typecheck-only config. The build config sets rootDir ./src so `nest build` emits a flat dist, but @weyos/shared-schema resolves to source OUTSIDE that root, which is TS6059 by construction — it made `npm run typecheck` red from the bootstrap commit. Widening rootDir to the repo root fixes the check without changing what `nest build` emits. Delete this once shared-schema ships built declarations (VEY-SCHEMA-GEN).",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}

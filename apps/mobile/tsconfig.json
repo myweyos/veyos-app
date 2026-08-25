@@ -1,0 +1,12 @@
+{
+  "$comment": "package.json declares a `typecheck` script but no tsconfig existed, so `tsc --noEmit` fell through to CLI defaults and exited non-zero. Extends Expo's base so the React Native and expo-router types resolve.",
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "paths": {
+      "@weyos/shared-schema": ["../../packages/shared-schema/src/index.ts"]
+    }
+  },
+  "include": ["app/**/*", "modules/**/*", "plugins/**/*"]
+}

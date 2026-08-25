@@ -44,9 +44,20 @@ jobs:
       - name: Typecheck all workspaces
         run: npm run typecheck
       - name: Schemas are valid JSON Schema
+        # --strict=false is load-bearing. Both schemas use `format: "date"` / `"date-time"`,
+        # and ajv's strict mode treats an unknown format as a compile error — which is why
+        # this step exited 1 from the bootstrap commit onward.
+        #
+        # This step proves the documents are STRUCTURALLY valid JSON Schema. It does not
+        # assert formats. Loading ajv-formats here is not currently possible: `-c ajv-formats`
+        # fails because ajv-formats v3 exports { default: fn } rather than a bare function,
+        # which ajv-cli rejects with "module ajv-formats is invalid; it should export
+        # function". Note that nothing else in the repo enforces `format` either — the API's
+        # validator does call addFormats(), but the engine's contract tests use jsonschema
+        # without a format_checker. Worth an issue; not worth blocking on here.
         run: |
-          npx --yes ajv-cli compile -s packages/shared-schema/schemas/signal-snapshot.schema.json --spec=draft2020
-          npx --yes ajv-cli compile -s packages/shared-schema/schemas/decision.schema.json --spec=draft2020
+          npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/signal-snapshot.schema.json --spec=draft2020
+          npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/decision.schema.json --spec=draft2020
 
   guardrails:
     name: Guardrails

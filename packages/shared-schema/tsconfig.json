@@ -1,0 +1,18 @@
+{
+  "$comment": "package.json declares a `typecheck` script but no tsconfig existed, so `tsc --noEmit` fell through to CLI defaults and exited non-zero. That made `npm run typecheck --workspaces` — and therefore the Contract CI job — red from the bootstrap commit onward.",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "moduleResolution": "node",
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"]
+}
