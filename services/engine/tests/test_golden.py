@@ -20,7 +20,11 @@ from weyos_engine.engine import decide
 from weyos_engine.models import Snapshot
 
 FIXTURES = Path(__file__).parent / "fixtures"
-PERSONAS = json.loads((FIXTURES / "personas.json").read_text(encoding="utf-8"))
+# Persona baselines are shared across three surfaces and live in packages/demo-fixtures.
+# The golden EXPECTATIONS stay here — those are the engine's regression net and nothing
+# else consumes them.
+DEMO_FIXTURES = Path(__file__).resolve().parents[3] / "packages" / "demo-fixtures"
+PERSONAS = json.loads((DEMO_FIXTURES / "personas.json").read_text(encoding="utf-8"))
 GOLDEN = yaml.safe_load((FIXTURES / "golden.yaml").read_text(encoding="utf-8"))
 
 

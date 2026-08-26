@@ -76,7 +76,9 @@ def test_trace_prefixes_still_match_the_engine() -> None:
     and L3/L4 are suppressed.
     """
     raw = json.loads(
-        (Path(__file__).resolve().parent / "fixtures" / "personas.json").read_text(encoding="utf-8")
+        (
+            Path(__file__).resolve().parents[3] / "packages" / "demo-fixtures" / "personas.json"
+        ).read_text(encoding="utf-8")
     )
     base = {k: v for k, v in raw["alex"]["calm"].items() if not k.startswith("$")}
     crash = {k: v for k, v in raw["alex"]["crash"].items() if not k.startswith("$")}

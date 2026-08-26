@@ -16,11 +16,13 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .config import load_rulebook
+from .config import REPO_ROOT, load_rulebook
 from .engine import decide
 from .models import Snapshot
 
-PERSONAS_PATH = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "personas.json"
+# Demo personas are shared data, not engine test fixtures — the API and the mobile app build
+# screens against the same three subjects. Read the same way config.py reads food-tags.json.
+PERSONAS_PATH = REPO_ROOT / "packages" / "demo-fixtures" / "personas.json"
 
 
 def _strip(value: Any) -> Any:
