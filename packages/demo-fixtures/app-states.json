@@ -1,0 +1,103 @@
+{
+  "$comment": "The 3 -> 6 mapping. The engine emits three states (calm | intervention | insufficient_baseline); the product design needs six. This file is that mapping, expressed as DATA so it can be reviewed and signed off rather than buried in an if-statement. Both drivers read it; neither hard-codes a predicate. See open_questions -- several edges here are genuinely undecided and are raised, not resolved.",
+
+  "version": 1,
+  "status": "PROPOSED — not signed off. Every entry in open_questions needs a human ruling.",
+  "resolution": "First match wins, reading top to bottom. THE ORDER IS THE PRIORITY, and the order is itself open question 2.",
+
+  "states": [
+    {
+      "id": "declined",
+      "display": "Declined",
+      "glyph": "○",
+      "predicate": "user_declined",
+      "input": "client",
+      "why": "A user action on a decision already served. Not derivable from a Decision at all — the engine has no idea the user said no. Must come from client state, and later from an event keyed by decision_id."
+    },
+    {
+      "id": "calibrating",
+      "display": "Calibrating",
+      "glyph": "◇",
+      "predicate": "engine_state_is_insufficient_baseline",
+      "input": "decision.state",
+      "why": "Cold start. engine.py sets this when days_of_history < min_days_for_baseline. It outranks everything except an explicit user decline because baseline-relative rules are not trustworthy yet, so nothing below can be believed."
+    },
+    {
+      "id": "intervention",
+      "display": "Intervention",
+      "glyph": "◆",
+      "predicate": "engine_state_is_intervention_and_activity_restricted",
+      "input": "decision.state + decision.activity.verdict",
+      "why": "A rule fired AND it restricted the plan (verdict is not 'allow'). Placed above 'partial' because a firing safety rule outranks an incomplete-data banner: telling someone to rest matters more than telling them their sleep did not sync."
+    },
+    {
+      "id": "partial",
+      "display": "Partial",
+      "glyph": "◐",
+      "predicate": "has_unevaluable_biometric_rules",
+      "input": "decision.trace (layer 1 only)",
+      "why": "A biometric signal the subject normally supplies is missing today, so a Layer 1 rule could not be evaluated. DELIBERATELY NARROWED TO LAYER 1 — see open question 1. Above 'advisory' because docs/engine.md is emphatic about preferring 'still learning your baseline' over false reassurance."
+    },
+    {
+      "id": "advisory",
+      "display": "Advisory",
+      "glyph": "▲",
+      "predicate": "engine_state_is_intervention",
+      "input": "decision.state",
+      "why": "Rules fired but nothing restricted the plan — food or supplements changed, training did not. Reached only after the intervention test above has failed, so this is the 'verdict == allow' remainder."
+    },
+    {
+      "id": "in_balance",
+      "display": "In balance",
+      "glyph": "●",
+      "predicate": "engine_state_is_calm",
+      "input": "decision.state",
+      "why": "Only the always-on Layer 3 baseline fired. Read open questions 3, 4 and 5 before treating this as reassurance."
+    }
+  ],
+
+  "open_questions": [
+    {
+      "id": "partial-is-narrowed-to-layer-1",
+      "question": "Should 'partial' count unevaluable rules on every layer, or only Layer 1?",
+      "why_it_bites": "The engine maps an ABSENT signal to UNKNOWN, identically to a signal that failed to sync. A subject with no menstrual cycle makes rules 2.1–2.4 unevaluable every single day. A subject with no labs makes 5.1–5.3 unevaluable every single day. Counting those, every non-cycling subject is permanently 'partial' and the in-balance state becomes unreachable for them — which would erase fixtures F2 and F5 from the demo entirely.",
+      "what_this_file_does": "Narrows the predicate to Layer 1 so 'partial' means 'a biometric I normally read is missing today'. That makes the demo correct but does NOT solve the modelling gap.",
+      "needs": "A contract decision: should the model carry an explicit not-applicable state, distinct from unknown?"
+    },
+    {
+      "id": "priority-order",
+      "question": "What is the priority order when several states are simultaneously true?",
+      "why_it_bites": "Alex's crash day is BOTH 'partial' (sleep_deep_rem_pct is null, so 1.2 is unevaluable) AND 'intervention' (1.1 and 1.3 both fire). Something has to win and the choice is visible to the user.",
+      "what_this_file_does": "Proposes declined > calibrating > intervention > partial > advisory > in_balance.",
+      "needs": "Product sign-off. This is a UX and safety judgement, not an engineering one."
+    },
+    {
+      "id": "advisory-vs-intervention",
+      "question": "Is a supplements-and-constraints-only day 'advisory' or 'intervention'?",
+      "why_it_bites": "Fixture F8 fires 5.1 on a high PM cortisol: it adds ashwagandha and a 20:00 digital sundown but touches no training. Under the verdict=='allow' split above that reads as merely advisory. docs/compliance.md makes intervention copy a legal-review surface, so where the line sits changes what gets reviewed.",
+      "what_this_file_does": "Splits on activity.verdict alone.",
+      "needs": "Product plus legal. Compliance-adjacent."
+    },
+    {
+      "id": "f5-james-gap-is-undecidable",
+      "question": "Should the James gap render as 'in balance' or 'partial'?",
+      "why_it_bites": "James's crash yields state 'calm' with NO warnings and NO unevaluable rows — rule 1.3's dual gate (temperature AND RHR) evaluates cleanly to FALSE. So the decision is indistinguishable from a genuinely calm day by any field the Decision currently carries. It cannot be routed anywhere else without either approving candidate rule 1.4 or adding a field to decision.schema.json.",
+      "what_this_file_does": "Renders it as 'in balance', which is the current, wrong-but-pinned behaviour. The scenario labels that day THE JAMES GAP so it is visible in the demo rather than only in a Python test.",
+      "needs": "The rule 1.4 decision. Fixture F5b flips from xfail the day it is approved."
+    },
+    {
+      "id": "f13-second-james-gap",
+      "question": "Should cycle_day > 28 render as 'in balance'?",
+      "why_it_bites": "NOT PREVIOUSLY WRITTEN DOWN. Fixture F13 puts Sarah on cycle_day 31: the engine emits state 'calm' with a warning, but no unevaluable rows, so under this mapping the app says 'in balance today' while her entire hormonal layer silently did not evaluate. Same defect class as F5, different cause.",
+      "what_this_file_does": "Nothing. The stock scenarios deliberately avoid day 31, and the day-clock refuses to advance past 28 rather than wrapping.",
+      "needs": "The cycle_day > 28 decision, which CLAUDE.md already lists as open."
+    },
+    {
+      "id": "in-balance-unreachable-for-cycle-trackers",
+      "question": "Is 'in balance' reachable at all for a subject with cycle tracking on?",
+      "why_it_bites": "Layer 2 covers days 1–5, 6–13, 14–15 and 16–28 with no gaps, and engine.py defines calm as 'every fired rule is on an always-on layer' (layer 3 only). So a cycle-tracking subject fires an L2 rule every single day of the cycle and is NEVER calm. Confirmed programmatically by the backtest harness. This is an engine-definition question, not a copy fix.",
+      "what_this_file_does": "Sarah's scenario reaches in_balance only by turning cycle tracking off, and says so in her profile.",
+      "needs": "A product decision on what 'in balance' means for a cycle-tracking subject."
+    }
+  ]
+}

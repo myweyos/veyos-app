@@ -1,0 +1,115 @@
+{
+  "activity_verdict": "allow",
+  "app_state": "advisory",
+  "day_index": 2,
+  "engine_state": "intervention",
+  "fired": [
+    "2.1",
+    "3.1"
+  ],
+  "label": "Follicular day 10 \u2014 the engine PERMITS the planned intensity",
+  "persona": "sarah",
+  "scenario_id": "sarah",
+  "snapshot": {
+    "as_of": "2026-09-03",
+    "baselines": {
+      "days_of_history": 92,
+      "hrv_ms": 60,
+      "hrv_sd": 6,
+      "rhr_bpm": 57,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 72,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 61,
+      "rhr_bpm": 57,
+      "sleep_deep_rem_pct": 71,
+      "source": "simulated",
+      "steps": 9400,
+      "wrist_temp_delta_c": 0.0
+    },
+    "constitution": {
+      "dosha": "vata"
+    },
+    "cycle": {
+      "cycle_day": 10,
+      "cycle_length": 28,
+      "tracked": true
+    },
+    "environment": {
+      "ambient_temp_c": 17,
+      "moon_phase": "waxing",
+      "season": "summer",
+      "wind_kph": 9
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "indoor",
+      "type": "hiit"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "overnight oats",
+            "tags": [
+              "cold",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "black coffee",
+            "tags": [
+              "caffeine"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kale salad",
+            "tags": [
+              "raw",
+              "cold",
+              "astringent"
+            ]
+          },
+          {
+            "name": "lentil soup",
+            "tags": [
+              "warm",
+              "grounding",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "sweet potato mash",
+            "tags": [
+              "warm",
+              "heavy",
+              "complex_carbs"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona01",
+    "timezone": "Europe/London"
+  },
+  "unevaluable": [
+    "5.1",
+    "5.2",
+    "5.3"
+  ],
+  "warning_count": 0
+}

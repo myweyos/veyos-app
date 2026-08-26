@@ -14,13 +14,19 @@ engine-test: ## Golden fixtures. This suite must never go red.
 	cd services/engine && python3 -m pytest
 
 engine-lint: ## ruff + mypy on the engine
-	cd services/engine && python3 -m ruff check . && python3 -m mypy weyos_engine backtest
+	cd services/engine && python3 -m ruff check . && python3 -m mypy weyos_engine backtest demo_driver
 
 backtest: ## Rulebook backtest over the synthetic sweep, e.g. make backtest GRID=quick
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary)
 
 backtest-validated: ## Same, in validated-biometrics-only mode
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary) --no-elemental
+
+demo: ## Walk the scripted demo scenarios, e.g. make demo PERSONA=james
+	cd services/engine && python3 -m demo_driver $(if $(PERSONA),--persona $(PERSONA),--all)
+
+demo-regenerate: ## Rebuild packages/demo-fixtures/expected/ after a scenario or rulebook change
+	cd services/engine && python3 -m demo_driver --generate
 
 api-test: ## API unit tests
 	npm run test --workspace @weyos/api --if-present
@@ -43,4 +49,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate infra-up infra-down dev

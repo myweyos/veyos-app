@@ -25,7 +25,7 @@ jobs:
       - name: Lint
         run: cd services/engine && python -m ruff check .
       - name: Types
-        run: cd services/engine && python -m mypy weyos_engine backtest
+        run: cd services/engine && python -m mypy weyos_engine backtest demo_driver
       - name: Backtest smoke run
         # Cheap grid. Catches a harness that has drifted from the engine's trace format or a
         # sweep that no longer reaches every enabled rule.
@@ -67,16 +67,20 @@ jobs:
       - name: No rule logic outside the engine
         # The rulebook is config. A threshold comparison against a hard-coded number in the
         # client or the API means someone reimplemented a rule where it cannot be tested.
+        #
+        # `packages` is in scope deliberately: packages/demo-fixtures ships a TypeScript
+        # driver, and before it existed this grep covered only apps and services/api, so
+        # anything under packages/ fell straight through the check.
         run: |
           if grep -rnE "(hrv|rhr|cortisol|hba1c)[^\n]{0,40}(0\.[0-9]|[0-9]{2,})" \
-               --include="*.ts" --include="*.tsx" apps services/api 2>/dev/null; then
+               --include="*.ts" --include="*.tsx" apps services/api packages 2>/dev/null; then
             echo "::error::Possible rule logic outside services/engine. Rules live in config/rules/."
             exit 1
           fi
       - name: No raw biometrics in log statements
         run: |
           if grep -rnE "console\.(log|info|warn)\([^)]*(snapshot|biometrics|hrv|rhr)" \
-               --include="*.ts" --include="*.tsx" apps services 2>/dev/null; then
+               --include="*.ts" --include="*.tsx" apps services packages 2>/dev/null; then
             echo "::error::Logging biometric data. Log rule ids and deltas only."
             exit 1
           fi

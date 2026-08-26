@@ -1,0 +1,12 @@
+{
+  "name": "@weyos/demo-fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scripted demo personas, scenarios and the app-state mapping. Dev/demo only — never bundled into a production build.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": ["src", "personas.json", "profiles", "scenarios", "app-states.json", "expected"],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "$comment": "Scripted days for Sarah. `state` selects the persona's calm base or its crash delta using the same deep-merge golden.yaml and the CLI already use. `patch` is a snapshot-shaped override, identical in shape to golden.yaml's `overrides`. `client` is the seam that keeps the engine pure — permissions and user responses live there, are consumed ONLY by the app-state derivation, and never reach decide(). `pins` links a day to the golden fixture that already asserts the engine behaviour, so this file never restates a golden assertion.",
+
+  "id": "sarah",
+  "persona": "sarah",
+  "start_date": "2026-09-01",
+  "start_cycle_day": 20,
+
+  "days": [
+    {
+      "day": 0,
+      "label": "Cold start — three weeks of history, not enough to trust a baseline",
+      "state": "calm",
+      "patch": { "baselines": { "days_of_history": 10 } },
+      "expect": {
+        "engine_state": "insufficient_baseline",
+        "app_state": "calibrating",
+        "pins": ["F12"]
+      }
+    },
+    {
+      "day": 1,
+      "label": "Luteal crash — sympathetic overload on top of the luteal phase",
+      "state": "crash",
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "intervention",
+        "fired": ["1.1", "2.3", "3.1"],
+        "activity_verdict": "substitute",
+        "pins": ["F1"]
+      }
+    },
+    {
+      "day": 2,
+      "label": "Follicular day 10 — the engine PERMITS the planned intensity",
+      "state": "calm",
+      "patch": { "cycle": { "cycle_day": 10 } },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "advisory",
+        "fired": ["2.1", "3.1"],
+        "activity_verdict": "allow",
+        "pins": ["F4"]
+      }
+    },
+    {
+      "day": 3,
+      "label": "HRV did not sync — rule 1.1 is unevaluable, not false",
+      "state": "calm",
+      "patch": { "cycle": { "cycle_day": 10 }, "biometrics": { "hrv_ms": null } },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "partial",
+        "fired": ["2.1", "3.1"],
+        "unevaluable_includes": ["1.1"],
+        "pins": ["F14"]
+      }
+    },
+    {
+      "day": 4,
+      "label": "Declined — she read the substitution and said no",
+      "state": "crash",
+      "client": { "user_response": "declined" },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "declined"
+      }
+    },
+    {
+      "day": 5,
+      "label": "Cycle tracking off — the ONLY way Sarah reaches in balance",
+      "state": "calm",
+      "patch": { "cycle": null },
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "in_balance",
+        "fired": ["3.1"]
+      },
+      "$note": "With cycle tracking ON she can never be calm: Layer 2 covers days 1-28 with no gaps and calm requires only-always-on-L3-fired. The other route to calm, cycle_day 31 (F13), is deliberately not used — it produces 'in balance today' while her whole hormonal layer silently did not evaluate. See app-states.json."
+    }
+  ]
+}

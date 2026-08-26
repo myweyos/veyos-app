@@ -1,0 +1,28 @@
+{
+  "$comment": "Demo/presentation metadata for Sarah. Everything here is deliberately NOT a snapshot field — signal-snapshot.schema.json sets additionalProperties:false at every level, so adding any of this to a snapshot would be a contract change.",
+
+  "persona": "sarah",
+  "display_name": "Sarah",
+  "region": "UK",
+  "scenario": "sarah",
+
+  "$region_note": "Region is an attribute of the subject ACCOUNT (data residency, consent stack, units, retailer set), not of a per-day signal payload. It must agree with the snapshot's timezone, and a test asserts that.",
+
+  "planned_activity_override": {
+    "type": "hiit",
+    "intensity": "high",
+    "location": "indoor"
+  },
+  "$activity_note": "The thing the engine overrides. C2's strikethrough is load-bearing — the user has to see their own plan being changed, not a generic suggestion appearing.",
+
+  "app_states": {
+    "calibrating":  { "reachable": true,  "via": "day 0, days_of_history patched to 10 (F12)" },
+    "partial":      { "reachable": true,  "via": "day 3, hrv_ms null so rule 1.1 is unevaluable (F14)" },
+    "in_balance":   { "reachable": true,  "via": "day 5, and ONLY with cycle tracking off — see note" },
+    "advisory":     { "reachable": true,  "via": "day 2, follicular day 10 permits the planned intensity (F4)" },
+    "intervention": { "reachable": true,  "via": "day 1, sympathetic overload + luteal + Vata (F1)" },
+    "declined":     { "reachable": true,  "via": "day 4, user response captured client-side" }
+  },
+
+  "$in_balance_note": "Sarah reaches in_balance only by turning cycle tracking OFF. With it on she is structurally incapable of reaching it: Layer 2 covers cycle days 1-28 with no gaps and the engine defines calm as 'only always-on Layer 3 fired', so an L2 rule fires every single day. See app-states.json open question 'in-balance-unreachable-for-cycle-trackers'. The other obvious route — cycle_day 31, fixture F13 — is deliberately NOT used, because that path produces 'in balance today' while the whole hormonal layer silently did not evaluate."
+}

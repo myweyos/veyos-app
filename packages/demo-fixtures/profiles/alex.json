@@ -1,0 +1,29 @@
+{
+  "$comment": "Demo/presentation metadata for Alex. Not snapshot fields — see sarah.json.",
+
+  "persona": "alex",
+  "display_name": "Alex",
+  "region": "US",
+  "scenario": "alex",
+
+  "planned_activity_override": {
+    "type": "lifting",
+    "intensity": "high",
+    "location": "outdoor_midday"
+  },
+
+  "app_states": {
+    "calibrating":  { "reachable": true,  "via": "day 4, days_of_history patched to 10" },
+    "partial":      { "reachable": true,  "via": "day 6, mild environment + hrv_ms null" },
+    "in_balance":   { "reachable": true,  "via": "day 2, ambient dropped to 18C so 4.2 stops firing" },
+    "advisory":     { "reachable": true,  "via": "day 3, elevated HbA1c sets macro floors without touching training" },
+    "intervention": { "reachable": true,  "via": "day 0 (heat-wave relocate, F6) and day 1 (full rest, F10)" },
+    "declined":     { "reachable": true,  "via": "day 5, user response captured client-side" }
+  },
+
+  "$heatwave_note": "Alex's baseline environment is 30C, so rule 4.2 fires on his ordinary day and the app relocates the session indoors rather than cancelling it (F6). Reaching in_balance therefore needs the ambient temperature patched DOWN — his calm day is not a quiet day.",
+
+  "$ginger_note": "Day 1 is the ginger-for-a-Pitta collision (F10). Rule 1.3's immunity basket adds ginger tea, which carries the 'hot' tag that his Pitta food profile blocks. L1 outranks L3 so the ginger stays and the engine emits a warning. Correct per spec, reads badly in the UI on a 30C day, and unresolved by design. Do not filter that warning to make the screen look clean.",
+
+  "$priority_note": "Day 1 is also the day that forces the priority question. It is simultaneously 'partial' (sleep_deep_rem_pct is null, so rule 1.2 cannot be evaluated) and 'intervention' (1.1 and 1.3 both fire). See app-states.json open question 'priority-order'."
+}

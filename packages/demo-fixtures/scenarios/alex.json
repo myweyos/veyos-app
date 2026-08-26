@@ -1,0 +1,103 @@
+{
+  "$comment": "Scripted days for Alex. See scenarios/sarah.json for the field semantics. His baseline environment is 30C, so rule 4.2 fires on his ORDINARY day — reaching a quiet state needs the temperature patched down.",
+
+  "id": "alex",
+  "persona": "alex",
+  "start_date": "2026-09-01",
+  "start_cycle_day": null,
+
+  "days": [
+    {
+      "day": 0,
+      "label": "Heat-wave — the session moves indoors rather than being cancelled",
+      "state": "calm",
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "intervention",
+        "fired": ["3.2", "4.2"],
+        "activity_verdict": "relocate",
+        "pins": ["F6"]
+      }
+    },
+    {
+      "day": 1,
+      "label": "Full rest — and the ginger-for-a-Pitta collision",
+      "state": "crash",
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "intervention",
+        "fired": ["1.1", "1.3", "3.2", "4.2"],
+        "activity_verdict": "rest",
+        "unevaluable_includes": ["1.2"],
+        "pins": ["F10"]
+      },
+      "$note": "Two things at once. (1) Rule 1.3's immunity basket adds ginger tea, which carries the 'hot' tag his Pitta profile blocks. L1 outranks L3, the ginger stays, and the engine warns rather than silently substituting. Do not filter that warning. (2) This day is simultaneously 'partial' — sleep_deep_rem_pct is null so rule 1.2 cannot be evaluated — and 'intervention'. It is the day that forces the priority-order question in app-states.json."
+    },
+    {
+      "day": 2,
+      "label": "Cool day — 4.2 stops firing and only the dosha baseline is left",
+      "state": "calm",
+      "patch": { "environment": { "ambient_temp_c": 18 } },
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "in_balance",
+        "fired": ["3.2"]
+      }
+    },
+    {
+      "day": 3,
+      "label": "Elevated HbA1c — macro floors set, training untouched",
+      "state": "calm",
+      "patch": {
+        "environment": { "ambient_temp_c": 18 },
+        "labs": { "hba1c": { "status": "high", "value": 6.1, "unit": "%" } }
+      },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "advisory",
+        "fired": ["3.2", "5.3"],
+        "activity_verdict": "allow",
+        "pins": ["F15"]
+      },
+      "$note": "Classified 'advisory' because activity.verdict is allow. Whether a labs-driven day with macro floors is really only advisory is open question 'advisory-vs-intervention' — it is compliance-adjacent, not an engineering call."
+    },
+    {
+      "day": 4,
+      "label": "Cold start",
+      "state": "calm",
+      "patch": {
+        "environment": { "ambient_temp_c": 18 },
+        "baselines": { "days_of_history": 10 }
+      },
+      "expect": {
+        "engine_state": "insufficient_baseline",
+        "app_state": "calibrating"
+      }
+    },
+    {
+      "day": 5,
+      "label": "Declined — he read the rest day and said no",
+      "state": "crash",
+      "client": { "user_response": "declined" },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "declined"
+      }
+    },
+    {
+      "day": 6,
+      "label": "HRV did not sync on a cool day",
+      "state": "calm",
+      "patch": {
+        "environment": { "ambient_temp_c": 18 },
+        "biometrics": { "hrv_ms": null }
+      },
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "partial",
+        "fired": ["3.2"],
+        "unevaluable_includes": ["1.1"]
+      }
+    }
+  ]
+}

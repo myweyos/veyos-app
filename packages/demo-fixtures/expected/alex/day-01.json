@@ -1,0 +1,113 @@
+{
+  "activity_verdict": "rest",
+  "app_state": "intervention",
+  "day_index": 1,
+  "engine_state": "intervention",
+  "fired": [
+    "1.1",
+    "1.3",
+    "3.2",
+    "4.2"
+  ],
+  "label": "Full rest \u2014 and the ginger-for-a-Pitta collision",
+  "persona": "alex",
+  "scenario_id": "alex",
+  "snapshot": {
+    "as_of": "2026-09-02",
+    "baselines": {
+      "days_of_history": 151,
+      "hrv_ms": 70,
+      "hrv_sd": 7,
+      "rhr_bpm": 60,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 82,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 50.4,
+      "rhr_bpm": 66,
+      "sleep_deep_rem_pct": null,
+      "sleep_score": 48,
+      "source": "simulated",
+      "steps": 4200,
+      "wrist_temp_delta_c": 0.8
+    },
+    "constitution": {
+      "dosha": "pitta"
+    },
+    "cycle": null,
+    "environment": {
+      "ambient_temp_c": 30,
+      "moon_phase": "new",
+      "season": "summer",
+      "wind_kph": 6
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "outdoor_midday",
+      "type": "lifting"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "chilli scrambled eggs",
+            "tags": [
+              "spicy",
+              "hot",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kimchi rice bowl",
+            "tags": [
+              "fermented",
+              "spicy",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "cucumber salad",
+            "tags": [
+              "cooling",
+              "hydrating",
+              "raw"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "grilled chicken",
+            "tags": [
+              "high_protein",
+              "warm"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona03",
+    "timezone": "America/New_York"
+  },
+  "unevaluable": [
+    "1.2",
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "5.1",
+    "5.2",
+    "5.3"
+  ],
+  "warning_count": 1
+}

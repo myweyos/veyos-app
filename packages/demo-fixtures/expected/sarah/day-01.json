@@ -1,0 +1,116 @@
+{
+  "activity_verdict": "substitute",
+  "app_state": "intervention",
+  "day_index": 1,
+  "engine_state": "intervention",
+  "fired": [
+    "1.1",
+    "2.3",
+    "3.1"
+  ],
+  "label": "Luteal crash \u2014 sympathetic overload on top of the luteal phase",
+  "persona": "sarah",
+  "scenario_id": "sarah",
+  "snapshot": {
+    "as_of": "2026-09-02",
+    "baselines": {
+      "days_of_history": 91,
+      "hrv_ms": 60,
+      "hrv_sd": 6,
+      "rhr_bpm": 57,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 72,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 46.8,
+      "rhr_bpm": 62,
+      "sleep_deep_rem_pct": 68,
+      "source": "simulated",
+      "steps": 3100,
+      "wrist_temp_delta_c": 0.1
+    },
+    "constitution": {
+      "dosha": "vata"
+    },
+    "cycle": {
+      "cycle_day": 21,
+      "cycle_length": 28,
+      "tracked": true
+    },
+    "environment": {
+      "ambient_temp_c": 17,
+      "moon_phase": "waxing",
+      "season": "summer",
+      "wind_kph": 9
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "indoor",
+      "type": "hiit"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "overnight oats",
+            "tags": [
+              "cold",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "black coffee",
+            "tags": [
+              "caffeine"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kale salad",
+            "tags": [
+              "raw",
+              "cold",
+              "astringent"
+            ]
+          },
+          {
+            "name": "lentil soup",
+            "tags": [
+              "warm",
+              "grounding",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "sweet potato mash",
+            "tags": [
+              "warm",
+              "heavy",
+              "complex_carbs"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona01",
+    "timezone": "Europe/London"
+  },
+  "unevaluable": [
+    "5.1",
+    "5.2",
+    "5.3"
+  ],
+  "warning_count": 0
+}

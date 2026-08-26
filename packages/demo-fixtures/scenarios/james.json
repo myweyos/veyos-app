@@ -1,0 +1,94 @@
+{
+  "$comment": "Scripted days for James. See scenarios/sarah.json for the field semantics. Day 1 is the reason this persona exists.",
+
+  "id": "james",
+  "persona": "james",
+  "start_date": "2026-09-01",
+  "start_cycle_day": null,
+
+  "days": [
+    {
+      "day": 0,
+      "label": "An ordinary day — a TRUE calm state, only the always-on dosha rule fired",
+      "state": "calm",
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "in_balance",
+        "fired": ["3.3"],
+        "pins": ["F2"]
+      }
+    },
+    {
+      "day": 1,
+      "label": "THE JAMES GAP — RHR 26% above baseline, steps collapsed, app says 'in balance today'",
+      "state": "crash",
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "in_balance",
+        "fired": ["3.3"],
+        "pins": ["F5", "F5b"]
+      },
+      "$note": "WRONG BUT CURRENT, and shown in the demo on purpose. Rule 1.3 is dual-gated on temperature AND RHR; with no temperature rise it evaluates cleanly to FALSE, so there are no warnings and no unevaluable rows. Nothing in the Decision distinguishes this from day 0. Candidate rule 1.4 would close it; F5b is a strict xfail that flips the day it is approved."
+    },
+    {
+      "day": 2,
+      "label": "Full moon — sodium dialled down, training untouched",
+      "state": "calm",
+      "patch": { "environment": { "moon_phase": "full" } },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "advisory",
+        "fired": ["3.3", "4.1"],
+        "activity_verdict": "allow",
+        "pins": ["F7"]
+      }
+    },
+    {
+      "day": 3,
+      "label": "A real intervention — HRV well below baseline, the run is substituted",
+      "state": "crash",
+      "patch": { "biometrics": { "hrv_ms": 40 } },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "intervention",
+        "fired": ["1.1", "3.3"],
+        "activity_verdict": "substitute"
+      },
+      "$note": "Contrast with day 1. Same persona, same collapsed steps, same elevated RHR — the only difference is that a rule can SEE it. That contrast is the argument for rule 1.4."
+    },
+    {
+      "day": 4,
+      "label": "Cold start",
+      "state": "calm",
+      "patch": { "baselines": { "days_of_history": 10 } },
+      "expect": {
+        "engine_state": "insufficient_baseline",
+        "app_state": "calibrating"
+      }
+    },
+    {
+      "day": 5,
+      "label": "Declined",
+      "state": "crash",
+      "patch": { "biometrics": { "hrv_ms": 40 } },
+      "client": { "user_response": "declined" },
+      "expect": {
+        "engine_state": "intervention",
+        "app_state": "declined"
+      }
+    },
+    {
+      "day": 6,
+      "label": "HRV did not sync — partial, not falsely reassuring",
+      "state": "calm",
+      "patch": { "biometrics": { "hrv_ms": null } },
+      "expect": {
+        "engine_state": "calm",
+        "app_state": "partial",
+        "fired": ["3.3"],
+        "unevaluable_includes": ["1.1"]
+      },
+      "$note": "Note what this day is NOT: James has no cycle data, so rules 2.1-2.4 are unevaluable on EVERY day including day 0. If 'partial' counted those, he would be permanently partial and in_balance would be unreachable — taking F2 and F5 out of the demo entirely. That is why the predicate is narrowed to Layer 1."
+    }
+  ]
+}
