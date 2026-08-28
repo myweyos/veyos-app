@@ -1,0 +1,249 @@
+{
+  "app_state": "in_balance",
+  "day_index": 2,
+  "decision": {
+    "activity": {
+      "decided_by": null,
+      "location": "outdoor_midday",
+      "planned": "lifting",
+      "prescribed": "lifting",
+      "verdict": "allow"
+    },
+    "as_of": "2026-09-03",
+    "constraints": {},
+    "elemental_layer_enabled": true,
+    "fired_rules": [
+      {
+        "because": [
+          "dosha == pitta is True"
+        ],
+        "layer": 3,
+        "name": "Pitta",
+        "priority": 41,
+        "rule_id": "3.2"
+      }
+    ],
+    "food": {
+      "blocked_tags": [
+        "acidic",
+        "fermented",
+        "hot",
+        "spicy"
+      ],
+      "hydration_pct_delta": null,
+      "kcal_delta": null,
+      "mandated_tags": [
+        "bitter",
+        "cooling",
+        "hydrating",
+        "sweet"
+      ],
+      "meals": [
+        {
+          "items": [],
+          "removed": [
+            {
+              "name": "chilli scrambled eggs",
+              "reason": "blocked tag 'hot'",
+              "rule_id": "3.2"
+            }
+          ],
+          "slot": "breakfast"
+        },
+        {
+          "items": [
+            {
+              "name": "cucumber salad",
+              "tags": [
+                "cooling",
+                "hydrating",
+                "raw"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "kimchi rice bowl",
+              "reason": "blocked tag 'spicy'",
+              "rule_id": "3.2"
+            }
+          ],
+          "slot": "lunch"
+        },
+        {
+          "items": [
+            {
+              "name": "grilled chicken",
+              "tags": [
+                "high_protein",
+                "warm"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "dinner"
+        }
+      ],
+      "min_fiber_g": null,
+      "min_protein_g": null,
+      "sodium_pct_delta": null
+    },
+    "messages": [],
+    "rulebook_version": 1,
+    "schema_version": 1,
+    "state": "calm",
+    "subject_ref": "sub_persona03",
+    "supplements": [],
+    "trace": [
+      {
+        "detail": "unevaluable: lab_pm_cortisol not available",
+        "rule_id": "5.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hs_crp not available",
+        "rule_id": "5.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hba1c not available; lab_fasting_glucose not available",
+        "rule_id": "5.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.4",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: dosha == pitta is True",
+        "rule_id": "3.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "removed 'chilli scrambled eggs' from breakfast ('hot')",
+        "rule_id": "3.2",
+        "step": "food"
+      },
+      {
+        "detail": "removed 'kimchi rice bowl' from lunch ('spicy')",
+        "rule_id": "3.2",
+        "step": "food"
+      }
+    ],
+    "warnings": []
+  },
+  "label": "Cool day \u2014 4.2 stops firing and only the dosha baseline is left",
+  "persona": "alex",
+  "snapshot": {
+    "as_of": "2026-09-03",
+    "baselines": {
+      "days_of_history": 152,
+      "hrv_ms": 70,
+      "hrv_sd": 7,
+      "rhr_bpm": 60,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 82,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 71,
+      "rhr_bpm": 60,
+      "sleep_deep_rem_pct": 80,
+      "sleep_score": 84,
+      "source": "simulated",
+      "steps": 8700,
+      "wrist_temp_delta_c": 0.0
+    },
+    "constitution": {
+      "dosha": "pitta"
+    },
+    "cycle": null,
+    "environment": {
+      "ambient_temp_c": 18,
+      "moon_phase": "new",
+      "season": "summer",
+      "wind_kph": 6
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "outdoor_midday",
+      "type": "lifting"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "chilli scrambled eggs",
+            "tags": [
+              "spicy",
+              "hot",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kimchi rice bowl",
+            "tags": [
+              "fermented",
+              "spicy",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "cucumber salad",
+            "tags": [
+              "cooling",
+              "hydrating",
+              "raw"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "grilled chicken",
+            "tags": [
+              "high_protein",
+              "warm"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona03",
+    "timezone": "America/New_York"
+  },
+  "unevaluable": [
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "5.1",
+    "5.2",
+    "5.3"
+  ]
+}

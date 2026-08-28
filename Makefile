@@ -25,8 +25,11 @@ backtest-validated: ## Same, in validated-biometrics-only mode
 demo: ## Walk the scripted demo scenarios, e.g. make demo PERSONA=james
 	cd services/engine && python3 -m demo_driver $(if $(PERSONA),--persona $(PERSONA),--all)
 
-demo-regenerate: ## Rebuild packages/demo-fixtures/expected/ after a scenario or rulebook change
+demo-regenerate: ## Rebuild demo-fixtures expected/ + decisions/ after a scenario or rulebook change
 	cd services/engine && python3 -m demo_driver --generate
+
+web: ## Serve the app in a browser on localhost:8081 (review screens without a device)
+	cd apps/mobile && npx expo start --web
 
 api-test: ## API unit tests
 	npm run test --workspace @weyos/api --if-present
@@ -49,4 +52,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate web infra-up infra-down dev

@@ -31,6 +31,7 @@ from .driver import (
     run_scenario,
     snapshot_at,
     write_expected,
+    write_ui_decisions,
 )
 
 __all__ = [
@@ -55,4 +56,5 @@ __all__ = [
     "snapshot_at",
     "unevaluable_rule_ids",
     "write_expected",
+    "write_ui_decisions",
 ]

@@ -13,9 +13,18 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .driver import DEMO_FIXTURES, PERSONA_IDS, DayResult, load_profile, run_scenario, write_expected
+from .driver import (
+    DEMO_FIXTURES,
+    PERSONA_IDS,
+    DayResult,
+    load_profile,
+    run_scenario,
+    write_expected,
+    write_ui_decisions,
+)
 
 EXPECTED_DIR = DEMO_FIXTURES / "expected"
+DECISIONS_DIR = DEMO_FIXTURES / "decisions"
 
 
 def render(results: list[DayResult]) -> str:
@@ -65,8 +74,9 @@ def main(argv: list[str] | None = None) -> int:
         total = 0
         for persona in PERSONA_IDS:
             written = write_expected(args.out, persona)
-            total += len(written)
-            print(f"{persona}: {len(written)} days -> {args.out / persona}")
+            decisions = write_ui_decisions(DECISIONS_DIR, persona)
+            total += len(written) + len(decisions)
+            print(f"{persona}: {len(written)} expected + {len(decisions)} decisions")
         print(f"wrote {total} files")
         return 0
 

@@ -215,3 +215,36 @@ def write_expected(out_dir: Path, scenario_id: str) -> list[Path]:
         path.write_text(json.dumps(result.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
         written.append(path)
     return written
+
+
+def write_ui_decisions(out_dir: Path, scenario_id: str) -> list[Path]:
+    """Write full Decision objects for the client to render.
+
+    Separate from ``expected/`` on purpose. ``expected/`` is an ASSERTION target and
+    deliberately omits the Decision, because golden.yaml is already the engine's regression
+    net. These files are INPUT — the mobile app has no Python and no API yet, and
+    apps/mobile/README.md is explicit that UI must be built against real engine output rather
+    than invented data shapes. Nothing asserts against them; they are regenerated, never
+    hand-edited.
+    """
+    target = out_dir / scenario_id
+    target.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for result in run_scenario(scenario_id):
+        path = target / f"day-{result.day_index:02d}.json"
+        # The snapshot is included because a Decision deliberately carries no raw readings —
+        # deltas exist only as prose inside fired_rules[].because. A signals tile therefore
+        # cannot be built from a Decision alone. In Phase 3 this is what /v1/signals serves;
+        # until then the client needs both in one file.
+        payload = {
+            "persona": result.persona,
+            "day_index": result.day_index,
+            "label": result.label,
+            "app_state": result.app_state,
+            "unevaluable": sorted(result.unevaluable),
+            "snapshot": result.snapshot,
+            "decision": result.decision,
+        }
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        written.append(path)
+    return written

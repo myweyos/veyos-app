@@ -23,6 +23,7 @@ import type { AppStateMapping, PersonaId, Profile, Scenario } from "./types";
 export * from "./types";
 export * from "./clock";
 export * from "./appState";
+export * from "./decisions";
 
 export const PERSONA_IDS: readonly PersonaId[] = ["sarah", "james", "alex"] as const;
 

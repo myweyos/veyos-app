@@ -1,0 +1,287 @@
+{
+  "app_state": "intervention",
+  "day_index": 1,
+  "decision": {
+    "activity": {
+      "decided_by": "1.1",
+      "location": "indoor",
+      "planned": "hiit",
+      "prescribed": "restorative yoga",
+      "verdict": "substitute"
+    },
+    "as_of": "2026-09-02",
+    "constraints": {},
+    "elemental_layer_enabled": true,
+    "fired_rules": [
+      {
+        "because": [
+          "hrv_ms 22.0% below baseline (threshold 20.0%)"
+        ],
+        "layer": 1,
+        "name": "Sympathetic Overload",
+        "priority": 10,
+        "rule_id": "1.1"
+      },
+      {
+        "because": [
+          "cycle_day within [16, 28]"
+        ],
+        "layer": 2,
+        "name": "Luteal",
+        "priority": 32,
+        "rule_id": "2.3"
+      },
+      {
+        "because": [
+          "dosha == vata is True"
+        ],
+        "layer": 3,
+        "name": "Vata",
+        "priority": 40,
+        "rule_id": "3.1"
+      }
+    ],
+    "food": {
+      "blocked_tags": [
+        "astringent",
+        "cold",
+        "raw"
+      ],
+      "hydration_pct_delta": null,
+      "kcal_delta": [
+        150,
+        250
+      ],
+      "mandated_tags": [
+        "complex_carbs",
+        "grounding",
+        "heavy",
+        "magnesium_rich",
+        "oily",
+        "warm"
+      ],
+      "meals": [
+        {
+          "items": [
+            {
+              "name": "black coffee",
+              "tags": [
+                "caffeine"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "overnight oats",
+              "reason": "blocked tag 'cold'",
+              "rule_id": "3.1"
+            }
+          ],
+          "slot": "breakfast"
+        },
+        {
+          "items": [
+            {
+              "name": "lentil soup",
+              "tags": [
+                "warm",
+                "grounding",
+                "high_protein"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "kale salad",
+              "reason": "blocked tag 'raw'",
+              "rule_id": "3.1"
+            }
+          ],
+          "slot": "lunch"
+        },
+        {
+          "items": [
+            {
+              "name": "sweet potato mash",
+              "tags": [
+                "warm",
+                "heavy",
+                "complex_carbs"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "dinner"
+        }
+      ],
+      "min_fiber_g": null,
+      "min_protein_g": null,
+      "sodium_pct_delta": null
+    },
+    "messages": [
+      "Your nervous system is running hot. Today is for recovery, not output.",
+      "Luteal phase \u2014 steady effort and more fuel."
+    ],
+    "rulebook_version": 1,
+    "schema_version": 1,
+    "state": "intervention",
+    "subject_ref": "sub_persona01",
+    "supplements": [],
+    "trace": [
+      {
+        "detail": "fired: hrv_ms 22.0% below baseline (threshold 20.0%)",
+        "rule_id": "1.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_pm_cortisol not available",
+        "rule_id": "5.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hs_crp not available",
+        "rule_id": "5.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hba1c not available; lab_fasting_glucose not available",
+        "rule_id": "5.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: cycle_day within [16, 28]",
+        "rule_id": "2.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: dosha == vata is True",
+        "rule_id": "3.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "verdict=substitute; planned='hiit' -> prescribed='restorative yoga'",
+        "rule_id": "1.1",
+        "step": "activity"
+      },
+      {
+        "detail": "removed 'kale salad' from lunch ('raw')",
+        "rule_id": "3.1",
+        "step": "food"
+      },
+      {
+        "detail": "removed 'overnight oats' from breakfast ('cold')",
+        "rule_id": "3.1",
+        "step": "food"
+      },
+      {
+        "detail": "kcal_delta = [150, 250]",
+        "rule_id": "2.3",
+        "step": "food"
+      }
+    ],
+    "warnings": []
+  },
+  "label": "Luteal crash \u2014 sympathetic overload on top of the luteal phase",
+  "persona": "sarah",
+  "snapshot": {
+    "as_of": "2026-09-02",
+    "baselines": {
+      "days_of_history": 91,
+      "hrv_ms": 60,
+      "hrv_sd": 6,
+      "rhr_bpm": 57,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 72,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 46.8,
+      "rhr_bpm": 62,
+      "sleep_deep_rem_pct": 68,
+      "source": "simulated",
+      "steps": 3100,
+      "wrist_temp_delta_c": 0.1
+    },
+    "constitution": {
+      "dosha": "vata"
+    },
+    "cycle": {
+      "cycle_day": 21,
+      "cycle_length": 28,
+      "tracked": true
+    },
+    "environment": {
+      "ambient_temp_c": 17,
+      "moon_phase": "waxing",
+      "season": "summer",
+      "wind_kph": 9
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "indoor",
+      "type": "hiit"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "overnight oats",
+            "tags": [
+              "cold",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "black coffee",
+            "tags": [
+              "caffeine"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kale salad",
+            "tags": [
+              "raw",
+              "cold",
+              "astringent"
+            ]
+          },
+          {
+            "name": "lentil soup",
+            "tags": [
+              "warm",
+              "grounding",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "sweet potato mash",
+            "tags": [
+              "warm",
+              "heavy",
+              "complex_carbs"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona01",
+    "timezone": "Europe/London"
+  },
+  "unevaluable": [
+    "5.1",
+    "5.2",
+    "5.3"
+  ]
+}

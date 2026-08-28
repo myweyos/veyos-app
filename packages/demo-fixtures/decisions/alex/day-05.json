@@ -1,0 +1,366 @@
+{
+  "app_state": "declined",
+  "day_index": 5,
+  "decision": {
+    "activity": {
+      "decided_by": "1.3",
+      "location": "indoor",
+      "planned": "lifting",
+      "prescribed": "rest",
+      "verdict": "rest"
+    },
+    "as_of": "2026-09-06",
+    "constraints": {},
+    "elemental_layer_enabled": true,
+    "fired_rules": [
+      {
+        "because": [
+          "hrv_ms 28.0% below baseline (threshold 20.0%)"
+        ],
+        "layer": 1,
+        "name": "Sympathetic Overload",
+        "priority": 10,
+        "rule_id": "1.1"
+      },
+      {
+        "because": [
+          "wrist_temp_delta_c >= 0.5 is True",
+          "rhr_bpm 10.0% above baseline (threshold 5.0%)"
+        ],
+        "layer": 1,
+        "name": "Immune / Inflammatory Spike",
+        "priority": 12,
+        "rule_id": "1.3"
+      },
+      {
+        "because": [
+          "dosha == pitta is True"
+        ],
+        "layer": 3,
+        "name": "Pitta",
+        "priority": 41,
+        "rule_id": "3.2"
+      },
+      {
+        "because": [
+          "ambient_temp_c > 25 is True"
+        ],
+        "layer": 4,
+        "name": "Heat-Wave",
+        "priority": 51,
+        "rule_id": "4.2"
+      }
+    ],
+    "food": {
+      "blocked_tags": [
+        "acidic",
+        "fermented",
+        "hot",
+        "spicy"
+      ],
+      "hydration_pct_delta": 40,
+      "kcal_delta": null,
+      "mandated_tags": [
+        "bitter",
+        "cooling",
+        "hydrating",
+        "immunity_basket",
+        "magnesium_rich",
+        "sweet"
+      ],
+      "meals": [
+        {
+          "items": [],
+          "removed": [
+            {
+              "name": "chilli scrambled eggs",
+              "reason": "blocked tag 'hot'",
+              "rule_id": "3.2"
+            }
+          ],
+          "slot": "breakfast"
+        },
+        {
+          "items": [
+            {
+              "name": "cucumber salad",
+              "tags": [
+                "cooling",
+                "hydrating",
+                "raw"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "kimchi rice bowl",
+              "reason": "blocked tag 'spicy'",
+              "rule_id": "3.2"
+            }
+          ],
+          "slot": "lunch"
+        },
+        {
+          "items": [
+            {
+              "name": "grilled chicken",
+              "tags": [
+                "high_protein",
+                "warm"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "dinner"
+        },
+        {
+          "items": [
+            {
+              "name": "bone broth",
+              "tags": [
+                "warm",
+                "heavy",
+                "immunity_basket"
+              ]
+            },
+            {
+              "name": "ginger tea",
+              "tags": [
+                "hot",
+                "warming",
+                "immunity_basket"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "additions"
+        }
+      ],
+      "min_fiber_g": null,
+      "min_protein_g": null,
+      "sodium_pct_delta": null
+    },
+    "messages": [
+      "Your nervous system is running hot. Today is for recovery, not output.",
+      "Your body is fighting something. Full rest today.",
+      "Heat \u2014 move the session indoors and drink more."
+    ],
+    "rulebook_version": 1,
+    "schema_version": 1,
+    "state": "intervention",
+    "subject_ref": "sub_persona03",
+    "supplements": [
+      "zinc",
+      "vitamin_c"
+    ],
+    "trace": [
+      {
+        "detail": "fired: hrv_ms 28.0% below baseline (threshold 20.0%)",
+        "rule_id": "1.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: sleep_deep_rem_pct not available",
+        "rule_id": "1.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: wrist_temp_delta_c >= 0.5 is True; rhr_bpm 10.0% above baseline (threshold 5.0%)",
+        "rule_id": "1.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_pm_cortisol not available",
+        "rule_id": "5.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hs_crp not available",
+        "rule_id": "5.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hba1c not available; lab_fasting_glucose not available",
+        "rule_id": "5.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.4",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: dosha == pitta is True",
+        "rule_id": "3.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: ambient_temp_c > 25 is True",
+        "rule_id": "4.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "location moved to indoor",
+        "rule_id": "4.2",
+        "step": "activity"
+      },
+      {
+        "detail": "verdict=rest; planned='lifting' -> prescribed='rest'",
+        "rule_id": "1.3",
+        "step": "activity"
+      },
+      {
+        "detail": "hydration_pct_delta = 40",
+        "rule_id": "4.2",
+        "step": "food"
+      },
+      {
+        "detail": "removed 'chilli scrambled eggs' from breakfast ('hot')",
+        "rule_id": "3.2",
+        "step": "food"
+      },
+      {
+        "detail": "removed 'kimchi rice bowl' from lunch ('spicy')",
+        "rule_id": "3.2",
+        "step": "food"
+      },
+      {
+        "detail": "added 'bone broth' to additions",
+        "rule_id": "1.3",
+        "step": "food"
+      },
+      {
+        "detail": "added 'ginger tea' to additions",
+        "rule_id": "1.3",
+        "step": "food"
+      },
+      {
+        "detail": "added zinc",
+        "rule_id": "1.3",
+        "step": "supplements"
+      },
+      {
+        "detail": "added vitamin_c",
+        "rule_id": "1.3",
+        "step": "supplements"
+      }
+    ],
+    "warnings": [
+      "1.3 added 'ginger tea' carrying tag(s) ['hot'] blocked by ['3.2']. Higher layer wins by precedence \u2014 per-item substitution is unresolved."
+    ]
+  },
+  "label": "Declined \u2014 he read the rest day and said no",
+  "persona": "alex",
+  "snapshot": {
+    "as_of": "2026-09-06",
+    "baselines": {
+      "days_of_history": 155,
+      "hrv_ms": 70,
+      "hrv_sd": 7,
+      "rhr_bpm": 60,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 82,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 50.4,
+      "rhr_bpm": 66,
+      "sleep_deep_rem_pct": null,
+      "sleep_score": 48,
+      "source": "simulated",
+      "steps": 4200,
+      "wrist_temp_delta_c": 0.8
+    },
+    "constitution": {
+      "dosha": "pitta"
+    },
+    "cycle": null,
+    "environment": {
+      "ambient_temp_c": 30,
+      "moon_phase": "new",
+      "season": "summer",
+      "wind_kph": 6
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "outdoor_midday",
+      "type": "lifting"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "chilli scrambled eggs",
+            "tags": [
+              "spicy",
+              "hot",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kimchi rice bowl",
+            "tags": [
+              "fermented",
+              "spicy",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "cucumber salad",
+            "tags": [
+              "cooling",
+              "hydrating",
+              "raw"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "grilled chicken",
+            "tags": [
+              "high_protein",
+              "warm"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona03",
+    "timezone": "America/New_York"
+  },
+  "unevaluable": [
+    "1.2",
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "5.1",
+    "5.2",
+    "5.3"
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "app_state": "advisory",
+  "day_index": 2,
+  "decision": {
+    "activity": {
+      "decided_by": "2.1",
+      "location": "indoor",
+      "planned": "hiit",
+      "prescribed": "hiit",
+      "verdict": "allow"
+    },
+    "as_of": "2026-09-03",
+    "constraints": {},
+    "elemental_layer_enabled": true,
+    "fired_rules": [
+      {
+        "because": [
+          "cycle_day within [6, 13]"
+        ],
+        "layer": 2,
+        "name": "Follicular",
+        "priority": 30,
+        "rule_id": "2.1"
+      },
+      {
+        "because": [
+          "dosha == vata is True"
+        ],
+        "layer": 3,
+        "name": "Vata",
+        "priority": 40,
+        "rule_id": "3.1"
+      }
+    ],
+    "food": {
+      "blocked_tags": [
+        "astringent",
+        "cold",
+        "raw"
+      ],
+      "hydration_pct_delta": null,
+      "kcal_delta": null,
+      "mandated_tags": [
+        "fermented",
+        "grounding",
+        "heavy",
+        "light",
+        "oily",
+        "warm"
+      ],
+      "meals": [
+        {
+          "items": [
+            {
+              "name": "black coffee",
+              "tags": [
+                "caffeine"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "overnight oats",
+              "reason": "blocked tag 'cold'",
+              "rule_id": "3.1"
+            }
+          ],
+          "slot": "breakfast"
+        },
+        {
+          "items": [
+            {
+              "name": "lentil soup",
+              "tags": [
+                "warm",
+                "grounding",
+                "high_protein"
+              ]
+            }
+          ],
+          "removed": [
+            {
+              "name": "kale salad",
+              "reason": "blocked tag 'raw'",
+              "rule_id": "3.1"
+            }
+          ],
+          "slot": "lunch"
+        },
+        {
+          "items": [
+            {
+              "name": "sweet potato mash",
+              "tags": [
+                "warm",
+                "heavy",
+                "complex_carbs"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "dinner"
+        }
+      ],
+      "min_fiber_g": null,
+      "min_protein_g": null,
+      "sodium_pct_delta": null
+    },
+    "messages": [
+      "Rising oestrogen \u2014 good window for intensity."
+    ],
+    "rulebook_version": 1,
+    "schema_version": 1,
+    "state": "intervention",
+    "subject_ref": "sub_persona01",
+    "supplements": [],
+    "trace": [
+      {
+        "detail": "unevaluable: lab_pm_cortisol not available",
+        "rule_id": "5.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hs_crp not available",
+        "rule_id": "5.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hba1c not available; lab_fasting_glucose not available",
+        "rule_id": "5.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: cycle_day within [6, 13]",
+        "rule_id": "2.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: dosha == vata is True",
+        "rule_id": "3.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "verdict=allow; planned='hiit' -> prescribed='hiit'",
+        "rule_id": "2.1",
+        "step": "activity"
+      },
+      {
+        "detail": "removed 'kale salad' from lunch ('raw')",
+        "rule_id": "3.1",
+        "step": "food"
+      },
+      {
+        "detail": "removed 'overnight oats' from breakfast ('cold')",
+        "rule_id": "3.1",
+        "step": "food"
+      }
+    ],
+    "warnings": []
+  },
+  "label": "Follicular day 10 \u2014 the engine PERMITS the planned intensity",
+  "persona": "sarah",
+  "snapshot": {
+    "as_of": "2026-09-03",
+    "baselines": {
+      "days_of_history": 92,
+      "hrv_ms": 60,
+      "hrv_sd": 6,
+      "rhr_bpm": 57,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 72,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 61,
+      "rhr_bpm": 57,
+      "sleep_deep_rem_pct": 71,
+      "source": "simulated",
+      "steps": 9400,
+      "wrist_temp_delta_c": 0.0
+    },
+    "constitution": {
+      "dosha": "vata"
+    },
+    "cycle": {
+      "cycle_day": 10,
+      "cycle_length": 28,
+      "tracked": true
+    },
+    "environment": {
+      "ambient_temp_c": 17,
+      "moon_phase": "waxing",
+      "season": "summer",
+      "wind_kph": 9
+    },
+    "planned_activity": {
+      "intensity": "high",
+      "location": "indoor",
+      "type": "hiit"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "overnight oats",
+            "tags": [
+              "cold",
+              "complex_carbs"
+            ]
+          },
+          {
+            "name": "black coffee",
+            "tags": [
+              "caffeine"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "kale salad",
+            "tags": [
+              "raw",
+              "cold",
+              "astringent"
+            ]
+          },
+          {
+            "name": "lentil soup",
+            "tags": [
+              "warm",
+              "grounding",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "sweet potato mash",
+            "tags": [
+              "warm",
+              "heavy",
+              "complex_carbs"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona01",
+    "timezone": "Europe/London"
+  },
+  "unevaluable": [
+    "5.1",
+    "5.2",
+    "5.3"
+  ]
+}

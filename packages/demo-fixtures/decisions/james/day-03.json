@@ -1,0 +1,250 @@
+{
+  "app_state": "intervention",
+  "day_index": 3,
+  "decision": {
+    "activity": {
+      "decided_by": "1.1",
+      "location": "outdoor",
+      "planned": "run",
+      "prescribed": "restorative yoga",
+      "verdict": "substitute"
+    },
+    "as_of": "2026-09-04",
+    "constraints": {},
+    "elemental_layer_enabled": true,
+    "fired_rules": [
+      {
+        "because": [
+          "hrv_ms 25.9% below baseline (threshold 20.0%)"
+        ],
+        "layer": 1,
+        "name": "Sympathetic Overload",
+        "priority": 10,
+        "rule_id": "1.1"
+      },
+      {
+        "because": [
+          "dosha == kapha is True"
+        ],
+        "layer": 3,
+        "name": "Kapha",
+        "priority": 42,
+        "rule_id": "3.3"
+      }
+    ],
+    "food": {
+      "blocked_tags": [
+        "dairy",
+        "heavy",
+        "oily",
+        "sweet"
+      ],
+      "hydration_pct_delta": null,
+      "kcal_delta": null,
+      "mandated_tags": [
+        "dry",
+        "light",
+        "magnesium_rich",
+        "stimulating",
+        "warm"
+      ],
+      "meals": [
+        {
+          "items": [],
+          "removed": [
+            {
+              "name": "full-fat yoghurt granola",
+              "reason": "blocked tag 'heavy'",
+              "rule_id": "3.3"
+            }
+          ],
+          "slot": "breakfast"
+        },
+        {
+          "items": [
+            {
+              "name": "chicken and quinoa bowl",
+              "tags": [
+                "light",
+                "high_protein"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "lunch"
+        },
+        {
+          "items": [
+            {
+              "name": "grilled fish and greens",
+              "tags": [
+                "light",
+                "warm"
+              ]
+            }
+          ],
+          "removed": [],
+          "slot": "dinner"
+        }
+      ],
+      "min_fiber_g": null,
+      "min_protein_g": null,
+      "sodium_pct_delta": null
+    },
+    "messages": [
+      "Your nervous system is running hot. Today is for recovery, not output."
+    ],
+    "rulebook_version": 1,
+    "schema_version": 1,
+    "state": "intervention",
+    "subject_ref": "sub_persona02",
+    "supplements": [],
+    "trace": [
+      {
+        "detail": "fired: hrv_ms 25.9% below baseline (threshold 20.0%)",
+        "rule_id": "1.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_pm_cortisol not available",
+        "rule_id": "5.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hs_crp not available",
+        "rule_id": "5.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: lab_hba1c not available; lab_fasting_glucose not available",
+        "rule_id": "5.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.4",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.1",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.2",
+        "step": "evaluate"
+      },
+      {
+        "detail": "unevaluable: cycle_day not available",
+        "rule_id": "2.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "fired: dosha == kapha is True",
+        "rule_id": "3.3",
+        "step": "evaluate"
+      },
+      {
+        "detail": "verdict=substitute; planned='run' -> prescribed='restorative yoga'",
+        "rule_id": "1.1",
+        "step": "activity"
+      },
+      {
+        "detail": "removed 'full-fat yoghurt granola' from breakfast ('heavy')",
+        "rule_id": "3.3",
+        "step": "food"
+      }
+    ],
+    "warnings": []
+  },
+  "label": "A real intervention \u2014 HRV well below baseline, the run is substituted",
+  "persona": "james",
+  "snapshot": {
+    "as_of": "2026-09-04",
+    "baselines": {
+      "days_of_history": 123,
+      "hrv_ms": 54,
+      "hrv_sd": 5,
+      "rhr_bpm": 62,
+      "rhr_sd": 3,
+      "sleep_deep_rem_pct": 65,
+      "window_days": 14
+    },
+    "biometrics": {
+      "hrv_ms": 40,
+      "rhr_bpm": 78,
+      "sleep_deep_rem_pct": 66,
+      "source": "simulated",
+      "steps": 2100,
+      "wrist_temp_delta_c": 0.1
+    },
+    "constitution": {
+      "dosha": "kapha"
+    },
+    "cycle": null,
+    "environment": {
+      "ambient_temp_c": 19,
+      "moon_phase": "waning",
+      "pollen_index": 8,
+      "season": "summer",
+      "wind_kph": 12
+    },
+    "planned_activity": {
+      "intensity": "moderate",
+      "location": "outdoor",
+      "type": "run"
+    },
+    "planned_meals": [
+      {
+        "items": [
+          {
+            "name": "full-fat yoghurt granola",
+            "tags": [
+              "dairy",
+              "heavy",
+              "sweet"
+            ]
+          }
+        ],
+        "slot": "breakfast"
+      },
+      {
+        "items": [
+          {
+            "name": "chicken and quinoa bowl",
+            "tags": [
+              "light",
+              "high_protein"
+            ]
+          }
+        ],
+        "slot": "lunch"
+      },
+      {
+        "items": [
+          {
+            "name": "grilled fish and greens",
+            "tags": [
+              "light",
+              "warm"
+            ]
+          }
+        ],
+        "slot": "dinner"
+      }
+    ],
+    "schema_version": 1,
+    "subject_ref": "sub_persona02",
+    "timezone": "Europe/London"
+  },
+  "unevaluable": [
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "5.1",
+    "5.2",
+    "5.3"
+  ]
+}
