@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weyos Build Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  :root{
+    --ground:#FDF6F1;
+    --surface:#FFFFFF;
+    --surface-2:#F6EEE7;
+    --ink:#2A2622;
+    --ink-soft:#5C534B;
+    --muted:#8A817A;
+    --line:#E7DACE;
+    --line-soft:#F0E5DB;
+    --copper:#C4794F;
+    --copper-deep:#8E4F26;
+    --earth:#6B5038;
+    --good:#5A7A5E;
+    --shadow:0 1px 2px rgba(42,38,34,.05), 0 8px 24px rgba(42,38,34,.05);
+
+    --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+
+    --measure:34rem;
+    --step--1:clamp(.82rem,.8rem + .1vw,.88rem);
+    --step-0:clamp(1.05rem,1rem + .25vw,1.18rem);
+    --step-1:clamp(1.3rem,1.2rem + .4vw,1.5rem);
+    --step-2:clamp(1.6rem,1.4rem + .8vw,2.1rem);
+    --step-3:clamp(2.1rem,1.7rem + 1.8vw,3.2rem);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#1B1917;
+      --surface:#242120;
+      --surface-2:#2C2825;
+      --ink:#F2EAE2;
+      --ink-soft:#C3B8AE;
+      --muted:#968C83;
+      --line:#3A342F;
+      --line-soft:#312C28;
+      --copper:#D98F63;
+      --copper-deep:#E0A277;
+      --earth:#C0A183;
+      --good:#8FB093;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#1B1917;
+    --surface:#242120;
+    --surface-2:#2C2825;
+    --ink:#F2EAE2;
+    --ink-soft:#C3B8AE;
+    --muted:#968C83;
+    --line:#3A342F;
+    --line-soft:#312C28;
+    --copper:#D98F63;
+    --copper-deep:#E0A277;
+    --earth:#C0A183;
+    --good:#8FB093;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.28);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--f-body);
+    font-size:var(--step-0);
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--measure);margin:0 auto;padding:0 1.35rem}
+  .wide{max-width:44rem;margin:0 auto;padding:0 1.35rem}
+
+  h1,h2,h3,.label,.num,.btnish{font-family:var(--f-display)}
+  h1{font-size:var(--step-3);line-height:1.06;letter-spacing:-.02em;font-weight:700;margin:0;text-wrap:balance}
+  h2{font-size:var(--step-2);line-height:1.15;letter-spacing:-.015em;font-weight:600;margin:0 0 .6rem;text-wrap:balance}
+  h3{font-size:var(--step-1);line-height:1.25;letter-spacing:-.01em;font-weight:600;margin:0 0 .35rem;text-wrap:balance}
+  p{margin:0 0 1.05rem}
+  strong{font-weight:600;color:var(--ink)}
+  a{color:var(--copper-deep)}
+
+  .label{
+    font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.13em;
+    color:var(--copper-deep);margin:0 0 .7rem;
+  }
+
+  /* ---------- masthead ---------- */
+  header.top{
+    border-bottom:1px solid var(--line);
+    padding:3.4rem 0 2.6rem;
+    background:var(--surface-2);
+  }
+  .mark{display:flex;align-items:center;gap:.6rem;margin-bottom:2.2rem}
+  .mark svg{display:block}
+  .mark span{
+    font-family:var(--f-display);font-weight:500;letter-spacing:.18em;
+    text-transform:lowercase;font-size:.95rem;color:var(--ink-soft);
+  }
+  header.top .deck{
+    font-size:var(--step-1);color:var(--ink-soft);margin:1rem 0 0;line-height:1.45;
+  }
+  .stamp{
+    font-family:var(--f-display);font-size:.72rem;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);margin-top:1.8rem;
+  }
+
+  /* ---------- sections ---------- */
+  section{padding:3.2rem 0;border-bottom:1px solid var(--line-soft)}
+  section:last-of-type{border-bottom:0}
+
+  /* ---------- answer box ---------- */
+  .answer{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    padding:1.7rem 1.6rem;
+    margin-top:-1.9rem;
+    position:relative;
+  }
+  .answer p:last-child{margin-bottom:0}
+  .answer .big{
+    font-family:var(--f-display);font-weight:600;font-size:var(--step-1);
+    line-height:1.32;letter-spacing:-.01em;margin:0 0 .9rem;color:var(--ink);
+  }
+
+  /* ---------- then/now ---------- */
+  .twoup{display:grid;gap:1rem;grid-template-columns:1fr;margin:1.6rem 0 0}
+  @media (min-width:34rem){.twoup{grid-template-columns:1fr 1fr}}
+  .box{
+    background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1.15rem 1.2rem;
+  }
+  .box .k{
+    font-family:var(--f-display);font-size:.7rem;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;
+  }
+  .box .v{
+    font-family:var(--f-display);font-size:var(--step-2);font-weight:700;letter-spacing:-.02em;
+    line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  .box .v small{font-size:.42em;font-weight:600;letter-spacing:0;color:var(--muted);margin-left:.3em}
+  .box .n{font-size:var(--step--1);color:var(--ink-soft);margin:.6rem 0 0;line-height:1.5}
+
+  /* ---------- timeline ---------- */
+  .plan{margin-top:1.9rem}
+  .plan + .plan{margin-top:2.6rem}
+  .plan-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap}
+  .plan-head .t{font-family:var(--f-display);font-weight:600;font-size:1.02rem;color:var(--ink)}
+  .plan-head .tot{
+    font-family:var(--f-display);font-weight:700;font-size:1.02rem;color:var(--copper-deep);
+    font-variant-numeric:tabular-nums;
+  }
+  .bar{display:flex;gap:3px;height:2.6rem;border-radius:3px;overflow:hidden;max-width:100%}
+  @media (max-width:33rem){.bar{width:100%!important}}
+  .seg{
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--f-display);font-size:.72rem;font-weight:700;letter-spacing:.04em;
+    color:#FFF6EE;min-width:0;padding:0 .3rem;text-align:center;
+  }
+  .seg.s1{background:var(--copper)}
+  .seg.s2{background:var(--earth)}
+  .seg.s3{background:var(--muted)}
+  .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;margin-top:.7rem}
+  .legend span{
+    font-family:var(--f-display);font-size:.74rem;font-weight:600;color:var(--ink-soft);
+    display:inline-flex;align-items:center;gap:.42rem;
+  }
+  .legend i{width:.62rem;height:.62rem;border-radius:2px;display:inline-block;flex:none}
+
+  /* ---------- stage list ---------- */
+  ol.stages{list-style:none;margin:2.2rem 0 0;padding:0;display:flex;flex-direction:column;gap:1.5rem}
+  ol.stages li{
+    display:grid;grid-template-columns:2.1rem 1fr;gap:.9rem;align-items:start;
+  }
+  .num{
+    font-size:.78rem;font-weight:700;color:var(--copper-deep);
+    border:1px solid var(--line);border-radius:50%;
+    width:2.1rem;height:2.1rem;display:flex;align-items:center;justify-content:center;
+    background:var(--surface);font-variant-numeric:tabular-nums;
+  }
+  .stage-t{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:.15rem}
+  .stage-t h3{margin:0}
+  .dur{
+    font-family:var(--f-display);font-size:.76rem;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--copper-deep);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:.16rem .55rem;
+  }
+  ol.stages p{margin:.3rem 0 0;color:var(--ink-soft);font-size:.98rem}
+
+  /* ---------- decisions ---------- */
+  .decision{
+    background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--copper);
+    border-radius:3px;padding:1.3rem 1.35rem;margin-top:1.2rem;
+  }
+  .decision h3{margin-bottom:.5rem}
+  .decision p:last-child{margin-bottom:0}
+  .decision .cost{
+    font-family:var(--f-display);font-size:.74rem;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.4rem;
+  }
+  .fork{display:grid;gap:.75rem;grid-template-columns:1fr;margin-top:1rem}
+  @media (min-width:34rem){.fork{grid-template-columns:1fr 1fr}}
+  .fork > div{
+    background:var(--surface-2);border-radius:3px;padding:.85rem .95rem;
+    font-size:.94rem;line-height:1.5;color:var(--ink-soft);
+  }
+  .fork strong{display:block;margin-bottom:.2rem;font-family:var(--f-display);font-size:.86rem;color:var(--ink)}
+
+  /* ---------- callout ---------- */
+  .note{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:3px;
+    padding:1.15rem 1.2rem;margin-top:1.5rem;font-size:.96rem;line-height:1.55;color:var(--ink-soft);
+  }
+  .note p:last-child{margin-bottom:0}
+  .note strong{color:var(--ink)}
+
+  footer{padding:2.6rem 0 4rem;color:var(--muted);font-size:var(--step--1);line-height:1.55}
+  footer p{margin:0 0 .6rem}
+
+  :focus-visible{outline:2px solid var(--copper);outline-offset:3px;border-radius:2px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="mark">
+      <svg width="46" height="21" viewBox="0 0 116 52" aria-hidden="true">
+        <g transform="translate(58,34)" fill="none" stroke="#C4794F" stroke-width="5" stroke-linecap="round">
+          <path d="M-50 10 Q0 -66 50 10" opacity="1"></path>
+          <path d="M-40 14 Q0 -46 40 14" opacity=".8"></path>
+          <path d="M-30 18 Q0 -26 30 18" opacity=".62"></path>
+          <path d="M-20 22 Q0 -6 20 22" opacity=".44"></path>
+          <path d="M-10 26 Q0 14 10 26" opacity=".28"></path>
+        </g>
+      </svg>
+      <span>weyos</span>
+    </div>
+    <h1>The build plan, in plain English</h1>
+    <p class="deck">What we are building, how long each part takes, and the four things we need you to decide.</p>
+    <p class="stamp">Prepared for Pav · 21 August 2026</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="answer">
+    <p class="big">There was never a two-month app. There was a two-month <em>demo</em>.</p>
+    <p>The plan you approved had two halves. The first half — two months — built something that looks and behaves like the finished app but runs on made-up test data. No watches, no phones, no real people. The second half — two more months — made it real.</p>
+    <p>Four months was always the number for a working app. That has not changed in spirit. What has changed is that the design is now finished, and it is bigger than what was priced, so the honest number today is about six months.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <p class="label">What the two halves actually were</p>
+    <h2>The demo, and then the real thing</h2>
+    <p>This is the part that causes confusion, so it is worth being blunt about it.</p>
+
+    <div class="twoup">
+      <div class="box">
+        <div class="k">First half</div>
+        <div class="v">2<small>months</small></div>
+        <p class="n"><strong>The demo.</strong> Every screen, and the logic that decides what to tell a person — all of it running on made-up data we typed in ourselves. You can show it to anyone. You cannot use it.</p>
+      </div>
+      <div class="box">
+        <div class="k">Second half</div>
+        <div class="v">2<small>months</small></div>
+        <p class="n"><strong>The real thing.</strong> Connects to watches, phones and heart-rate straps. Real data in, real notifications out, privacy paperwork done. Now a person can actually use it.</p>
+      </div>
+    </div>
+
+    <div class="note">
+      <p><strong>Why build a demo at all?</strong> Because it proves the thinking works before we spend money connecting it to hardware. And because it is the thing you can put in front of the people in Dubai who asked to see the app.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">What changed</p>
+    <h2>The design got finished, and it is bigger</h2>
+    <p>The original estimate was written before anyone had designed the app. It priced roughly ten screens.</p>
+    <p>The finished design has <strong>56 screens</strong>. That single gap is where two thirds of the extra time comes from. Nothing was mis-priced — there was simply more app than anyone had drawn yet.</p>
+    <p>Four smaller things were also missing: the United States as a launch market, the monthly cycle logic, blood-test results, and the ability to read a person's last three months of health history the moment they connect their watch. That last one matters more than it sounds — without it, someone waits three weeks before Weyos knows anything useful about them.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wide">
+    <p class="label">The plan now</p>
+    <h2>Two versions, depending on one decision</h2>
+    <p style="max-width:34rem">The difference between them is whether people can <em>talk</em> to Weyos in the first release, the way you described it — asking it questions and getting answers from their own data.</p>
+
+    <div class="plan">
+      <div class="plan-head">
+        <span class="t">With talking to the app</span>
+        <span class="tot">≈ 6 months</span>
+      </div>
+      <div class="bar" role="img" aria-label="Stage one about four months, stage two about two months, stage three about two weeks">
+        <div class="seg s1" style="flex:60">Demo · 4 mo</div>
+        <div class="seg s2" style="flex:32">Real · 2 mo</div>
+        <div class="seg s3" style="flex:8">Clear</div>
+      </div>
+    </div>
+
+    <div class="plan">
+      <div class="plan-head">
+        <span class="t">Without it — talking added later</span>
+        <span class="tot">≈ 5 months</span>
+      </div>
+      <div class="bar" style="width:78%" role="img" aria-label="Stage one about two and a half months, stage two about two months, stage three about two weeks">
+        <div class="seg s1" style="flex:49">Demo · 2.5 mo</div>
+        <div class="seg s2" style="flex:41">Real · 2 mo</div>
+        <div class="seg s3" style="flex:10">Clear</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--copper)"></i>Demo — looks and thinks like the app</span>
+        <span><i style="background:var(--earth)"></i>Real — live data from devices</span>
+        <span><i style="background:var(--muted)"></i>Clear — privacy and legal sign-off</span>
+      </div>
+    </div>
+
+    <ol class="stages">
+      <li>
+        <span class="num">1</span>
+        <div>
+          <div class="stage-t"><h3>The demo</h3><span class="dur">2.5–4 months</span></div>
+          <p>The whole app, every screen, and the logic that decides what to tell someone — running on test data. Show it to investors, to doctors, to anyone. The maths is provable. Nothing is connected yet.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <div>
+          <div class="stage-t"><h3>Making it real</h3><span class="dur">2 months</span></div>
+          <p>Apple Health, Android Health, heart-rate straps. Real servers, real baselines learned from real bodies, real notifications arriving on real phones. This is the point where a person can genuinely use Weyos.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <div>
+          <div class="stage-t"><h3>Getting cleared</h3><span class="dur">2 weeks</span></div>
+          <p>Privacy paperwork, consent screens, data registration for the UK and the US. After this it can go in front of the public in both markets.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="note" style="max-width:34rem">
+      <p><strong>What this assumes.</strong> Two people building, full-time. If either of them is part-time, or gets pulled onto something else, every date on this page moves. That is the single biggest thing that will make this slip.</p>
+      <p>It also assumes someone else handles testing, servers and project management. If the same two people have to do that as well, add roughly two months.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">Your decisions</p>
+    <h2>Four things only you can answer</h2>
+    <p>None of these are engineering questions. Each one changes what gets built and when.</p>
+
+    <div class="decision">
+      <span class="cost">About 2 weeks of work · needed this week</span>
+      <h3>Is astrology and numerology in the app?</h3>
+      <p>The plan you approved includes the real thing — working out planetary positions from someone's exact birth time and place, plus a numerology engine.</p>
+      <p>What we have actually written the rules for is different: body type, the full moon, heat and the season. No birth chart. No numerology. The app screens we designed even tell users, in writing, that Weyos does not do this.</p>
+      <p>Both cannot be true. We need you to say which Weyos is.</p>
+      <div class="fork">
+        <div><strong>If it stays in</strong> We build it properly and change the screens to say so honestly. Expect pushback from some doctors, grant bodies and investors — so we would agree what to say to each of them.</div>
+        <div><strong>If it comes out</strong> We save about two weeks, and the app matches both what the patent protects and what the screens already promise.</div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <span class="cost">About 1 month of work · before we commit</span>
+      <h3>Talking to the app — first release, or straight after?</h3>
+      <p>Two versions of this exist and they are very different. One is a conversation that answers from a person's own data — it can only say things the app has actually worked out. The other is a chatbot that answers from general knowledge, like ChatGPT.</p>
+      <p>The second one we cannot safely build without lawyers in both countries looking at it first, because it could say something that sounds like a medical opinion. Tell us which one you mean.</p>
+    </div>
+
+    <div class="decision">
+      <span class="cost">Roughly 2 months of calendar · before we start</span>
+      <h3>Who does testing, servers and project management?</h3>
+      <p>None of this was in the original estimate — not hidden, just never counted. If we hire or assign separate people, the dates on this page hold. If the same two builders absorb it, add about two months.</p>
+    </div>
+
+    <div class="decision">
+      <span class="cost">Not engineering work · before stage 2 ends</span>
+      <h3>Who writes the recipes and the exercises?</h3>
+      <p>Around thirty meals, each with a budget and a premium shopping list for both the UK and the US, plus about twenty guided sessions. The app decides what someone should eat and do — but it needs real content to choose from. An engine with an empty cupboard produces an empty app.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="label">If two months matters</p>
+    <h2>You can still have a demo in two months</h2>
+    <p>If honouring the original date is important — for the people waiting to see something — there is one clean way to do it.</p>
+    <p>Build the demo <strong>without</strong> the talking feature and <strong>without</strong> the astrology layer. That is almost exactly two months' work, and it still shows the whole app and proves the thinking.</p>
+    <p>Both of those can be added afterwards. Neither has to be in the first thing you show people.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>These are engineering estimates, not a promise of a launch date. App-store review and legal sign-off run alongside and are outside these figures.</p>
+    <p>Full itemised breakdown available in the estimate workbook. Prepared by Core Development.</p>
+  </div>
+</footer>
+
+</body>
+</html>

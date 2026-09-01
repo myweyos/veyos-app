@@ -1,0 +1,732 @@
+<title>Weyos MVP Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+
+<style>
+  /* ---------- tokens: light is the base, both dark paths redefine only tokens ---------- */
+  :root{
+    --ground:#f2f4f7;
+    --surface:#ffffff;
+    --surface-2:#ffffff;
+    --panel:#ffffff;
+    --ink:#161a21;
+    --ink-2:#4a5462;
+    --ink-3:#78828f;
+    --line:#d3d8e0;
+    --line-soft:#e4e8ee;
+    --edge:#2a2f38;
+    --edge-dim:#aab2be;
+    --focus:#2f6fd0;
+    --grid:rgba(22,26,33,.055);
+    --shadow:0 1px 2px rgba(16,22,33,.06), 0 1px 1px rgba(16,22,33,.04);
+    --shadow-hi:0 6px 20px rgba(16,22,33,.12);
+    --c-device:#7c8797;
+    --c-mobile:#5b8fd0;
+    --c-ingest:#d98b3a;
+    --c-data:#4e9a63;
+    --c-arb:#7d5bb8;
+    --c-exec:#c25b5b;
+    --c-plat:#7c8797;
+    --tint-group:9%;
+    --tint-head:22%;
+    --tint-border:50%;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0e1116;
+      --surface:#161a21;
+      --surface-2:#1b2029;
+      --panel:#12161c;
+      --ink:#e7ebf1;
+      --ink-2:#a8b2c0;
+      --ink-3:#78838f;
+      --line:#2c333d;
+      --line-soft:#232a33;
+      --edge:#8d99a9;
+      --edge-dim:#3b434e;
+      --focus:#79a9f0;
+      --grid:rgba(231,235,241,.045);
+      --shadow:0 1px 2px rgba(0,0,0,.5);
+      --shadow-hi:0 8px 26px rgba(0,0,0,.55);
+      --c-device:#93a0b1;
+      --c-mobile:#7cabe4;
+      --c-ingest:#e5a45c;
+      --c-data:#6cb782;
+      --c-arb:#a17fd8;
+      --c-exec:#dd7b7b;
+      --c-plat:#93a0b1;
+      --tint-group:13%;
+      --tint-head:26%;
+      --tint-border:46%;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1116;
+    --surface:#161a21;
+    --surface-2:#1b2029;
+    --panel:#12161c;
+    --ink:#e7ebf1;
+    --ink-2:#a8b2c0;
+    --ink-3:#78838f;
+    --line:#2c333d;
+    --line-soft:#232a33;
+    --edge:#8d99a9;
+    --edge-dim:#3b434e;
+    --focus:#79a9f0;
+    --grid:rgba(231,235,241,.045);
+    --shadow:0 1px 2px rgba(0,0,0,.5);
+    --shadow-hi:0 8px 26px rgba(0,0,0,.55);
+    --c-device:#93a0b1;
+    --c-mobile:#7cabe4;
+    --c-ingest:#e5a45c;
+    --c-data:#6cb782;
+    --c-arb:#a17fd8;
+    --c-exec:#dd7b7b;
+    --c-plat:#93a0b1;
+    --tint-group:13%;
+    --tint-head:26%;
+    --tint-border:46%;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* ---------- masthead ---------- */
+  header.mast{
+    display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 28px;
+    padding:20px 24px 16px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+  }
+  .mast h1{
+    font-family:"IBM Plex Serif",Georgia,serif;
+    font-weight:600;font-size:22px;line-height:1.15;margin:0;
+    letter-spacing:-.01em;text-wrap:balance;
+  }
+  .mast .sub{
+    margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.5;
+    max-width:62ch;
+  }
+  .mast .sub b{font-weight:500;color:var(--ink)}
+  .mast-l{flex:1 1 320px;min-width:0}
+  .mast-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  .kicker{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 7px;
+  }
+
+  /* ---------- controls ---------- */
+  .btn{
+    font:500 12px/1 "IBM Plex Sans",sans-serif;
+    color:var(--ink-2);background:var(--surface-2);
+    border:1px solid var(--line);border-radius:6px;
+    padding:7px 10px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:border-color .12s,color .12s,background .12s;
+  }
+  .btn:hover{color:var(--ink);border-color:var(--ink-3)}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .zoomgroup{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface-2)}
+  .zoomgroup .btn{border:0;border-radius:0;padding:7px 11px}
+  .zoomgroup .btn+.btn{border-left:1px solid var(--line)}
+  .zoomval{
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+    display:flex;align-items:center;padding:0 10px;color:var(--ink-2);
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+    min-width:52px;justify-content:center;font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- legend ---------- */
+  .legend{
+    display:flex;flex-wrap:wrap;gap:4px;
+    padding:9px 24px;background:var(--panel);
+    border-bottom:1px solid var(--line);
+    align-items:center;
+  }
+  .legend .lg-label{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-3);margin-right:8px;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;
+    font:500 11.5px/1 "IBM Plex Sans",sans-serif;color:var(--ink-2);
+    background:transparent;border:1px solid transparent;border-radius:999px;
+    padding:5px 10px 5px 8px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;
+  }
+  .chip:hover{background:color-mix(in oklab,var(--sw) 12%,transparent);color:var(--ink)}
+  .chip[aria-pressed="true"]{border-color:color-mix(in oklab,var(--sw) 60%,var(--line));background:color-mix(in oklab,var(--sw) 14%,transparent);color:var(--ink)}
+  .chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .sw{width:9px;height:9px;border-radius:2.5px;background:var(--sw);flex:none}
+
+  /* ---------- stage ---------- */
+  .viewport{
+    flex:1 1 auto;overflow:auto;position:relative;
+    background:
+      linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px,
+      var(--ground);
+    cursor:grab;min-height:420px;
+  }
+  .viewport.dragging{cursor:grabbing}
+  .scaler{transform-origin:0 0;width:1470px;height:914px;position:relative}
+  .stage{position:absolute;inset:0;padding:24px}
+  .layer{position:absolute;left:9px;top:-67px;width:1440px;height:975px}
+
+  svg.wires{position:absolute;inset:0;width:1440px;height:975px;overflow:visible;pointer-events:none;z-index:2}
+  .wire{fill:none;stroke:var(--edge);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s,opacity .15s,stroke-width .15s}
+  .head{fill:var(--edge);transition:fill .15s,opacity .15s}
+  .wire-hit{fill:none;stroke:transparent;stroke-width:12;pointer-events:stroke;cursor:pointer}
+
+  /* group boxes */
+  .group{
+    position:absolute;z-index:1;border-radius:9px;
+    border:1px solid color-mix(in oklab,var(--g) 34%,var(--line));
+    background:color-mix(in oklab,var(--g) var(--tint-group),var(--surface));
+    transition:opacity .15s,box-shadow .15s,border-color .15s;
+  }
+  .group-head{
+    position:absolute;z-index:5;left:-1px;top:-1px;height:34px;max-width:100%;
+    display:inline-flex;align-items:center;gap:7px;
+    padding:0 13px 0 11px;
+    border-radius:9px 9px 9px 0;
+    background:color-mix(in oklab,var(--g) var(--tint-head),var(--surface));
+    border:1px solid color-mix(in oklab,var(--g) 40%,var(--line));
+    color:color-mix(in oklab,var(--g) 62%,var(--ink));
+    font-weight:600;font-size:12px;letter-spacing:-.005em;white-space:nowrap;
+    cursor:pointer;
+  }
+  .group-head svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .group-head span{overflow:hidden;text-overflow:ellipsis}
+  .group-head:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  /* nodes */
+  .node{
+    position:absolute;z-index:3;text-align:left;font-family:inherit;
+    display:flex;align-items:center;gap:9px;
+    padding:0 11px;
+    background:var(--surface-2);
+    border:1px solid color-mix(in oklab,var(--g) var(--tint-border),var(--line));
+    border-radius:7px;box-shadow:var(--shadow);
+    color:var(--ink);cursor:pointer;
+    transition:opacity .15s,box-shadow .15s,border-color .15s,transform .15s;
+  }
+  .node:hover{box-shadow:var(--shadow-hi);border-color:color-mix(in oklab,var(--g) 78%,var(--line))}
+  .node:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .node .ic{flex:none;width:17px;height:17px;color:color-mix(in oklab,var(--g) 74%,var(--ink-2))}
+  .node .ic svg{width:17px;height:17px;display:block;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .node .ic svg.solid{fill:currentColor;stroke:none}
+  .node .tx{min-width:0;overflow:hidden}
+  .node .t1{display:block;font-size:12.5px;font-weight:500;line-height:1.25;letter-spacing:-.005em}
+  .node .t2{display:block;font-size:10.5px;color:var(--ink-3);line-height:1.3;margin-top:2px;font-family:"IBM Plex Mono",monospace}
+  .node.cyl{border-radius:44% 44% 7px 7px / 22px 22px 7px 7px;padding-top:12px;align-items:center}
+
+  /* wire labels */
+  .wlabel{
+    position:absolute;display:flex;align-items:center;justify-content:center;
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.01em;
+    color:var(--ink-2);z-index:4;
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:4px;
+    padding:0 5px;white-space:nowrap;pointer-events:none;
+    transition:opacity .15s,color .15s;
+  }
+
+  /* focus / dim states */
+  .layer.focused .node,
+  .layer.focused .group,
+  .layer.focused .group-head,
+  .layer.focused .wlabel{opacity:.17}
+  .layer.focused .wire,.layer.focused .head{opacity:.1}
+  .layer.focused .node.on,
+  .layer.focused .group.on,
+  .layer.focused .group-head.on,
+  .layer.focused .wlabel.on{opacity:1}
+  .layer.focused .wire.on{opacity:1;stroke:var(--hl);stroke-width:2}
+  .layer.focused .head.on{opacity:1;fill:var(--hl)}
+  .layer.focused .node.pin{transform:translateZ(0);border-color:var(--hl);box-shadow:0 0 0 2px color-mix(in oklab,var(--hl) 40%,transparent),var(--shadow-hi)}
+  .layer.focused .group.pin{box-shadow:0 0 0 2px color-mix(in oklab,var(--hl) 40%,transparent)}
+
+  /* ---------- footer ---------- */
+  footer{
+    padding:12px 24px 16px;background:var(--panel);border-top:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:8px 26px;align-items:center;
+    font-size:11.5px;color:var(--ink-3);
+  }
+  footer .rule{display:inline-flex;align-items:center;gap:7px}
+  footer svg{color:var(--ink-3)}
+  footer a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)}
+  footer a:hover{color:var(--ink);border-color:var(--ink-3)}
+  kbd{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;
+    border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+    padding:1px 5px;color:var(--ink-2);background:var(--surface-2);
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+  @media (max-width:640px){
+    header.mast{padding:16px 14px 12px}
+    .legend{padding:8px 14px}
+    footer{padding:10px 14px 14px}
+  }
+</style>
+
+<header class="mast">
+  <div class="mast-l">
+    <p class="kicker">Weyos MVP &middot; System Architecture</p>
+    <h1>Preventative Health Platform</h1>
+    <p class="sub">Mobile-first capture from wearables, <b>config-driven arbitration</b> in Python, and rate-limited one-action interventions. Deployed across <b>UK/EU + US</b> residency zones.</p>
+  </div>
+  <div class="mast-r">
+    <button class="btn" id="clear" type="button">Clear focus</button>
+    <div class="zoomgroup">
+      <button class="btn" id="zout" type="button" aria-label="Zoom out">&minus;</button>
+      <span class="zoomval" id="zval">100%</span>
+      <button class="btn" id="zin" type="button" aria-label="Zoom in">+</button>
+      <button class="btn" id="zfit" type="button">Fit</button>
+    </div>
+  </div>
+</header>
+
+<div class="legend" id="legend"><span class="lg-label">Layers</span></div>
+
+<div class="viewport" id="viewport">
+  <div class="scaler" id="scaler">
+    <div class="stage">
+      <div class="layer" id="layer">
+        <svg class="wires" id="wires" viewBox="0 0 1440 975" aria-hidden="true"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="rule"><svg width="30" height="8" viewBox="0 0 30 8" fill="none"><path d="M1 4h20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M21 1l6 3-6 3z" fill="currentColor"/></svg> data or control flow</span>
+  <span class="rule"><svg width="30" height="8" viewBox="0 0 30 8" fill="none"><path d="M4 4h22" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M9 1L3.5 4 9 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M21 1l6 3-6 3z" fill="currentColor"/></svg> bidirectional</span>
+  <span>Click a box or a line to isolate it &middot; <kbd>Esc</kbd> clears &middot; drag to pan</span>
+  <span style="margin-left:auto">Source: <a href="https://app.eraser.io/workspace/gqRfLRX0Cese75JYzl46?diagram=HEQM8NJ9O0vMORC_MHvy&amp;layout=canvas" target="_blank" rel="noopener">Eraser canvas</a> &middot; last edited 13 Aug 2026</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- icons (24px stroke grid) ---------------- */
+  var I = {
+    heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.8 1.1-1.1a5.5 5.5 0 0 0 0-7.7z"/>',
+    apple:'<path d="M16.4 12.9c0-2.4 2-3.5 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.6.9s-1.9-.9-3.1-.8c-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.7 2.4 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.1.8c1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.6-3.9z"/><path d="M14.3 5.6c.7-.8 1.1-1.9 1-3-1 0-2.2.6-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.5z"/>',
+    android:'<path d="M6.5 10.5v7a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-7z"/><path d="M6.5 10.5a5.5 5.5 0 0 1 11 0"/><path d="M8.4 4.2l1.3 2.2M15.6 4.2l-1.3 2.2"/><path d="M9.6 8.4h.01M14.4 8.4h.01"/><rect x="2.6" y="10.4" width="2.6" height="6.6" rx="1.3"/><rect x="18.8" y="10.4" width="2.6" height="6.6" rx="1.3"/><rect x="8" y="18.6" width="2.6" height="4.2" rx="1.3"/><rect x="13.4" y="18.6" width="2.6" height="4.2" rx="1.3"/>',
+    cloud:'<path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+    activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    bluetooth:'<polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>',
+    database:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/>',
+    layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
+    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    gateway:'<polyline points="7.5 8 3.5 12 7.5 16"/><polyline points="16.5 8 20.5 12 16.5 16"/><line x1="14" y1="4" x2="10" y2="20"/>',
+    zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    refresh:'<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
+    shuffle:'<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+    redis:'<ellipse cx="12" cy="5.5" rx="9" ry="3"/><path d="M3 5.5v4c0 1.7 4 3 9 3s9-1.3 9-3v-4"/><path d="M3 12v4.5c0 1.7 4 3 9 3s9-1.3 9-3V12"/>',
+    trend:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    bar:'<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+    layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+    filetext:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    toggle:'<rect x="1" y="5" width="22" height="14" rx="7"/><circle cx="16" cy="12" r="3"/>',
+    branch:'<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    check:'<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><polyline points="22 4 12 14 9 11"/>',
+    clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    message:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    aws:'<path d="M18 9.5h-1.3A8 8 0 1 0 9 19.5h9a5 5 0 0 0 0-10z"/><path d="M2.5 21.5c5.5 2.4 13.5 2.4 19 0"/>',
+    lock:'<rect x="3" y="11" width="18" height="10.5" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    clipboard:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+    globe:'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    watch:'<circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.5 17.4l-.35 3.8a2 2 0 0 1-2 1.8H9.8a2 2 0 0 1-2-1.8l-.35-3.8m0-10.7l.35-3.8A2 2 0 0 1 9.8 1h4.4a2 2 0 0 1 2 1.8l.35 3.8"/>',
+    phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+    server:'<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>',
+    cpu:'<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+    send:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+  };
+  function icon(name, solid){
+    return '<svg viewBox="0 0 24 24"'+(solid?' class="solid"':'')+'>'+(I[name]||I.server)+'</svg>';
+  }
+
+  /* ---------------- data (transcribed from the Eraser freeform scene) ---------------- */
+  var GROUPS = [
+    {id:'g_device', x:15,  y:91,  w:250,   h:394, t:'Device Sources',                                        ic:'watch',  v:'--c-device'},
+    {id:'g_mobile', x:325, y:91,  w:320,   h:394, t:'Mobile Client — Expo (React Native), EAS dev builds',   ic:'phone',  v:'--c-mobile'},
+    {id:'g_ingest', x:655, y:91,  w:280,   h:394, t:'Ingestion & Real-time',                                 ic:'server', v:'--c-ingest'},
+    {id:'g_data',   x:995, y:91,  w:270,   h:394, t:'Data & Baseline',                                       ic:'database',v:'--c-data'},
+    {id:'g_arb',    x:325, y:551, w:420,   h:394, t:'Arbitration Engine (Python, config-driven)',            ic:'cpu',    v:'--c-arb'},
+    {id:'g_exec',   x:805, y:551, w:300,   h:394, t:'Execution & Delivery',                                  ic:'send',   v:'--c-exec'},
+    {id:'g_plat',   x:1165,y:551, w:260,   h:394, t:'Platform & Compliance',                                 ic:'shield', v:'--c-plat'}
+  ];
+
+  var NODES = [
+    // Device Sources
+    {id:'ble',   g:'g_device', x:35,  y:141, w:210, h:54, ic:'heart',    solid:1, t:'BLE HR Strap'},
+    {id:'hk',    g:'g_device', x:35,  y:207, w:210, h:54, ic:'apple',    solid:1, t:'Apple HealthKit'},
+    {id:'hc',    g:'g_device', x:35,  y:273, w:210, h:54, ic:'android',           t:'Health Connect'},
+    {id:'oura',  g:'g_device', x:35,  y:339, w:210, h:54, ic:'cloud',             t:'Oura Cloud API'},
+    {id:'garmin',g:'g_device', x:35,  y:405, w:210, h:54, ic:'activity',          t:'Garmin (stub)'},
+    // Mobile Client
+    {id:'bridge',      g:'g_mobile', x:345, y:141, w:250, h:62, ic:'bluetooth', t:'Sensor Bridge', s:'Expo Modules API + config plugins'},
+    {id:'baseline_dev',g:'g_mobile', x:345, y:225, w:250, h:54, ic:'database',  t:'On-device Baseline'},
+    {id:'variance',    g:'g_mobile', x:345, y:291, w:250, h:54, ic:'activity',  t:'Local Variance Detector'},
+    {id:'dash',        g:'g_mobile', x:345, y:345, w:250, h:54, ic:'layout',    t:'Dashboard + Interventions'},
+    {id:'push',        g:'g_mobile', x:345, y:411, w:250, h:54, ic:'bell',      t:'Push Handler (APNs/FCM)'},
+    // Ingestion
+    {id:'api',   g:'g_ingest', x:675, y:141, w:246, h:54, ic:'gateway', t:'Ingestion API (NestJS REST)'},
+    {id:'rtc',   g:'g_ingest', x:675, y:207, w:240, h:54, ic:'zap',     t:'Real-time Channel (WS/gRPC)'},
+    {id:'poller',g:'g_ingest', x:675, y:273, w:240, h:54, ic:'refresh', t:'Oura Poller (OAuth)'},
+    {id:'norm',  g:'g_ingest', x:675, y:383, w:240, h:54, ic:'shuffle', t:'Normalization Worker'},
+    // Data & Baseline
+    {id:'tsdb', g:'g_data', x:1015, y:141, w:230, h:85, cyl:1, ic:'database', t:'Time-series Store', s:'Postgres + TimescaleDB'},
+    {id:'redis',g:'g_data', x:1015, y:241, w:230, h:62,        ic:'redis',    t:'Redis',             s:'hot state / dedupe'},
+    {id:'bsvc', g:'g_data', x:1015, y:331, w:230, h:62,        ic:'trend',    t:'Baseline Service',  s:'rolling stats'},
+    // Arbitration
+    {id:'zscore',  g:'g_arb', x:345, y:601, w:380, h:54, ic:'bar',      t:'Z-score Anomaly Detection'},
+    {id:'blend',   g:'g_arb', x:345, y:673, w:380, h:54, ic:'layers',   t:'4-Layer Blend + Precedence'},
+    {id:'ruleconf',g:'g_arb', x:345, y:745, w:380, h:62, ic:'filetext', t:'5-Layer Rule Config', s:'versioned JSON'},
+    {id:'flag',    g:'g_arb', x:345, y:825, w:380, h:62, ic:'toggle',   t:'Feature Flag',        s:'validated-biometrics-only'},
+    // Execution
+    {id:'sm',      g:'g_exec', x:825, y:601, w:260, h:54, ic:'branch',  t:'Intervention State Machine'},
+    {id:'dispatch',g:'g_exec', x:825, y:673, w:260, h:62, ic:'check',   t:'Exactly-once Dispatch', s:'idempotent'},
+    {id:'orch',    g:'g_exec', x:825, y:753, w:260, h:62, ic:'clock',   t:'Notification Orchestrator', s:'rate limit, quiet hours'},
+    {id:'msg',     g:'g_exec', x:825, y:833, w:260, h:62, ic:'message', t:'Messaging', s:'APNs + FCM / Twilio SMS'},
+    // Platform
+    {id:'iac',   g:'g_plat', x:1185, y:601, w:220, h:62, ic:'aws',       t:'AWS / Fly.io', s:'IaC'},
+    {id:'enc',   g:'g_plat', x:1185, y:681, w:220, h:54, ic:'lock',      t:'Encryption + Key Mgmt'},
+    {id:'audit', g:'g_plat', x:1185, y:753, w:220, h:54, ic:'clipboard', t:'Consent + Audit Log'},
+    {id:'region',g:'g_plat', x:1185, y:825, w:220, h:62, ic:'globe',     t:'Multi-region Residency', s:'UK/EU + US'}
+  ];
+
+  var EDGES = [
+    {id:'r1', f:'ble',    t:'bridge',  x:245, y:168, p:[[0,0],[50,0],[50,-8],[100,-8]],            l:'live HR',      lp:[5,-8,40,16]},
+    {id:'r2', f:'hk',     t:'bridge',  x:245, y:234, p:[[0,0],[44,0],[44,-62],[100,-62]],          l:'batched',      lp:[1,-8,48,16]},
+    {id:'r3', f:'hc',     t:'bridge',  x:245, y:300, p:[[0,0],[56,0],[56,-116],[100,-116]]},
+    {id:'r4', f:'oura',   t:'poller',  x:140, y:393, p:[[0,0],[0,5],[195,5],[195,-175],[520,-175],[520,-93],[535,-93]], l:'5–60 min', lp:[331,-183,53,16]},
+    {id:'r5', f:'garmin', t:'poller',  x:245, y:432, p:[[0,0],[90,0],[90,45],[420,45],[420,-132],[430,-132]]},
+    {id:'r6', f:'bridge', t:'api',     x:595, y:172, p:[[0,0],[70,0],[70,-4],[80,-4]],             l:'batched sync', lp:[-4,-20,78,16]},
+    {id:'r7', f:'baseline_dev', t:'variance', x:470, y:279, p:[[0,0],[0,12]]},
+    {id:'r8', f:'variance', t:'rtc',   x:595, y:318, p:[[0,0],[38,0],[38,-84],[80,-84]],           l:'stream on trip', lp:[-2.5,-50,81,16]},
+    {id:'r9', f:'api',    t:'norm',    x:798, y:195, p:[[0,0],[0,6],[128,6],[128,154],[9,154],[9,188]]},
+    {id:'r10',f:'rtc',    t:'norm',    x:795, y:261, p:[[0,0],[0,6],[135,6],[135,100],[0,100],[0,122]]},
+    {id:'r11',f:'poller', t:'norm',    x:783, y:327, p:[[0,0],[0,56]]},
+    {id:'r12',f:'norm',   t:'tsdb',    x:915, y:410, p:[[0,0],[29,0],[29,-176],[209,-176],[209,-184]]},
+    {id:'r13',f:'tsdb',   t:'bsvc',    x:1136,y:226, p:[[0,0],[0,8],[119,8],[119,91],[-6,91],[-6,105]]},
+    {id:'r14',f:'redis',  t:'rtc',     x:1015,y:272, p:[[0,0],[-67,0],[-67,-38],[-100,-38]], bi:1},
+    {id:'r15',f:'bsvc',   t:'g_arb',   x:1126,y:393, p:[[0,0],[0,108],[-345,108],[-345,349],[-381,349]]},
+    {id:'r16',f:'g_arb',  t:'g_exec',  x:745, y:754, p:[[0,0],[60,0]], l:'prioritised daily read + intervention', lp:[-70.5,-20,201,16]},
+    {id:'r17',f:'redis',  t:'dispatch',x:1130,y:303, p:[[0,0],[0,14],[-178,14],[-178,210],[-8,210],[-8,401],[-45,401]], bi:1},
+    {id:'r18',f:'msg',    t:'push',    x:825, y:864, p:[[0,0],[-56,0],[-56,-346],[-355,-346],[-355,-399]], l:'one-action nudge', lp:[-254,-354,103,16]},
+    {id:'r19',f:'push',   t:'dash',    x:470, y:411, p:[[0,0],[0,-12]]},
+    {id:'r20',f:'enc',    t:'g_data',  x:1295,y:681, p:[[0,0],[0,-9],[-154,-9],[-154,-174],[-157,-174],[-157,-196]]},
+    {id:'r21',f:'audit',  t:'g_ingest',x:1185,y:780, p:[[0,0],[-56,0],[-56,-262],[-390,-262],[-390,-295]]},
+    {id:'r22',f:'region', t:'g_data',  x:1295,y:825, p:[[0,0],[0,-9],[-161,-9],[-161,-340]]}
+  ];
+
+  var byId = {};
+  GROUPS.forEach(function(g){ byId[g.id] = g; });
+  NODES.forEach(function(n){ byId[n.id] = n; });
+
+  var layer = document.getElementById('layer');
+  var svg   = document.getElementById('wires');
+  var SVGNS = 'http://www.w3.org/2000/svg';
+
+  /* ---------------- render groups ---------------- */
+  GROUPS.forEach(function(g){
+    var box = document.createElement('div');
+    box.className = 'group';
+    box.dataset.id = g.id;
+    box.style.cssText = 'left:'+g.x+'px;top:'+g.y+'px;width:'+g.w+'px;height:'+g.h+'px;--g:var('+g.v+')';
+    layer.appendChild(box);
+
+    var head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'group-head';
+    head.dataset.id = g.id;
+    head.style.cssText = 'left:'+(g.x-1)+'px;top:'+(g.y-1)+'px;position:absolute;--g:var('+g.v+')';
+    head.innerHTML = icon(g.ic) + '<span>' + g.t + '</span>';
+    layer.appendChild(head);
+  });
+
+  /* ---------------- render nodes ---------------- */
+  NODES.forEach(function(n){
+    var grp = byId[n.g];
+    var el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'node' + (n.cyl ? ' cyl' : '');
+    el.dataset.id = n.id;
+    el.style.cssText = 'left:'+n.x+'px;top:'+n.y+'px;width:'+n.w+'px;height:'+n.h+'px;--g:var('+grp.v+')';
+    el.innerHTML =
+      '<span class="ic">' + icon(n.ic, n.solid) + '</span>' +
+      '<span class="tx"><span class="t1">' + n.t + '</span>' +
+      (n.s ? '<span class="t2">' + n.s + '</span>' : '') + '</span>';
+    layer.appendChild(el);
+  });
+
+  /* ---------------- wire geometry ---------------- */
+  function abs(e){
+    var out = [], last = null;
+    for (var i = 0; i < e.p.length; i++){
+      var pt = [e.x + e.p[i][0], e.y + e.p[i][1]];
+      if (last && Math.abs(pt[0]-last[0]) < 0.01 && Math.abs(pt[1]-last[1]) < 0.01) continue;
+      out.push(pt); last = pt;
+    }
+    return out;
+  }
+  function rounded(pts, r){
+    if (pts.length < 2) return '';
+    var d = 'M ' + pts[0][0] + ' ' + pts[0][1];
+    for (var i = 1; i < pts.length - 1; i++){
+      var p = pts[i], a = pts[i-1], b = pts[i+1];
+      var v1x = p[0]-a[0], v1y = p[1]-a[1], v2x = b[0]-p[0], v2y = b[1]-p[1];
+      var l1 = Math.hypot(v1x,v1y), l2 = Math.hypot(v2x,v2y);
+      if (l1 < 0.5 || l2 < 0.5) continue;
+      var rr = Math.min(r, l1/2, l2/2);
+      d += ' L ' + (p[0]-v1x/l1*rr) + ' ' + (p[1]-v1y/l1*rr);
+      d += ' Q ' + p[0] + ' ' + p[1] + ' ' + (p[0]+v2x/l2*rr) + ' ' + (p[1]+v2y/l2*rr);
+    }
+    d += ' L ' + pts[pts.length-1][0] + ' ' + pts[pts.length-1][1];
+    return d;
+  }
+  function triangle(tip, from, size){
+    var dx = tip[0]-from[0], dy = tip[1]-from[1], len = Math.hypot(dx,dy) || 1;
+    var ux = dx/len, uy = dy/len, px = -uy, py = ux;
+    var bx = tip[0]-ux*size, by = tip[1]-uy*size, hw = size*0.44;
+    return 'M '+tip[0]+' '+tip[1]+
+           ' L '+(bx+px*hw)+' '+(by+py*hw)+
+           ' L '+(bx-px*hw)+' '+(by-py*hw)+' Z';
+  }
+
+  EDGES.forEach(function(e){
+    var pts = abs(e);
+    var path = document.createElementNS(SVGNS,'path');
+    path.setAttribute('d', rounded(pts, 9));
+    path.setAttribute('class','wire');
+    path.dataset.edge = e.id;
+    svg.appendChild(path);
+
+    var head = document.createElementNS(SVGNS,'path');
+    head.setAttribute('d', triangle(pts[pts.length-1], pts[pts.length-2], 8));
+    head.setAttribute('class','head');
+    head.dataset.edge = e.id;
+    svg.appendChild(head);
+
+    if (e.bi){
+      var back = document.createElementNS(SVGNS,'path');
+      back.setAttribute('d', triangle(pts[0], pts[1], 8));
+      back.setAttribute('class','head');
+      back.dataset.edge = e.id;
+      svg.appendChild(back);
+    }
+
+    var hit = document.createElementNS(SVGNS,'path');
+    hit.setAttribute('d', rounded(pts, 9));
+    hit.setAttribute('class','wire-hit');
+    hit.dataset.edge = e.id;
+    hit.style.pointerEvents = 'stroke';
+    svg.appendChild(hit);
+
+    if (e.l){
+      var lab = document.createElement('div');
+      lab.className = 'wlabel';
+      lab.dataset.edge = e.id;
+      lab.style.cssText = 'left:'+(e.x+e.lp[0])+'px;top:'+(e.y+e.lp[1])+'px;width:'+e.lp[2]+'px;height:'+e.lp[3]+'px';
+      lab.textContent = e.l;
+      layer.appendChild(lab);
+    }
+  });
+  svg.style.pointerEvents = 'none';
+  Array.prototype.forEach.call(svg.querySelectorAll('.wire-hit'), function(h){ h.style.pointerEvents = 'stroke'; });
+
+  // shrink any group title that overruns its box
+  requestAnimationFrame(function(){
+    Array.prototype.forEach.call(layer.querySelectorAll('.group-head'), function(h){
+      var g = byId[h.dataset.id];
+      var fs = 12;
+      while (h.scrollWidth > g.w && fs > 9.5){
+        fs -= 0.5;
+        h.style.fontSize = fs + 'px';
+      }
+    });
+  });
+
+  /* ---------------- legend ---------------- */
+  var legend = document.getElementById('legend');
+  GROUPS.filter(function(g,i,a){
+    return a.findIndex(function(o){ return o.t === g.t; }) === i;
+  }).forEach(function(g){
+    var c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'chip';
+    c.dataset.id = g.id;
+    c.setAttribute('aria-pressed','false');
+    c.style.setProperty('--sw','var('+g.v+')');
+    var short = g.t.split('—')[0].split('(')[0].trim();
+    c.innerHTML = '<span class="sw"></span>' + short;
+    legend.appendChild(c);
+  });
+
+  /* ---------------- focus logic ---------------- */
+  var current = null;
+
+  function clearFocus(){
+    current = null;
+    layer.classList.remove('focused');
+    Array.prototype.forEach.call(layer.querySelectorAll('.on,.pin'), function(el){
+      el.classList.remove('on'); el.classList.remove('pin');
+    });
+    Array.prototype.forEach.call(svg.querySelectorAll('.on'), function(el){ el.classList.remove('on'); });
+    Array.prototype.forEach.call(legend.querySelectorAll('.chip'), function(c){ c.setAttribute('aria-pressed','false'); });
+  }
+
+  function mark(id, pin){
+    var el = layer.querySelector('.node[data-id="'+id+'"]') || layer.querySelector('.group[data-id="'+id+'"]');
+    if (el){ el.classList.add('on'); if (pin) el.classList.add('pin'); }
+    var h = layer.querySelector('.group-head[data-id="'+id+'"]');
+    if (h) h.classList.add('on');
+  }
+
+  function markEdge(eid){
+    Array.prototype.forEach.call(svg.querySelectorAll('[data-edge="'+eid+'"]'), function(el){ el.classList.add('on'); });
+    var lab = layer.querySelector('.wlabel[data-edge="'+eid+'"]');
+    if (lab) lab.classList.add('on');
+  }
+
+  function accentOf(id){
+    var it = byId[id];
+    if (!it) return 'var(--focus)';
+    return 'var(' + (it.v || byId[it.g].v) + ')';
+  }
+
+  function focusNode(id){
+    if (current === id){ clearFocus(); return; }
+    clearFocus();
+    current = id;
+    layer.classList.add('focused');
+    layer.style.setProperty('--hl', accentOf(id));
+    mark(id, true);
+    EDGES.forEach(function(e){
+      if (e.f === id || e.t === id){
+        markEdge(e.id);
+        mark(e.f === id ? e.t : e.f, false);
+      }
+    });
+    var chip = legend.querySelector('.chip[data-id="'+id+'"]');
+    if (chip) chip.setAttribute('aria-pressed','true');
+  }
+
+  function focusGroup(gid){
+    if (current === gid){ clearFocus(); return; }
+    clearFocus();
+    current = gid;
+    layer.classList.add('focused');
+    layer.style.setProperty('--hl', accentOf(gid));
+    mark(gid, true);
+    var members = {};
+    members[gid] = true;
+    NODES.forEach(function(n){ if (n.g === gid){ members[n.id] = true; mark(n.id, false); } });
+    EDGES.forEach(function(e){
+      if (members[e.f] || members[e.t]){
+        markEdge(e.id);
+        mark(e.f, false); mark(e.t, false);
+      }
+    });
+    var chip = legend.querySelector('.chip[data-id="'+gid+'"]');
+    if (chip) chip.setAttribute('aria-pressed','true');
+  }
+
+  function focusEdge(eid){
+    var e = EDGES.filter(function(x){ return x.id === eid; })[0];
+    if (!e) return;
+    if (current === eid){ clearFocus(); return; }
+    clearFocus();
+    current = eid;
+    layer.classList.add('focused');
+    layer.style.setProperty('--hl', accentOf(e.f));
+    markEdge(eid);
+    mark(e.f, true); mark(e.t, true);
+  }
+
+  layer.addEventListener('click', function(ev){
+    var n = ev.target.closest('.node');
+    if (n){ focusNode(n.dataset.id); return; }
+    var h = ev.target.closest('.group-head');
+    if (h){ focusGroup(h.dataset.id); return; }
+    var hit = ev.target.closest('.wire-hit');
+    if (hit){ focusEdge(hit.dataset.edge); return; }
+    var g = ev.target.closest('.group');
+    if (g){ focusGroup(g.dataset.id); return; }
+    clearFocus();
+  });
+
+  legend.addEventListener('click', function(ev){
+    var c = ev.target.closest('.chip');
+    if (c) focusGroup(c.dataset.id);
+  });
+
+  document.getElementById('clear').addEventListener('click', clearFocus);
+  document.addEventListener('keydown', function(ev){
+    if (ev.key === 'Escape') clearFocus();
+  });
+
+  /* ---------------- zoom + pan ---------------- */
+  var viewport = document.getElementById('viewport');
+  var scaler   = document.getElementById('scaler');
+  var zval     = document.getElementById('zval');
+  var BASE_W = 1470, BASE_H = 914;
+  var z = 1, userZoom = false;
+
+  function applyZoom(){
+    z = Math.max(0.28, Math.min(2, z));
+    scaler.style.transform = 'scale(' + z + ')';
+    scaler.style.width  = BASE_W + 'px';
+    scaler.style.height = BASE_H + 'px';
+    scaler.style.marginRight  = (BASE_W * (z - 1)) + 'px';
+    scaler.style.marginBottom = (BASE_H * (z - 1)) + 'px';
+    zval.textContent = Math.round(z * 100) + '%';
+  }
+  function fit(){
+    var aw = viewport.clientWidth - 6, ah = viewport.clientHeight - 6;
+    z = Math.max(0.28, Math.min(1, aw / BASE_W, ah / BASE_H));
+    applyZoom();
+  }
+  document.getElementById('zin').addEventListener('click', function(){ userZoom = true; z = z * 1.15; applyZoom(); });
+  document.getElementById('zout').addEventListener('click', function(){ userZoom = true; z = z / 1.15; applyZoom(); });
+  document.getElementById('zfit').addEventListener('click', function(){ userZoom = false; fit(); });
+  window.addEventListener('resize', function(){ if (!userZoom) fit(); });
+
+  // drag-to-pan on empty canvas
+  var drag = null;
+  viewport.addEventListener('pointerdown', function(ev){
+    if (ev.target.closest('.node, .group-head, .wire-hit')) return;
+    drag = { x: ev.clientX, y: ev.clientY, l: viewport.scrollLeft, t: viewport.scrollTop };
+    viewport.classList.add('dragging');
+    viewport.setPointerCapture(ev.pointerId);
+  });
+  viewport.addEventListener('pointermove', function(ev){
+    if (!drag) return;
+    viewport.scrollLeft = drag.l - (ev.clientX - drag.x);
+    viewport.scrollTop  = drag.t - (ev.clientY - drag.y);
+  });
+  ['pointerup','pointercancel'].forEach(function(t){
+    viewport.addEventListener(t, function(){ drag = null; viewport.classList.remove('dragging'); });
+  });
+
+  fit();
+})();
+</script>

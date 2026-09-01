@@ -1,32 +1,19 @@
 /**
- * C2 — the intervention takeover. The screen the product lives or dies on.
+ * C2 — the intervention takeover. The product lives or dies here.
  *
- * Strict three-part vertical structure, and the order is NOT negotiable:
+ * Evidence before instruction. The user's own plan visibly struck through. "Not for me"
+ * always present at the same distance. One takeover a day, hard-capped.
  *
- *   1. WHAT CHANGED   evidence first
- *   2. WHAT I'M DOING the strikethrough on the user's own plan, then the replacement
- *   3. ACTIONS        thumb zone
- *
- * Evidence before instruction. A user told what to do before being told why reads it as
- * nagging.
- *
- * The strikethrough is load-bearing. The user must see THEIR OWN plan being changed, not a
- * generic suggestion appearing — which is also why Plan is one of the four tabs.
- *
- * "Not for me" is always present, always the same distance away, never hidden behind a timer
- * and never smaller on a second showing.
- *
- * No red, no siren iconography, no heart-rate-alarm visual language. Intervention is warm
- * amber (Fire). `danger` is reserved for destructive account actions.
+ * No red, no siren iconography. Intervention is Fire (accent); `danger` is reserved for
+ * destructive account actions.
  */
 
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
-import { Disclaimer, EngineWarning, Pill } from "../components/primitives";
-import { radius, space, type } from "../theme/tokens";
-import { useTheme } from "../theme/useTheme";
+import { Button, Chip, Disclaimer, Link, Section, WarnBox } from "../components/primitives";
+import { color, space, type } from "../theme/tokens";
 
 export function Takeover({
   day,
@@ -37,90 +24,54 @@ export function Takeover({
   onWhyThis: () => void;
   onDismiss: () => void;
 }) {
-  const palette = useTheme();
   const decision = day.decision;
   const activity = decision.activity;
-
-  // Evidence, straight from the rules that fired. Deltas and thresholds only — these strings
-  // never carry a raw value bound to a subject.
-  const evidence = decision.fired_rules.flatMap((rule) => rule.because ?? []);
+  const evidence = decision.fired_rules.flatMap((r) => r.because ?? []);
+  const messages = decision.messages ?? [];
+  const warnings = decision.warnings ?? [];
 
   return (
-    <ScrollView
-      style={{ backgroundColor: palette.bg }}
-      contentContainerStyle={st.page}
-      testID="screen-takeover"
-    >
-      {/* ---------------------------------------------------------------- 1. WHAT CHANGED */}
-      <Text style={[st.eyebrow, { color: palette.fire }]}>◆ What changed</Text>
-      {decision.messages !== undefined && decision.messages.length > 0 ? (
-        <Text style={[st.lede, { color: palette.text }]}>{decision.messages[0]}</Text>
-      ) : (
-        <Text style={[st.lede, { color: palette.text }]}>Your signals moved today.</Text>
-      )}
-
-      <View style={st.chips}>
-        {evidence.slice(0, 3).map((line) => (
-          <Pill key={line} text={line} tone="fire" />
-        ))}
-      </View>
-
-      {/* ------------------------------------------------------------- 2. WHAT I'M DOING */}
-      <Text style={[st.eyebrow, { color: palette.textMuted, marginTop: space.xl }]}>
-        What I'm doing
-      </Text>
-
-      <View style={[st.plan, { borderColor: palette.border, backgroundColor: palette.surface }]}>
-        {/* The strikethrough on the user's own plan. Load-bearing — do not replace this with
-            a generic "we suggest" card. */}
-        <Text style={[st.struck, { color: palette.strike }]}>{activity.planned ?? "your session"}</Text>
-        <Text style={[st.arrow, { color: palette.textMuted }]}>↓</Text>
-        <Text style={[st.replacement, { color: palette.text }]}>
-          {activity.prescribed ?? "rest"}
+    <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-takeover">
+      {/* 1. WHAT CHANGED — evidence first. */}
+      <Section title="What changed">
+        <Text style={s.what}>
+          {messages[0] ?? "Your live signals moved today."}
         </Text>
-        {activity.location !== null && activity.location !== undefined && (
-          <Text style={[st.where, { color: palette.textMuted }]}>{activity.location}</Text>
+        <View style={s.chips}>
+          {evidence.slice(0, 3).map((e) => (
+            <Chip key={e} text={e} tone="calm" />
+          ))}
+        </View>
+      </Section>
+
+      {/* 2. WHAT I'M DOING — the strikethrough is load-bearing. The user must see THEIR OWN
+          plan being changed, not a generic suggestion appearing. */}
+      <Section title="What I'm doing">
+        <View style={s.planrow}>
+          <Text style={s.time}>{activity.location ?? ""}</Text>
+          <Text style={s.strike}>{activity.planned ?? "your session"}</Text>
+        </View>
+        <View style={s.planrow}>
+          <Text style={s.arrow}>→</Text>
+          <Text style={s.to}>{activity.prescribed ?? "rest"}</Text>
+        </View>
+        {decision.supplements.length > 0 && (
+          <Text style={s.plus}>+ {decision.supplements.join(", ")}</Text>
         )}
-      </View>
+        <Link text="ⓘ  Why this?" onPress={onWhyThis} />
+      </Section>
 
-      {decision.supplements.length > 0 && (
-        <Text style={[st.aside, { color: palette.textMuted }]}>
-          Plus {decision.supplements.join(", ")}.
-        </Text>
-      )}
+      {warnings.map((w) => (
+        <WarnBox key={w} text={w} />
+      ))}
 
-      {/* Mandatory on every recommendation. One tap, never buried. */}
-      <Pressable onPress={onWhyThis} accessibilityRole="button" testID="why-this">
-        <Text style={[st.why, { color: palette.fire }]}>ⓘ  Why this?</Text>
-      </Pressable>
-
-      {decision.warnings !== undefined &&
-        decision.warnings.map((warning) => <EngineWarning key={warning} text={warning} />)}
-
-      {/* ------------------------------------------------------------------- 3. ACTIONS */}
-      <View style={st.actions}>
-        <Pressable
-          style={[st.primary, { backgroundColor: palette.fire }]}
-          accessibilityRole="button"
-          onPress={onDismiss}
-        >
-          <Text style={st.primaryText}>Do it now</Text>
-        </Pressable>
-        <Pressable
-          style={[st.secondary, { borderColor: palette.border }]}
-          accessibilityRole="button"
-          onPress={onDismiss}
-        >
-          <Text style={[st.secondaryText, { color: palette.text }]}>See my food</Text>
-        </Pressable>
-        <View style={st.tertiary}>
-          <Text style={[st.tertiaryText, { color: palette.textMuted }]} onPress={onDismiss}>
-            Later
-          </Text>
-          {/* Always present, always this far away, never de-emphasised on a repeat showing. */}
-          <Text style={[st.tertiaryText, { color: palette.textMuted }]} onPress={onDismiss}>
-            Not for me
-          </Text>
+      {/* 3. ACTIONS — thumb zone. "Not for me" never hidden, never smaller on a repeat. */}
+      <View style={s.actions}>
+        <Button label="Do it now" kind="primary" onPress={onDismiss} />
+        <Button label="See my food" kind="secondary" onPress={onDismiss} />
+        <View style={s.tertiary}>
+          <Button label="Later" kind="quiet" onPress={onDismiss} />
+          <Button label="Not for me" kind="quiet" onPress={onDismiss} />
         </View>
       </View>
 
@@ -129,34 +80,24 @@ export function Takeover({
   );
 }
 
-const st = StyleSheet.create({
-  page: { padding: space.lg, paddingTop: space.xl * 2, paddingBottom: space.xl },
-  eyebrow: { fontSize: type.caption, letterSpacing: 1.2, textTransform: "uppercase" },
-  lede: { fontSize: type.title, lineHeight: type.title * 1.35, marginTop: space.sm },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.md },
-  plan: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: space.md,
-    marginTop: space.sm,
+const s = StyleSheet.create({
+  page: { backgroundColor: color.cream },
+  content: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: space.lg },
+  what: { fontSize: type.title.size, lineHeight: type.title.size * 1.25, color: color.ink },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.md },
+  planrow: {
+    flexDirection: "row",
+    gap: 12,
     alignItems: "flex-start",
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: color.line,
   },
-  struck: { fontSize: type.body, textDecorationLine: "line-through" },
-  arrow: { fontSize: type.body, marginVertical: space.xs },
-  replacement: { fontSize: type.title },
-  where: { fontSize: type.caption, marginTop: space.xs },
-  aside: { fontSize: type.label, marginTop: space.sm },
-  why: { fontSize: type.body, marginTop: space.md },
-  actions: { marginTop: space.xl, gap: space.sm },
-  primary: { borderRadius: radius.md, paddingVertical: space.md, alignItems: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: type.body },
-  secondary: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: space.md,
-    alignItems: "center",
-  },
-  secondaryText: { fontSize: type.body },
-  tertiary: { flexDirection: "row", justifyContent: "space-between", paddingTop: space.sm },
-  tertiaryText: { fontSize: type.label },
+  time: { fontSize: 13, color: color.muted, width: 66 },
+  strike: { fontSize: 15.5, color: color.muted, textDecorationLine: "line-through", flex: 1 },
+  arrow: { color: color.accent, fontWeight: "700", width: 66, fontSize: 15.5 },
+  to: { fontSize: 15.5, color: color.ink, fontWeight: "600", flex: 1 },
+  plus: { fontSize: 14, color: color.muted, marginTop: 10 },
+  actions: { marginTop: space.xl },
+  tertiary: { flexDirection: "row", justifyContent: "space-between", marginTop: space.sm },
 });

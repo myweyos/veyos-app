@@ -1,80 +1,87 @@
 /**
- * B1–B6 — Today.
+ * B1–B6 — Today, one screen with several states.
  *
- * The app should mostly say nothing (design principle 1). Home is one sentence and a colour.
- * No charts, no streaks, no engagement nudges, nothing that rewards opening the app.
+ * The distinction the pack cares about most: Calibrating and Partial must look visibly
+ * different from In balance, because "I could not evaluate" must never look like "you are
+ * fine". That is what three-valued evaluation buys, and it is the whole reason the state has
+ * its own glyph, its own word and its own copy.
  *
- * One deliberate exception: the signal tiles sit beneath the headline in EVERY state,
- * including "in balance". That is the agreed mitigation for the James gap — a user whose
- * RHR is visibly elevated sees the number even on a day when no rule fired and the app says
- * nothing is wrong. It does not fix F5; it stops the screen hiding it.
+ * Signal tiles sit under the verdict in every state, including In balance — so a user whose
+ * resting heart rate is visibly elevated sees the number even on a day when no rule fired.
  */
 
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
-import { Disclaimer, EngineWarning, Section, SignalTile, StateHeader } from "../components/primitives";
-import { space, type } from "../theme/tokens";
-import { useTheme } from "../theme/useTheme";
-import { headlineFor, signalTilesFor } from "./copy";
+import {
+  Card,
+  DateLine,
+  Disclaimer,
+  Link,
+  Note,
+  Section,
+  SignalTile,
+  Tiles,
+  Verdict,
+  WarnBox,
+} from "../components/primitives";
+import { color, space } from "../theme/tokens";
+import { headlineFor, signalTilesFor, subFor } from "./copy";
 
-export function Today({ day, onOpenTakeover }: { day: DemoDay; onOpenTakeover: () => void }) {
-  const palette = useTheme();
+export function Today({ day, onOpen }: { day: DemoDay; onOpen: () => void }) {
   const decision = day.decision;
   const tiles = signalTilesFor(day);
+  const messages = decision.messages ?? [];
+  const warnings = decision.warnings ?? [];
 
   return (
-    <ScrollView
-      style={{ backgroundColor: palette.bg }}
-      contentContainerStyle={st.page}
-      testID="screen-today"
-    >
-      <StateHeader state={day.app_state} line={headlineFor(day)} />
+    <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-today">
+      <DateLine text={decision.as_of} />
+      <Verdict state={day.app_state} headline={headlineFor(day)} sub={subFor(day)} />
 
-      {/* Always visible, in every state. See the module docstring. */}
-      <Section title="What I'm reading">
-        <View style={st.tiles}>
-          {tiles.map((tile) => (
-            <SignalTile key={tile.label} label={tile.label} value={tile.value} detail={tile.detail} />
-          ))}
-        </View>
-      </Section>
+      <Tiles>
+        {tiles.map((t) => (
+          <SignalTile
+            key={t.label}
+            label={t.label}
+            value={t.value}
+            unit={t.unit}
+            detail={t.detail}
+            pillar={t.pillar}
+            unknown={t.unknown}
+          />
+        ))}
+      </Tiles>
 
-      {day.app_state === "intervention" && (
-        <Section title="Today">
-          <Text style={[st.link, { color: palette.fire }]} onPress={onOpenTakeover}>
-            See what changed →
-          </Text>
+      {messages.length > 0 && (
+        <Section title="Tonight">
+          <Card>
+            {messages.map((m) => (
+              <Note key={m} text={m} />
+            ))}
+          </Card>
         </Section>
       )}
 
-      {decision.messages !== undefined && decision.messages.length > 0 && (
-        <Section title="Notes">
-          {decision.messages.map((message) => (
-            <Text key={message} style={[st.message, { color: palette.text }]}>
-              {message}
-            </Text>
-          ))}
-        </Section>
-      )}
-
-      {decision.warnings !== undefined && decision.warnings.length > 0 && (
+      {warnings.length > 0 && (
         <Section title="Worth knowing">
-          {decision.warnings.map((warning) => (
-            <EngineWarning key={warning} text={warning} />
+          {warnings.map((w) => (
+            <WarnBox key={w} text={w} />
           ))}
         </Section>
       )}
+
+      <View>
+        <Link text="Why this? ›" onPress={onOpen} />
+      </View>
 
       <Disclaimer />
     </ScrollView>
   );
 }
 
-const st = StyleSheet.create({
-  page: { padding: space.lg, paddingTop: space.xl * 2, paddingBottom: space.xl },
-  tiles: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  message: { fontSize: type.body, lineHeight: type.body * 1.5, marginBottom: space.sm },
-  link: { fontSize: type.body },
+const s = StyleSheet.create({
+  page: { backgroundColor: color.cream },
+  content: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: space.sm },
 });

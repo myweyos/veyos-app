@@ -1,116 +1,132 @@
 /**
- * Copy derivation.
+ * Copy and signal derivation.
  *
  * Two constraints bind everything here.
  *
- * BANNED VOCABULARY (hard constraint 4). Never: detect, diagnose, risk, prevent, treat,
- * symptom, condition, disorder, abnormal, medical, cardiac, patient, prescribe. Never, for
- * tone: should, must, failed, missed, streak. Note that `prescribed` is a FIELD NAME on the
- * Decision — it is data, and it must never reach a user-facing string.
+ * BANNED VOCABULARY. Never: detect, diagnose, risk, prevent, treat, symptom, condition,
+ * disorder, abnormal, medical, cardiac, patient, prescribe. Never, for tone: should, must,
+ * failed, missed, streak. Note `prescribed` is a FIELD NAME on the Decision — it is data and
+ * must never reach a user-facing string.
  *
  * NO RULE LOGIC OUTSIDE THE ENGINE. Nothing here compares a reading to a threshold or
  * computes a deviation. Tiles show the reading and the subject's usual value as two plain
  * facts; the delta the engine actually used is already prose inside fired_rules[].because.
- * Recomputing it here would be a second implementation of the comparison the rulebook owns.
  */
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
+import { LAYER_PILLAR, type PillarId } from "../theme/tokens";
+
 export interface Tile {
   label: string;
-  value: string | null;
-  detail?: string;
+  value: string;
+  unit: string;
+  detail: string;
+  pillar: PillarId;
+  unknown: boolean;
 }
 
 const round1 = (n: number): string => (Math.round(n * 10) / 10).toString();
 
-/**
- * One sentence for Today. Voice follows the state table in the design brief.
- *
- * Deliberately does not fill silence. On a quiet day it says one short thing and stops —
- * that restraint is the product's whole claim on the user's attention.
- */
+/** One sentence for Today. Follows the pack's verdict voice per state. */
 export function headlineFor(day: DemoDay): string {
   switch (day.app_state) {
     case "calibrating":
       return "Still learning your baseline.";
     case "partial":
-      return `In balance on what I can see. ${absentSignalSentence(day)}`;
+      return "In balance on what I can see.";
     case "in_balance":
       return "In balance today.";
     case "advisory":
-      return "Today's plan still works. I've adjusted the details.";
+      return "Tonight's plan changes.";
     case "intervention":
-      return "Today needs a different shape.";
+      return "Let's change tonight.";
     case "declined":
-      return "Noted. I've left today as you planned.";
+      return "Noted. Tonight stays as you planned.";
   }
 }
 
 /**
- * Names the signal that did not arrive.
+ * The line under the verdict.
  *
- * Honest about the gap rather than papering over it — an unevaluable rule is not a rule that
- * came out false, and the user is told which reading is absent rather than being reassured
- * on incomplete data.
+ * For `partial` it names what could not be checked. The pack is emphatic that "I could not
+ * evaluate" must never look like "you are fine", so the absent signal is stated rather than
+ * glossed.
  */
-function absentSignalSentence(day: DemoDay): string {
-  const biometrics = day.snapshot.biometrics ?? {};
-  const absent: string[] = [];
-  if (biometrics.hrv_ms === null || biometrics.hrv_ms === undefined) {
-    absent.push("Heart-rate variability");
+export function subFor(day: DemoDay): string | undefined {
+  if (day.app_state === "partial") {
+    const absent = absentLabels(day);
+    return absent.length === 0
+      ? "Some of today's readings haven't come through, so one rule couldn't be checked."
+      : `${absent.join(" and ")} hasn't come through, so one rule couldn't be checked at all.`;
   }
-  if (biometrics.sleep_deep_rem_pct === null || biometrics.sleep_deep_rem_pct === undefined) {
-    absent.push("Sleep");
-  }
-  if (absent.length === 0) return "Some of today's readings haven't arrived.";
-  return `${absent.join(" and ")} hasn't synced.`;
+  if (day.app_state === "in_balance") return "Nothing needs to change.";
+  if (day.app_state === "calibrating") return "Your food profile is already guiding you.";
+  return undefined;
 }
 
-/**
- * The signal tiles under the headline.
- *
- * A null reading renders as "Not available" — never as a zero, a dash or a flat line. Hard
- * constraint 2: never fake certainty.
- */
+function absentLabels(day: DemoDay): string[] {
+  const b = day.snapshot.biometrics ?? {};
+  const out: string[] = [];
+  if (b.hrv_ms === null || b.hrv_ms === undefined) out.push("Your variability");
+  if (b.sleep_deep_rem_pct === null || b.sleep_deep_rem_pct === undefined) out.push("Your sleep");
+  if (b.wrist_temp_delta_c === null || b.wrist_temp_delta_c === undefined) {
+    out.push("Your wrist temperature");
+  }
+  return out;
+}
+
+/** Signal tiles, pillar-coded per the pack: HRV air, resting HR fire, sleep ether, temp water. */
 export function signalTilesFor(day: DemoDay): Tile[] {
-  const bio = day.snapshot.biometrics ?? {};
+  const b = day.snapshot.biometrics ?? {};
   const base = day.snapshot.baselines ?? {};
 
-  const usual = (value: number | null | undefined, unit: string): string | undefined =>
-    value === null || value === undefined ? undefined : `usual ${round1(value)}${unit}`;
+  const usual = (v: number | null | undefined, unit: string): string =>
+    v === null || v === undefined ? "Baseline not ready yet" : `Your usual is ${round1(v)}${unit}`;
+
+  const absent = (v: number | null | undefined): boolean => v === null || v === undefined;
 
   return [
     {
-      label: "Variability",
-      value: bio.hrv_ms === null || bio.hrv_ms === undefined ? null : `${round1(bio.hrv_ms)} ms`,
-      detail: usual(base.hrv_ms, " ms"),
+      label: "HRV",
+      value: absent(b.hrv_ms) ? "" : round1(b.hrv_ms as number),
+      unit: "ms",
+      detail: absent(b.hrv_ms) ? "No reading today" : usual(base.hrv_ms, "ms"),
+      pillar: "air",
+      unknown: absent(b.hrv_ms),
     },
     {
-      label: "Resting heart rate",
-      value: bio.rhr_bpm === null || bio.rhr_bpm === undefined ? null : `${round1(bio.rhr_bpm)} bpm`,
-      detail: usual(base.rhr_bpm, " bpm"),
+      label: "Resting HR",
+      value: absent(b.rhr_bpm) ? "" : round1(b.rhr_bpm as number),
+      unit: "bpm",
+      detail: absent(b.rhr_bpm) ? "No reading today" : usual(base.rhr_bpm, ""),
+      pillar: "fire",
+      unknown: absent(b.rhr_bpm),
     },
     {
-      label: "Deep + REM",
-      value:
-        bio.sleep_deep_rem_pct === null || bio.sleep_deep_rem_pct === undefined
-          ? null
-          : `${round1(bio.sleep_deep_rem_pct)}%`,
-      detail: usual(base.sleep_deep_rem_pct, "%"),
+      label: "Sleep",
+      value: absent(b.sleep_deep_rem_pct) ? "" : round1(b.sleep_deep_rem_pct as number),
+      unit: "%",
+      detail: absent(b.sleep_deep_rem_pct)
+        ? "No reading today"
+        : usual(base.sleep_deep_rem_pct, "%"),
+      pillar: "ether",
+      unknown: absent(b.sleep_deep_rem_pct),
     },
     {
-      label: "Temperature",
-      value:
-        bio.wrist_temp_delta_c === null || bio.wrist_temp_delta_c === undefined
-          ? null
-          : `${bio.wrist_temp_delta_c > 0 ? "+" : ""}${round1(bio.wrist_temp_delta_c)} °C`,
-      detail: "vs your own baseline",
+      label: "Wrist temp",
+      value: absent(b.wrist_temp_delta_c)
+        ? ""
+        : `${(b.wrist_temp_delta_c as number) > 0 ? "+" : ""}${round1(b.wrist_temp_delta_c as number)}`,
+      unit: "°C",
+      detail: absent(b.wrist_temp_delta_c) ? "No reading today" : "Against your own baseline",
+      pillar: "water",
+      unknown: absent(b.wrist_temp_delta_c),
     },
   ];
 }
 
-/** Layer names as a user sees them. Rule ids live in the collapsed technical block only. */
+/** Layer names as a user sees them. Rule ids stay in the collapsed technical block. */
 export const LAYER_NAMES: Record<number, string> = {
   1: "Live biometrics",
   2: "Cycle phase",
@@ -118,3 +134,5 @@ export const LAYER_NAMES: Record<number, string> = {
   4: "Season and surroundings",
   5: "Lab results",
 };
+
+export const layerPillar = (layer: number): PillarId => LAYER_PILLAR[layer] ?? "earth";

@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weyos — MVP Design, all screens</title>
+<style>
+  :root{
+    /* ---- Weyos brand kit v3 ---- */
+    --cream:#FDF6F1; --ink:#2A2622; --dark-ground:#1C1A18; --accent:#C4794F;
+    --p-ether:#9C8794; --p-air:#9C8A66; --p-fire:#C4794F; --p-water:#6E8A87; --p-earth:#6B5038;
+    /* ---- derived UI ---- */
+    --surface:#FFFFFF; --surface-2:#F6EEE7; --line:#EADFD5;
+    --muted:#8A817A; --muted-2:#A79C93;
+    --danger:#A33A34;
+    --r-card:20px; --r-btn:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--dark-ground); color:var(--ink);
+    min-height:100vh; padding:22px 20px 60px;
+  }
+
+  /* ============================ prototype chrome ============================ */
+  .chrome{max-width:1560px;margin:0 auto;color:#E9E2DB}
+  .brandrow{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .brandrow h1{font-size:18px;margin:0;font-weight:600;letter-spacing:-.2px;color:#F5EFE9}
+  .chrome p.lede{margin:0;font-size:13px;color:#A79C93;line-height:1.55;max-width:1000px}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding:12px;background:#26231F;border-radius:14px}
+  .ctl-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:#8A817A;margin-right:2px;font-weight:600}
+  .seg{display:flex;background:#1C1A18;border-radius:10px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;color:#B3A99F;font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:#3A342E;color:#FDF6F1}
+  .ghost{border:1px solid #453E37;background:transparent;color:#D8CFC6;font-size:12.5px;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:500}
+  .ghost:hover{background:#332E29}
+  .ghost.hot{border-color:var(--accent);color:#E0A277}
+
+  /* ============================ flow board ============================ */
+  #flowView{max-width:1560px;margin:22px auto 0}
+  .flowmap{background:#26231F;border-radius:16px;padding:20px;margin-bottom:26px;overflow-x:auto}
+  .flowmap h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#8A817A;margin:0 0 14px;font-weight:600}
+  .secgroup{margin-bottom:34px}
+  .sechead{display:flex;align-items:baseline;gap:12px;margin:0 0 4px;flex-wrap:wrap}
+  .sechead .code{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+  .sechead h3{font-size:19px;margin:0;color:#F5EFE9;font-weight:600;letter-spacing:-.2px}
+  .sechead .cnt{font-size:12px;color:#8A817A}
+  .secnote{font-size:13px;color:#A79C93;margin:0 0 16px;line-height:1.55;max-width:900px}
+  .rail{display:flex;gap:18px;overflow-x:auto;padding:6px 2px 18px;align-items:flex-start}
+  .rail::-webkit-scrollbar{height:9px}
+  .rail::-webkit-scrollbar-thumb{background:#453E37;border-radius:5px}
+  .rail::-webkit-scrollbar-track{background:#26231F;border-radius:5px}
+  .cell{flex:none;width:var(--fw)}
+  .celltop{display:flex;align-items:baseline;gap:7px;margin-bottom:7px;min-height:17px}
+  .celltop .id{font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+  .celltop .nm{font-size:12px;color:#D8CFC6;font-weight:500}
+  .cellnote{font-size:11.5px;color:#8A817A;line-height:1.45;margin-top:8px;min-height:32px}
+  .mini{
+    width:var(--fw);height:var(--fh);border-radius:26px;border:6px solid #0F0D0C;
+    background:var(--cream);overflow:hidden;position:relative;box-shadow:0 12px 30px rgba(0,0,0,.45);
+    cursor:pointer;
+  }
+  .mini:hover{box-shadow:0 12px 34px rgba(196,121,79,.35)}
+  .mini .scaler{width:390px;height:844px;transform-origin:0 0;position:absolute;top:0;left:0}
+  .mini .sb{height:42px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 5px;font-size:12.5px;font-weight:600}
+  .mini .pg{position:absolute;inset:42px 0 0 0;overflow:hidden;padding:0 20px 20px}
+  .arrowcell{flex:none;align-self:center;color:#5A5148;font-size:20px;padding:0 2px;margin-top:40px}
+
+  /* ============================ single phone ============================ */
+  #protoView{display:none;flex-direction:column;align-items:center;gap:18px;margin-top:22px}
+  .phone{width:390px;height:844px;background:var(--cream);border-radius:44px;border:11px solid #0F0D0C;position:relative;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);flex:none}
+  .phone .sb{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font-size:12.5px;font-weight:600}
+  .phone .pg{position:absolute;inset:46px 0 0 0;overflow-y:auto;padding:0 20px 110px;animation:rise .22s ease-out}
+  .phone .pg::-webkit-scrollbar{width:0}
+  @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .protohint{color:#8A817A;font-size:12.5px;max-width:520px;text-align:center;line-height:1.6}
+
+  /* ============================ shared screen styles ============================ */
+  .h-date{font-size:13px;color:var(--muted);padding-top:14px;letter-spacing:.02em}
+  .verdict{font-size:31px;line-height:1.16;font-weight:600;letter-spacing:-.5px;margin:12px 0 0}
+  .title{font-size:24px;font-weight:600;letter-spacing:-.3px;margin:16px 0 4px;line-height:1.25}
+  .sect{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin:24px 0 10px}
+  .body{font-size:15.5px;line-height:1.55;margin:8px 0}
+  .sub{font-size:14px;line-height:1.5;color:var(--muted);margin:6px 0}
+  .cap{font-size:12.5px;color:var(--muted);line-height:1.45}
+  .glyph{font-size:22px;vertical-align:2px;margin-right:6px}
+
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+  .chip.warm{background:#F7E7DA;color:#8E4F26}
+  .chip.calm{background:#E7E0D6;color:#5A4430}
+  .chip.act{background:var(--accent);color:#fff}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:17px;margin:12px 0}
+  .card.flat{background:var(--surface-2);border-color:transparent}
+  .card.tap{cursor:pointer}
+  .rowlink{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px;cursor:pointer;position:relative;overflow:hidden}
+  .tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pc,transparent)}
+  .tile .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px}
+  .tile .k i{width:7px;height:7px;border-radius:50%;background:var(--pc);display:inline-block;font-style:normal;flex:none}
+  .tile .v{font-size:24px;font-weight:600;letter-spacing:-.5px;margin-top:6px}
+  .tile .d{font-size:12px;margin-top:3px;color:var(--muted);line-height:1.35}
+  .tile.unknown .v{color:var(--muted-2);font-size:17px;font-weight:500;padding-top:5px}
+  .tile.flag{background:#FEF8F2;border-color:#EBD3BE}
+
+  .planrow{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .planrow:last-child{border-bottom:0}
+  .planrow .t{font-size:13px;color:var(--muted);width:66px;flex:none;padding-top:2px;font-variant-numeric:tabular-nums}
+  .strike{text-decoration:line-through;color:var(--muted)}
+  .arrow{color:var(--accent);font-weight:700}
+
+  .btn{display:block;width:100%;text-align:center;border:0;border-radius:var(--r-btn);padding:15px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:10px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  .btn.quiet{background:transparent;color:var(--muted);font-weight:500;font-size:15px;padding:12px}
+  .btnrow{display:flex;gap:10px}
+  .btnrow .btn{margin-top:0}
+  .link{color:var(--accent);font-size:14.5px;font-weight:600;cursor:pointer;display:inline-block;margin-top:12px}
+  .back{font-size:15px;color:var(--muted);cursor:pointer;padding:15px 0 2px;display:inline-block;font-weight:500}
+
+  .trace{border-left:3px solid var(--line);padding-left:14px;margin:14px 0}
+  .trace.l1{border-color:var(--p-fire)}
+  .trace.l2{border-color:var(--p-ether)}
+  .trace.l3{border-color:var(--p-earth)}
+  .trace.l4{border-color:var(--p-water)}
+  .trace.l5{border-color:var(--p-air)}
+  .trace.off{border-color:var(--line);opacity:.6}
+  .trace .n{font-size:15px;font-weight:600}
+  .trace .lay{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-top:2px}
+  .trace .e{font-size:14px;color:var(--muted);margin-top:7px;line-height:1.5}
+  .trace .o{font-size:14px;margin-top:5px;line-height:1.5}
+  .warnbox{background:#FBF0E4;border:1px solid #E9D2B9;border-radius:14px;padding:13px;margin:14px 0;font-size:13.5px;line-height:1.5;color:#7E5426}
+  .note{font-size:12px;color:#8A817A;background:var(--surface-2);border-radius:10px;padding:9px 11px;margin-top:14px;line-height:1.45}
+  .disclaim{font-size:12px;color:var(--muted);line-height:1.5;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+
+  .togrow{display:flex;gap:14px;align-items:flex-start;padding:15px 0;border-bottom:1px solid var(--line)}
+  .togrow:last-child{border-bottom:0}
+  .togrow .tx{flex:1}
+  .togrow .tn{font-size:15px;font-weight:600}
+  .togrow .td{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+  .switch{width:47px;height:28px;border-radius:999px;background:#DED3C8;position:relative;flex:none;cursor:pointer;transition:background .18s;margin-top:2px}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.22)}
+  .switch.on{background:var(--p-earth)}
+  .switch.on::after{left:22px}
+  .switch.locked{background:var(--p-earth);opacity:.42}
+  .switch.locked::after{left:22px}
+
+  .check{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .check:last-child{border-bottom:0}
+  .box{width:21px;height:21px;border-radius:7px;border:2px solid #D6CABE;flex:none;position:relative}
+  .check.done .box{background:var(--p-earth);border-color:var(--p-earth)}
+  .check.done .box::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .check.done .cl{color:var(--muted);text-decoration:line-through}
+  .cl{font-size:15px}
+
+  .toggle2{display:flex;background:var(--surface-2);border-radius:12px;padding:4px;margin:14px 0}
+  .toggle2 button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px;font-size:14px;font-weight:600;font-family:inherit;color:var(--muted);cursor:pointer}
+  .toggle2 button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(253,246,241,.95);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:9px 6px 0;z-index:20}
+  .tab{flex:1;text-align:center;cursor:pointer;padding-top:6px}
+  .tab .ic{font-size:18px;line-height:1;opacity:.38}
+  .tab .lb{font-size:10.5px;margin-top:5px;color:var(--muted);font-weight:600}
+  .tab.on .ic{opacity:1}
+  .tab.on .lb{color:var(--accent)}
+
+  .tl{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .tl:last-child{border-bottom:0}
+  .tl .bar{width:3px;border-radius:2px;flex:none;background:var(--line)}
+  .tl.i .bar{background:var(--p-fire)} .tl.a .bar{background:var(--p-air)}
+  .tl.c .bar{background:var(--p-earth)} .tl.p .bar{background:var(--muted-2)}
+  .tl .d{font-size:12px;color:var(--muted)}
+  .tl .t{font-size:15px;font-weight:600;margin-top:3px;line-height:1.35}
+  .tl .r{font-size:13px;color:var(--muted);margin-top:4px}
+
+  .trend{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}
+  .spark{width:100%;height:76px;display:block;margin-top:10px}
+  .pacer{width:170px;height:170px;border-radius:50%;background:#F1E3D6;margin:30px auto 0;display:flex;align-items:center;justify-content:center}
+  .pacer span{font-size:15px;color:#8E4F26;font-weight:600}
+  .notif{background:rgba(253,246,241,.97);border-radius:19px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.2);cursor:pointer}
+  .notif .nh{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.03em}
+  .notif .nt{font-size:14.5px;font-weight:600}
+  .notif .nb{font-size:14px;color:#463F39;margin-top:3px;line-height:1.4}
+  .stepdots{display:flex;gap:5px;margin:18px 0 0}
+  .stepdots i{height:3px;flex:1;border-radius:2px;background:var(--line)}
+  .stepdots i.on{background:var(--accent)}
+  .pillrow{display:flex;gap:6px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .pilllab{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);font-weight:600}
+  .pilllab i{width:8px;height:8px;border-radius:50%;display:inline-block;font-style:normal}
+  .takeover{position:absolute;inset:0;background:var(--cream);z-index:40;padding:32px 24px 24px;overflow-y:auto}
+  .to-kicker{font-size:11.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--accent);font-weight:700}
+  .to-what{font-size:25px;line-height:1.26;font-weight:600;letter-spacing:-.4px;margin:12px 0 0}
+  .evid{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+  .swap{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px;margin-top:20px}
+  .legend{max-width:1560px;margin:30px auto 0;color:#8A817A;font-size:12.5px;line-height:1.7}
+  .legend strong{color:#D8CFC6}
+
+  /* ==================== v0.5 — the wrapper (conversational root) ==================== */
+  .wrapcol{display:flex;flex-direction:column;min-height:100%}
+  .wrap-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 0 2px}
+  .wrap-state{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600}
+  .wrap-state .g{font-size:17px;line-height:1}
+  .wrap-open{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer;white-space:nowrap}
+  .chat{display:flex;flex-direction:column;gap:11px;margin-top:18px}
+  .bub{max-width:85%;padding:13px 15px;border-radius:19px;font-size:15px;line-height:1.5}
+  .bub.w{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:7px;align-self:flex-start}
+  .bub.u{background:var(--p-earth);color:#FDF6F1;border-bottom-right-radius:7px;align-self:flex-end}
+  .bub.quiet{background:transparent;border:0;color:var(--muted);font-size:13.5px;padding:2px;max-width:100%;line-height:1.5}
+  .cite{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#7E5426;
+    background:#FBF0E4;border:1px solid #E9D2B9;border-radius:999px;padding:7px 13px;cursor:pointer;max-width:100%;line-height:1.3}
+  .refuse{align-self:flex-start;max-width:88%;background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--muted-2);
+    border-radius:14px;padding:13px 15px;font-size:14.5px;line-height:1.5}
+  .refuse .rh{font-weight:600;margin-bottom:6px}
+  .refuse.care{border-left-color:var(--p-water);background:#EEF2F1}
+  .chatbar{margin-top:auto;padding:14px 0 20px;display:flex;gap:10px;align-items:center}
+  .chatfield{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:13px 17px;font-size:15px;color:var(--muted-2)}
+  .micbtn{width:46px;height:46px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;
+    justify-content:center;font-size:15px;flex:none;cursor:pointer}
+  .micbtn.live{background:var(--danger)}
+  .wave{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:58px;margin:6px 0 2px}
+  .wave i{width:4px;border-radius:2px;background:var(--accent);display:block}
+
+  /* badges + deferral on the flow board */
+  .celltop .badge{margin-left:auto}
+  .badge{font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 7px;border-radius:999px;white-space:nowrap}
+  .badge.new{background:#3A2E26;color:#E0A277;border:1px solid #7A4E32}
+  .badge.p2{background:#2A2A2E;color:#9A93A8;border:1px solid #4A4553}
+  .cell.deferred .mini{opacity:.4;filter:saturate(.3)}
+  .callout{max-width:1560px;margin:20px auto 0;background:#2A241F;border:1px solid #5A4534;border-radius:14px;padding:17px 19px;
+    color:#B3A99F;font-size:13px;line-height:1.65}
+  .callout h4{margin:0 0 9px;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .callout strong{color:#F5EFE9}
+  .callout .cols{display:flex;gap:26px;flex-wrap:wrap;margin-top:4px}
+  .callout .cols>div{flex:1;min-width:280px}
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="brandrow">
+    <svg width="150" height="40" viewBox="0 0 268 72" aria-label="Weyos">
+      <g transform="translate(58,42) scale(0.72)" fill="none" stroke-width="5" stroke-linecap="round">
+        <path d="M-50 10 Q0 -66 50 10" stroke="#C4794F" opacity="1"/>
+        <path d="M-40 14 Q0 -46 40 14" stroke="#C4794F" opacity=".8"/>
+        <path d="M-30 18 Q0 -26 30 18" stroke="#C4794F" opacity=".62"/>
+        <path d="M-20 22 Q0 -6 20 22" stroke="#C4794F" opacity=".44"/>
+        <path d="M-10 26 Q0 14 10 26" stroke="#C4794F" opacity=".28"/>
+      </g>
+      <text x="122" y="54" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="32" font-weight="500" letter-spacing="3" fill="#FDF6F1">weyos</text>
+    </svg>
+    <h1 style="margin-left:4px">MVP design — every screen <span style="font-weight:400;color:#8A817A">v0.5 · wrapper in Phase 1 · brand kit v3</span></h1>
+  </div>
+  <p class="lede">All 56 MVP surfaces, on the Weyos palette. <strong style="color:#E0A277">v0.5 adds the conversational wrapper as the app's root surface</strong> (section W), brings the board up to spec v0.4 (B8, H9), and adds wrapper controls (H10). Signal tiles are pillar-coded per the brand sheet — Air carries HRV, Fire metabolic load, Ether sleep depth, Water temperature, Earth recovery — always paired with the signal's name, never colour alone. The mark doubles as a live state readout: the lit arc is the pillar driving the decision. Decisions follow the real precedence (L1 &gt; L5 &gt; L2 &gt; L3 &gt; L4) and the reverse-precedence food chain.</p>
+  <div class="controls">
+    <span class="ctl-label">View</span>
+    <div class="seg" id="segView">
+      <button data-v="flow" class="on">Flow — all screens</button>
+      <button data-v="proto">Prototype — clickable</button>
+    </div>
+    <span class="ctl-label" style="margin-left:8px">Persona</span>
+    <div class="seg" id="segPersona">
+      <button data-p="sarah" class="on">Sarah · UK</button>
+      <button data-p="james">James · UK</button>
+      <button data-p="alex">Alex · US</button>
+    </div>
+    <span class="ctl-label" style="margin-left:8px">Size</span>
+    <div class="seg" id="segZoom">
+      <button data-z="0.46">S</button>
+      <button data-z="0.60" class="on">M</button>
+      <button data-z="0.78">L</button>
+    </div>
+    <button class="ghost" id="btnValidated">Validated signals only: off</button>
+  </div>
+</div>
+
+<div class="callout">
+  <h4>What changed in v0.5 — and the decision it still needs</h4>
+  <div class="cols">
+    <div>
+      <p style="margin:0 0 8px"><strong>The wrapper is built to reading (a): a conversational interface <em>over</em> the deterministic engine.</strong> Every claim it makes traces to a rule that actually fired. It reports the engine; it does not reason on its own. That is what keeps the wellness positioning, the banned-vocabulary rule and the decision trace intact.</p>
+      <p style="margin:0"><strong>Reading (b) — a generative advisor</strong> that answers open questions from its own knowledge — is a different product and is <em>not</em> drawn here. It needs legal review before it is estimated, because free generation cannot be held to the §6 vocabulary ban.</p>
+    </div>
+    <div>
+      <p style="margin:0 0 8px"><strong>The quiet-day problem is the crux (W1).</strong> Principle 1 says nothing should reward opening the app; Pav's wrapper is the front door on every session. The reconciliation drawn here: the wrapper opens, states where you are, and then stops talking. It never greets, never prompts, never asks how you are unless you speak first.</p>
+      <p style="margin:0"><strong>Still open:</strong> does the wrapper replace the A1–A11 form onboarding (W7 shows the progressive alternative Pav asked about), and does it ship in Phase 1 or 1.5? It does not fit inside 691h either way.</p>
+    </div>
+  </div>
+</div>
+
+<div id="flowView"></div>
+
+<div id="protoView">
+  <div class="phone">
+    <div class="sb"><span id="pClock">18:04</span><span style="letter-spacing:2px">▮▮▮ ᯤ ▰</span></div>
+    <div class="pg" id="pPage"></div>
+    <div class="tabbar" id="pTabs">
+      <div class="tab on" data-tab="B3"><div class="ic">◐</div><div class="lb">Today</div></div>
+      <div class="tab" data-tab="F1"><div class="ic">☰</div><div class="lb">Plan</div></div>
+      <div class="tab" data-tab="G1"><div class="ic">◇</div><div class="lb">Insights</div></div>
+      <div class="tab" data-tab="H1"><div class="ic">○</div><div class="lb">You</div></div>
+    </div>
+  </div>
+  <div class="protohint">Tap anything underlined or any card with a › to move through the app. Use the browser back gesture or the on-screen ‹ Back.</div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<script>
+/* =====================================================================
+   WEYOS — MVP design, all screens
+   Brand kit v3. Palette, pillar semantics and the mark-as-state-display
+   come straight from Weyos_Brand_Sheet.html / tokens.json.
+   ===================================================================== */
+
+const PILLAR = {ether:'#9C8794', air:'#9C8A66', fire:'#C4794F', water:'#6E8A87', earth:'#6B5038'};
+
+/* the five arcs, outermost (ether) to innermost (earth) — order is the meaning */
+const ARCS = [
+  ['ether','M-50 10 Q0 -66 50 10'],
+  ['air',  'M-40 14 Q0 -46 40 14'],
+  ['fire', 'M-30 18 Q0 -26 30 18'],
+  ['water','M-20 22 Q0 -6 20 22'],
+  ['earth','M-10 26 Q0 14 10 26']
+];
+/* mark(lit) — one arc lit, the rest at 12% ink, exactly as the brand sheet specifies */
+function mark(lit, w){
+  w = w || 78;
+  const s = (w/116);
+  const paths = ARCS.map(([k,d])=>{
+    const on = (lit===k);
+    return '<path d="'+d+'" stroke="'+(on?PILLAR[k]:'#2A2622')+'" opacity="'+(on?1:0.12)+'"/>';
+  }).join('');
+  return '<svg width="'+w+'" height="'+(w*52/116)+'" viewBox="0 0 116 52" aria-hidden="true">'
+    +'<g transform="translate(58,32)" fill="none" stroke-width="5" stroke-linecap="round">'+paths+'</g></svg>';
+}
+/* mono lockup for chrome-like placements */
+function lockup(w){
+  w=w||120;
+  const paths = ARCS.map(([k,d],i)=>'<path d="'+d+'" stroke="#C4794F" opacity="'+[1,.8,.62,.44,.28][i]+'"/>').join('');
+  return '<svg width="'+w+'" height="'+(w*72/268)+'" viewBox="0 0 268 72" aria-label="Weyos">'
+    +'<g transform="translate(58,42) scale(0.72)" fill="none" stroke-width="5" stroke-linecap="round">'+paths+'</g>'
+    +'<text x="122" y="54" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="32" font-weight="500" letter-spacing="3" fill="#2A2622">weyos</text></svg>';
+}
+
+/* ---------------------------------------------------------------- STATES
+   State colour comes from the pillar palette (tokens.json: "pillar colours
+   are state colours"). Buttons stay Fire/accent only — no Water buttons.
+   Every state also carries a distinct glyph and word: never colour alone. */
+const STATE = {
+  calibrating:{g:'◇', c:'var(--muted-2)', w:'Calibrating'},
+  partial:    {g:'◐', c:'var(--muted-2)', w:'Partial'},
+  balance:    {g:'●', c:'var(--p-earth)', w:'In balance'},
+  advisory:   {g:'▲', c:'var(--p-air)',   w:'Advisory'},
+  intervene:  {g:'◆', c:'var(--p-fire)',  w:'Intervention'},
+  declined:   {g:'○', c:'var(--muted-2)', w:'Declined'}
+};
+
+/* ================================================================= DATA */
+const P = {
+  sarah:{
+    name:'Sarah', region:'UK', city:'London',
+    meta:'London, UK · Air-and-Ether type (Vata) · cycle day 20',
+    profileLine:'Air + Ether', dosha:'Vata', pillar:'air',
+    labs:'1 value on file · HbA1c, in range',
+    env:'On · London · 19°C, no heat rule active',
+    calib:{daysIn:7,total:21},
+    calibSub:'Baseline is 7 days in. Your food profile is already guiding you — your biometrics need another two weeks.',
+    calmSignals:[
+      {k:'HRV',p:'air',v:'54',u:'ms',b:55,d:'About your usual (55ms)'},
+      {k:'Resting HR',p:'fire',v:'63',u:'bpm',b:62,d:'About your usual (62)'},
+      {k:'Sleep',p:'ether',v:'7h 35m',u:'',d:'Deep + REM at 91% of your usual'},
+      {k:'Wrist temp',p:'water',v:'+0.1',u:'°C',d:'About your usual'}
+    ],
+    signals:[
+      {k:'HRV',p:'air',v:'43',u:'ms',b:55,d:'22% below your usual (55ms)',flag:true},
+      {k:'Resting HR',p:'fire',v:'69',u:'bpm',b:62,d:'7 above your usual (62)',flag:true},
+      {k:'Sleep',p:'ether',v:'6h 20m',u:'',d:'Deep + REM at 58% of your usual',flag:true},
+      {k:'Wrist temp',p:'water',v:'+0.2',u:'°C',d:'About your usual'}
+    ],
+    defaultState:'balance', drivingPillar:'air',
+    calm:{v:'In balance today.', s:'Nothing needs to change. Your cycle phase is shaping tonight’s food, and that’s all.'},
+    balance:{v:'In balance today.', s:'Nothing needs to change. Your cycle phase is shaping tonight’s food, and that’s all.'},
+    advisory:{v:'Tonight’s plan changes.', s:'You’re on day 20 — luteal. Heavy intensity is off, and I’ve raised tonight’s carbohydrates.',
+      planChange:true, to:'45-min steady walk', note:'No notification for this. Weyos only interrupts you when your live body says so.'},
+    interv:{
+      what:'Your HRV is 22% below your usual, your deep sleep is well down, and you’re on day 20 of your cycle.',
+      evid:['HRV 43ms · usual 55ms','Deep + REM 58% of usual','Cycle day 20 · luteal'],
+      time:'18:30', from:'Intense evening run', to:'20-min warming Vinyasa',
+      food:'+ tonight’s food adjusted',
+      notif:['Let’s change tonight','Your HRV is 22% below your usual and your deep sleep is down. I’ve swapped your 6:30 PM run for something restorative.']
+    },
+    plan:[['18:30','Intense evening run'],['07:15','Morning walk','done']],
+    act:{name:'20-min warming Vinyasa', tag:'Restorative', dur:'20 min', pillar:'earth',
+      why:'Your recovery hasn’t caught up and your deep sleep was short, and in the luteal phase your body is already working harder at rest. Warm, slow movement gives you the session without the cost.',
+      steps:['4 min — settle and warm','10 min — slow flow','6 min — floor and breath'],
+      timer:'19:42', stage:'Settle and warm · 1 of 3'},
+    meal:{name:'Warming red lentil, spinach & ginger stew', time:'35 min',
+      why:'Warm and grounding for your food profile, with the complex carbohydrates your luteal phase asks for — and rich in magnesium, which your live signals called for.',
+      count:'4 added · 2 set aside',
+      budget:{store:'Tesco or Sainsbury’s · about £8.40 for two servings',
+        items:['Red split lentils, 500g','Baby spinach, 200g','Pumpkin seeds, 100g','Sweet potatoes, 2','Root ginger','Ground turmeric','Chamomile & tulsi tea']},
+      premium:{store:'Waitrose or Ocado · about £16.20 for two servings',
+        items:['Organic red split lentils','Organic baby spinach','Activated pumpkin seeds','Organic sweet potatoes','Fresh root ginger & turmeric','Bone broth base','Chamomile & tulsi tea']},
+      supp:[['Vitamin D3 with K2','Routine for a UK winter, not tied to a reading'],['Magnesium-rich foods tonight','Preferred over a supplement while your recovery is low']]},
+    trace:[
+      ['l1','Live biometrics','Layer 1 · highest priority','HRV 43ms — 22% below your 14-day average of 55ms.','→ High-intensity training paused. Restorative movement instead. Magnesium-rich foods added.'],
+      ['l1','Live biometrics','Layer 1 · highest priority','Deep and REM sleep at 58% of your baseline.','→ No caffeine after midday tomorrow. A grounding, high-protein breakfast within an hour of waking.'],
+      ['l2','Cycle phase','Layer 2','Day 20 — luteal phase.','→ Heavy intensity blocked, downgraded to gentle movement. Complex carbohydrates mandated, roughly +200 kcal.'],
+      ['l3','Your food profile','Layer 3','Air and Ether type.','→ Raw and cold foods set aside. Warm, grounding, oily foods preferred.']
+    ],
+    traceOff:[
+      ['Immune and inflammatory response','Layer 1','Your wrist temperature is normal, so this rule did not fire.'],
+      ['Lab overrides','Layer 5','Your HbA1c is on file and in range, so nothing from your labs applies tonight.'],
+      ['Environment','Layer 4','No heat rule, no seasonal rule and no full moon today.']
+    ],
+    tech:'Fired: 1.1, 1.2, 2.3, 3.1 · Not fired: 1.3 (FALSE), 5.3 (FALSE), 4.1 / 4.2 / 4.3 (FALSE)',
+    foodTrace:[
+      ['l4','Environment','Layer 4 · applied first','No environmental modifier tonight — nothing added or removed.'],
+      ['l3','Your food profile','Layer 3','Raw salad and chilled yoghurt removed; warm stewed vegetables in their place. Cold and raw foods don’t suit an Air-and-Ether profile.'],
+      ['l2','Your cycle','Layer 2','Sweet potato and red lentils added — complex carbohydrates for the luteal phase, roughly +200 kcal.'],
+      ['l5','Your labs','Layer 5','Your HbA1c is in range, so the carbohydrates added above were left in place.'],
+      ['l1','Your biometrics','Layer 1 · applied last','Spinach and pumpkin seeds added — magnesium, for a system that hasn’t recovered.']
+    ],
+    foodWarn:null,
+    tl:[['i','Today · 18:04','HRV 22% below baseline, deep sleep down','Run swapped for Vinyasa · you accepted'],
+        ['a','Mon · 08:10','Luteal phase carbohydrates','Food adjusted · no action needed'],
+        ['c','Sun','In balance',null],
+        ['i','Fri · 19:20','HRV down and deep sleep short','Evening session dropped · you declined']]
+  },
+
+  james:{
+    name:'James', region:'UK', city:'London',
+    meta:'London, UK · Earth-and-Water type (Kapha)',
+    profileLine:'Earth + Water', dosha:'Kapha', pillar:'earth',
+    labs:'2 values on file · hs-CRP raised, HbA1c in range',
+    env:'On · London · 17°C, no heat rule active',
+    calib:{daysIn:11,total:21},
+    calibSub:'Baseline is 11 days in. Your food profile and your lab results are already guiding you.',
+    calmSignals:[
+      {k:'HRV',p:'air',v:'47',u:'ms',b:48,d:'About your usual (48ms)'},
+      {k:'Resting HR',p:'fire',v:'78',u:'bpm',b:62,d:'26% above your usual (62)',flag:true},
+      {k:'Sleep',p:'ether',v:'6h 55m',u:'',d:'Deep + REM at 82% of your usual'},
+      {k:'Wrist temp',p:'water',v:'—',u:'',d:'No reading since Monday',unknown:true}
+    ],
+    signals:[
+      {k:'HRV',p:'air',v:'47',u:'ms',b:48,d:'About your usual (48ms)'},
+      {k:'Resting HR',p:'fire',v:'78',u:'bpm',b:62,d:'26% above your usual (62)',flag:true},
+      {k:'Sleep',p:'ether',v:'6h 40m',u:'',d:'Deep + REM at 78% of your usual'},
+      {k:'Wrist temp',p:'water',v:'+0.6',u:'°C',d:'Above your usual, first reading since Monday',flag:true}
+    ],
+    defaultState:'partial', drivingPillar:'water',
+    calm:{v:'In balance on what I can see.', s:'No rule fired on the signals I have. Your wrist temperature hasn’t come through since Monday, so one rule couldn’t be checked at all.'},
+    balance:{v:'In balance today.', s:'Nothing needs to change. Your raised hs-CRP is shaping tonight’s food, and that’s all.',
+      unreachable:'James doesn’t reach this state today — his wrist temperature is missing, so he sits in B2 Partial instead. Shown here so the state is designed.'},
+    partialFlag:'Two things worth knowing. Your resting heart rate is well above your usual, and no rule currently fires on that alone. And with no wrist temperature, I can’t check your immune and inflammatory rule either way — so I’m not telling you you’re fine.',
+    advisory:{v:'Your plan stands.', s:'Nothing in your live signals needs changing tonight. Your raised hs-CRP is still shaping what I suggest you eat.',
+      planChange:false, note:'An advisory doesn’t always touch your plan. Here only the food changed, so the run stays exactly as you set it.'},
+    interv:{
+      what:'Your wrist temperature has come through raised, and your resting heart rate is 26% above your usual.',
+      evid:['Wrist temp +0.6°C','Resting HR 78 · usual 62'],
+      time:'18:00', from:'Evening run, outdoors', to:'Rest tonight',
+      food:'+ a warm, light dinner instead',
+      notif:['Let’s rest tonight','Your wrist temperature came through raised, with your resting heart rate up. That combination means rest, not a run.']
+    },
+    plan:[['18:00','Evening run, outdoors'],['12:30','Walk to lunch','done']],
+    act:{name:'Rest tonight', tag:'Rest', dur:'—', pillar:'earth',
+      why:'A raised wrist temperature together with a raised resting heart rate is the one combination where Weyos asks for nothing at all. No session, an early night, and plenty of fluids.',
+      steps:['Skip tonight’s session entirely','Aim to be in bed an hour early','Fluids through the evening'],
+      timer:'—', stage:'Nothing to do'},
+    meal:{name:'Warm chicken & ginger broth bowl', time:'25 min',
+      why:'Light, warm and stimulating for your food profile, built around the broth-and-ginger base your live signals asked for, and free of the refined sugar and seed oils your raised hs-CRP rules out.',
+      count:'3 added · 4 set aside',
+      budget:{store:'Tesco or Sainsbury’s · about £7.10 for two servings',
+        items:['Chicken thighs or firm tofu, 400g','Chicken or vegetable broth, 1L','Root ginger','Tenderstem broccoli','Ground turmeric','Brown basmati rice']},
+      premium:{store:'Waitrose or Ocado · about £14.80 for two servings',
+        items:['Free-range chicken thighs','Fresh bone broth, 1L','Fresh root ginger & turmeric','Organic tenderstem broccoli','Wholegrain freekeh','Cold-pressed olive oil']},
+      supp:[['Zinc-rich foods tonight','From the immune rule that fired'],['Oily fish two or three times a week','A standing suggestion while hs-CRP is raised']]},
+    trace:[
+      ['l1','Live biometrics','Layer 1 · highest priority','Wrist temperature 0.6°C above your usual, with your resting heart rate at 78 against a usual 62.','→ Rest mandated. All exercise off tonight. Broth, ginger and zinc-rich foods added.'],
+      ['l5','Your lab results','Layer 5','hs-CRP raised on your last panel.','→ Refined sugar and seed oils set aside. Oily fish and turmeric preferred.'],
+      ['l3','Your food profile','Layer 3','Earth-and-Water type.','→ Heavy, sweet, oily and dairy foods set aside. Light, dry, warm and stimulating foods preferred.']
+    ],
+    traceOff:[
+      ['Sympathetic overload','Layer 1','Your HRV is within your usual range.'],
+      ['Cycle phase','Layer 2','Not applicable to you.'],
+      ['Environment','Layer 4','No heat rule, no seasonal rule and no full moon today.']
+    ],
+    tech:'Fired: 1.3, 5.2, 3.3 · Not fired: 1.1 (FALSE), 1.2 (FALSE), 4.x (FALSE) · Candidate 1.4 not in rulebook v1',
+    calmTrace:[
+      ['l5','Your lab results','Layer 5','hs-CRP raised on your last panel.','→ Refined sugar and seed oils set aside. Oily fish and turmeric preferred.'],
+      ['l3','Your food profile','Layer 3','Earth-and-Water type.','→ Heavy, sweet, oily and dairy foods set aside. Light, dry, warm and stimulating foods preferred.']
+    ],
+    calmTraceOff:[
+      ['Immune and inflammatory response','Layer 1 · could not be checked','This rule needs your wrist temperature together with your resting heart rate. There has been no wrist temperature since Monday, so Weyos cannot say whether it applies. It is not being treated as a no.'],
+      ['Sympathetic overload','Layer 1','Your HRV is within your usual range.'],
+      ['Raised resting heart rate on its own','Layer 1 · not in the rulebook','Your resting heart rate is 26% above your usual. No rule in the current rulebook fires on a raised resting heart rate alone, so nothing changed. This gap is under review.'],
+      ['Cycle phase','Layer 2','Not applicable to you.'],
+      ['Environment','Layer 4','No heat rule, no seasonal rule and no full moon today.']
+    ],
+    calmTech:'Fired: 5.2, 3.3 · UNKNOWN: 1.3 (wrist temp missing) · Not fired: 1.1 (FALSE), 1.2 (FALSE), 4.x (FALSE) · Fixture F5',
+    foodTrace:[
+      ['l4','Environment','Layer 4 · applied first','No environmental modifier tonight — nothing added or removed.'],
+      ['l3','Your food profile','Layer 3','Creamy sauce and cheese removed. Ginger and black pepper added — heavy and dairy-rich foods don’t suit an Earth-and-Water profile, warming and stimulating ones do.'],
+      ['l2','Your cycle','Layer 2','Not applicable to you.'],
+      ['l5','Your labs','Layer 5','Honey glaze and the seed-oil dressing removed — your raised hs-CRP rules out refined sugar and seed oils.'],
+      ['l1','Your biometrics','Layer 1 · applied last','Broth base added, and zinc-rich foods with it. Your food profile already wanted the ginger, so nothing had to be overruled.']
+    ],
+    foodWarn:null,
+    tl:[['p','Today','Wrist temperature missing','Rule 1.3 could not be checked · nothing changed'],
+        ['a','Tue · 08:00','hs-CRP raised','Food filter applied · ongoing'],
+        ['c','Mon','In balance',null],
+        ['c','Sun','In balance',null]]
+  },
+
+  alex:{
+    name:'Alex', region:'US', city:'New York City',
+    meta:'New York City, US · Fire-and-Water type (Pitta)',
+    profileLine:'Fire + Water', dosha:'Pitta', pillar:'fire',
+    labs:'No values on file',
+    env:'On · New York City · 86°F, heat rule active',
+    calib:{daysIn:4,total:21},
+    calibSub:'Baseline is 4 days in. Your food profile is already guiding you — your biometrics need another two and a half weeks.',
+    calmSignals:[
+      {k:'HRV',p:'air',v:'59',u:'ms',b:60,d:'About your usual (60ms)'},
+      {k:'Resting HR',p:'fire',v:'58',u:'bpm',b:58,d:'Your usual (58)'},
+      {k:'Sleep',p:'ether',v:'7h 44m',u:'',d:'Deep + REM at 94% of your usual'},
+      {k:'Skin temp',p:'water',v:'+0.2',u:'°F',d:'About your usual'}
+    ],
+    signals:[
+      {k:'HRV',p:'air',v:'43',u:'ms',b:60,d:'28% below your usual (60ms)',flag:true},
+      {k:'Resting HR',p:'fire',v:'66',u:'bpm',b:58,d:'8 above your usual (58)',flag:true},
+      {k:'Sleep',p:'ether',v:'5h 48m',u:'',d:'Deep + REM at 59% of your usual',flag:true},
+      {k:'Skin temp',p:'water',v:'+1.4',u:'°F',d:'Above your usual (+0.8°C)',flag:true}
+    ],
+    defaultState:'balance', drivingPillar:'fire',
+    calm:{v:'In balance today.', s:'Nothing needs to change. It’s 72°F, so no heat rule tonight either.'},
+    balance:{v:'In balance today.', s:'Nothing needs to change. It’s 72°F, so no heat rule tonight either.'},
+    advisory:{v:'Tonight moves indoors.', s:'It’s 86°F in the city. Outdoor training is off through the heat of the day and I’ve raised your hydration target.',
+      planChange:true, to:'CrossFit, indoors', note:'No notification for this. Weyos only interrupts you when your live body says so.'},
+    interv:{
+      what:'Your HRV is 28% below your usual, your temperature is up with your resting heart rate, and it’s a heat-wave day.',
+      evid:['HRV 43ms · usual 60ms','Skin temp +1.4°F','Deep + REM 59% of usual','86°F in NYC'],
+      time:'6:00 PM', from:'CrossFit', to:'15-min cooling breathwork',
+      food:'+ a cooling dinner and an earlier sleep target',
+      notif:['Let’s cool tonight down','HRV 28% below your usual, your temperature up, and 86°F outside. CrossFit is off — try 15 minutes of breathwork instead.']
+    },
+    plan:[['6:00 PM','CrossFit'],['7:30 AM','Morning run','done']],
+    act:{name:'15-min cooling breathwork', tag:'Parasympathetic', dur:'15 min', pillar:'water',
+      why:'Your recovery is well down, your temperature is up and it’s a heat-wave day. Slow extended-exhale breathing pulls your system down without adding any heat at all.',
+      steps:['3 min — settle, longer out-breath','9 min — extended exhale','3 min — rest and reset'],
+      timer:'14:31', stage:'Settle, longer out-breath · 1 of 3'},
+    meal:{name:'Wild salmon & cucumber-mint quinoa bowl', time:'30 min',
+      why:'Cooling and hydrating for your food profile on a hot day, with the omega-3 and the broth-and-ginger base your live signals asked for while your system recovers.',
+      count:'5 added · 3 set aside',
+      budget:{store:'Trader Joe’s · about $19 for two servings',
+        items:['Frozen wild salmon fillets','Quinoa','Persian cucumbers','Fresh mint','Coconut water','Fresh ginger','Light broth base']},
+      premium:{store:'Whole Foods or Instacart · about $38 for two servings',
+        items:['Wild Alaskan salmon fillets','Organic quinoa','Persian cucumbers & fresh mint','Hass avocado','Coconut water','Fresh ginger','Fresh bone broth']},
+      supp:[['Magnesium glycinate','Commonly taken in the evening; nothing here is tied to a lab value'],['Algae-based EPA/DHA','A plant source of omega-3']]},
+    trace:[
+      ['l1','Live biometrics','Layer 1 · highest priority','HRV 43ms — 28% below your 14-day average of 60ms.','→ All high-intensity training paused. Parasympathetic work instead. Magnesium-rich foods added.'],
+      ['l1','Live biometrics','Layer 1 · highest priority','Skin temperature 1.4°F above your usual, with your resting heart rate at 66 against a usual 58.','→ Rest reinforced. Broth, ginger and zinc-rich foods added.'],
+      ['l1','Live biometrics','Layer 1 · highest priority','Deep and REM sleep at 59% of your baseline.','→ No caffeine after midday tomorrow — including cold brew. A high-protein breakfast within an hour of waking.'],
+      ['l3','Your food profile','Layer 3','Fire-and-Water type.','→ Hot, spicy, fermented and acidic foods set aside. Cooling, hydrating foods preferred.'],
+      ['l4','Environment','Layer 4','86°F in New York City.','→ Outdoor training blocked through the heat of the day. Hydration target raised 40%. Cooling foods preferred.']
+    ],
+    traceOff:[
+      ['Cycle phase','Layer 2','Not applicable to you.'],
+      ['Lab overrides','Layer 5','No values on file. Add a blood panel in You → Lab results to activate this layer.']
+    ],
+    tech:'Fired: 1.1, 1.3, 1.2, 3.2, 4.2 · Not fired: 2.x (n/a), 5.x (no values) · Fixtures F10, F11',
+    foodTrace:[
+      ['l4','Environment','Layer 4 · applied first','Coconut water and extra cucumber added — hydration target raised 40% for the heat.'],
+      ['l3','Your food profile','Layer 3','Chili, harissa and pickled vegetables removed — hot, spicy and fermented foods don’t suit a Fire-and-Water profile.'],
+      ['l2','Your cycle','Layer 2','Not applicable to you.'],
+      ['l5','Your labs','Layer 5','No values on file, so nothing was added or withdrawn here.'],
+      ['l1','Your biometrics','Layer 1 · applied last','Wild salmon added for omega-3, and a light broth base with fresh ginger for immune support. Cold brew removed until after midday tomorrow.']
+    ],
+    foodWarn:'Ginger was added by your live biometrics for immune support, and your Fire-and-Water food profile normally sets warming foods aside. Your live signals outrank your food profile, so the ginger stays — but you should know the two disagreed. Keep it light.',
+    tl:[['i','Today · 6:04 PM','HRV 28% below baseline, temperature up, heat wave','CrossFit swapped for breathwork · you accepted'],
+        ['a','Tue','Heat wave, 84°F','Outdoor session moved · you accepted'],
+        ['c','Mon','In balance',null],
+        ['i','Sat · 7:10 PM','Deep sleep short and temperature raised','Rest suggested · you declined']]
+  }
+};
+
+/* =============================================================== HELPERS */
+let persona='sarah', validated=false, zoom=0.60, view='flow';
+const d = ()=>P[persona];
+const us = ()=>d().region==='US';
+const clock = ()=> us()?'6:04 PM':'18:04';
+const datestr = ()=> us()?'Wednesday, August 19':'Wednesday 19 August';
+const emerg = ()=> us()?'911':'999';
+const go = id=>'data-go="'+id+'"';
+
+function verdictBlock(stKey, headline, sub){
+  const s=STATE[stKey];
+  return '<div class="verdict"><span class="glyph" style="color:'+s.c+'">'+s.g+'</span>'+headline+'</div>'
+       + (sub?'<p class="sub">'+sub+'</p>':'');
+}
+function tiles(list, showDev){
+  return '<div class="tiles">'+list.map(s=>
+    '<div class="tile '+(s.unknown?'unknown':'')+' '+((s.flag&&showDev)?'flag':'')+'" style="--pc:'+PILLAR[s.p]+'" '+go('B7')+'>'
+    +'<div class="k"><i></i>'+s.k+'</div>'
+    +'<div class="v">'+(s.unknown?'Not available':s.v+'<span style="font-size:14px;font-weight:500;color:var(--muted)"> '+s.u+'</span>')+'</div>'
+    +'<div class="d">'+(s.unknown?s.d:(showDev?s.d:'Baseline not ready yet'))+'</div></div>').join('')+'</div>';
+}
+function traceRows(rows){
+  return rows.map(t=>'<div class="trace '+t[0]+'"><div class="n">'+t[1]+'</div><div class="lay">'+t[2]+'</div>'
+    +'<div class="e">'+t[3]+'</div>'+(t[4]?'<div class="o">'+t[4]+'</div>':'')+'</div>').join('');
+}
+function offRows(rows){
+  return rows.map(t=>'<div class="trace off"><div class="n">'+t[0]+'</div><div class="lay">'+t[1]+'</div><div class="e">'+t[2]+'</div></div>').join('');
+}
+function checks(items){ return items.map(i=>'<div class="check"><div class="box"></div><div class="cl">'+i+'</div></div>').join(''); }
+function togrow(n,dsc,sw){ return '<div class="togrow"><div class="tx"><div class="tn">'+n+'</div><div class="td">'+dsc+'</div></div>'+sw+'</div>'; }
+function rowlink(n,dsc,chip,goid){
+  return '<div class="togrow" '+(goid?go(goid):'')+' style="cursor:pointer"><div class="tx"><div class="tn">'+n+'</div><div class="td">'+dsc+'</div></div><span class="chip">'+chip+'</span></div>';
+}
+function disclaim(extra){ return '<p class="disclaim">'+(extra?extra+'<br><br>':'')+'Wellness guidance, not medical advice.</p>'; }
+function pillarLegend(){
+  return '<div class="pillrow">'+Object.keys(PILLAR).map(k=>
+    '<span class="pilllab"><i style="background:'+PILLAR[k]+'"></i>'+k[0].toUpperCase()+k.slice(1)+'</span>').join('')+'</div>';
+}
+function spark(dip){
+  const W=300,H=76,mid=H/2,seed=persona.length*7, days=14, gapAt=8;
+  let pts=[];
+  for(let i=0;i<days;i++){
+    const v=Math.sin((i+seed)*0.9)*6+Math.cos((i+seed)*0.35)*3.5;
+    pts.push({x:(i/(days-1))*W, y:mid-v, gap:(i===gapAt||i===gapAt+1)});
+  }
+  if(dip) pts[days-1].y=mid+22;
+  let path='',open=false;
+  pts.forEach(p=>{ if(p.gap){open=false;return;} path+=(open?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; open=true; });
+  return '<svg class="spark" viewBox="0 0 300 76" preserveAspectRatio="none">'
+    +'<line x1="0" y1="'+mid+'" x2="'+W+'" y2="'+mid+'" stroke="#D6C8BA" stroke-dasharray="3 4" stroke-width="1"/>'
+    +'<path d="'+path+'" fill="none" stroke="'+PILLAR.air+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+W+'" cy="'+pts[days-1].y.toFixed(1)+'" r="4" fill="'+(dip?PILLAR.fire:PILLAR.earth)+'"/>'
+    +'<text x="2" y="10" font-size="9" fill="#A79C93">your baseline</text>'
+    +'<text x="118" y="72" font-size="9" fill="#A79C93">no data</text></svg>';
+}
+
+/* ========================================================= SCREEN REGISTRY
+   44 surfaces. Each render() returns the page HTML for the current persona.
+   ======================================================================== */
+const SECTIONS = [
+  {code:'A', name:'First run', note:'Eleven screens between install and a working app — the seven-minute form path. W7 shows the progressive alternative Pav asked for; the two are a decision, not a coexistence. The consent stack is now eight separate, independently revocable permissions (voice and conversation processing are new in v0.5) — UK GDPR Art.9 explicit consent means the health toggle cannot be bundled — and analytics defaults off for CCPA/CPRA and Washington My Health My Data. The last screen sets the cold-start expectation honestly rather than hiding it behind a spinner.'},
+  {code:'W', name:'The wrapper', note:'New in v0.5, and the app’s root surface. The wrapper is what the user meets on every session; the four-tab app is what they override into — "no, take me to the website". It is a conversational interface over the engine, not a generative advisor: every claim traces to a rule that fired, and the surfaces that carry weight — the takeover, the trace — stay structured rather than being flattened into prose. Three screens here exist purely to bound it: W3 refuses what it cannot ground, W8 handles distress, W9 states the limits in one place.'},
+  {code:'B', name:'Today', note:'One screen, seven states — B8 restores the environment-driving state that v0.3 left undesigned. The distinction that matters most: Calibrating and Partial are visibly different from In balance, because "I could not evaluate" must never look like "you are fine". Partial is what three-valued evaluation buys you — James sits in it because his wrist temperature is missing and rule 1.3 is therefore unevaluable, not false.'},
+  {code:'C', name:'Intervention', note:'The product lives or dies here. Evidence before instruction, the user’s own plan visibly struck through, and "Not for me" always present at the same distance. One takeover a day, hard-capped. Why this? is the trust surface and the same artifact a clinical reviewer will ask to see.'},
+  {code:'D', name:'Activity', note:'The first of the two actions an intervention can resolve to. Reached through a decision or through Plan — never as a content destination you browse for its own sake.'},
+  {code:'E', name:'Food', note:'The second action. Why this meal exposes the reverse-precedence chain (L4 → L3 → L2 → L5 → L1) so that a withdrawn ingredient is comprehensible rather than infuriating. No Order button — there is no grocery integration in the MVP and the design does not pretend otherwise.'},
+  {code:'F', name:'Plan', note:'The object the engine overrides. If the user cannot see their plan, the override has no visible subject and reads as arbitrary. Manual entry only; no calendar integration in the MVP.'},
+  {code:'G', name:'Insights', note:'What makes Weyos feel like a guardian with a memory rather than a notification generator. Gaps in the trend are drawn as gaps — interpolating missing biometric data would be the app inventing readings.'},
+  {code:'H', name:'You', note:'Profile, signal sources, layer control, notifications and the privacy surface. Export and delete are two taps away, not buried in a web form. Every consent carries an honest consequence line.'}
+];
+
+function chatbar(ph, goid){
+  return '<div class="chatbar"><div class="chatfield">'+(ph||'Tell Weyos something…')+'</div>'
+       + '<div class="micbtn" '+go(goid||'W4')+'>●</div></div>';
+}
+function wrapHead(stKey, label, goid){
+  const s=STATE[stKey];
+  return '<div class="wrap-head"><span class="wrap-state" style="color:'+s.c+'"><span class="g">'+s.g+'</span>'+(label||s.w)+'</span>'
+       + '<span class="wrap-open" '+go(goid||'B3')+'>Open the app ›</span></div>';
+}
+
+const SCREENS = [
+/* ===================================================== W: THE WRAPPER (v0.5)
+   Reading (a): a conversational surface over the deterministic engine.
+   Nothing here invents guidance — it renders decisions the engine already made.
+   ========================================================================= */
+{id:'W1',sec:'W',name:'Wrapper — a quiet day',badge:'new',
+ note:'The crux. It opens, states where you are, then stops. No greeting, no prompt, no "how are you today" unless the user speaks first.',
+ render:p=>{
+  const k = (p.defaultState==='partial')?'partial':'balance';
+  const line = (k==='partial')?p.calm:p.balance;
+  return '<div class="wrapcol">'+wrapHead(k)
+   +'<div class="chat">'
+   +'<div class="bub w"><strong>'+line.v+'</strong><br>'+line.s+'</div>'
+   +'<div class="bub quiet">That’s everything. Weyos hasn’t asked you anything today — if you want to tell it something, it’s listening.</div>'
+   +'</div>'+chatbar()+'</div>';
+ }},
+
+{id:'W2',sec:'W',name:'Wrapper — a grounded answer',badge:'new',
+ note:'Reading (a) in one screen. The answer cites the rules that produced it and links to the trace. The last bubble is the honesty constraint.',
+ render:p=>'<div class="wrapcol">'+wrapHead('intervene',null,'B5')
+   +'<div class="chat">'
+   +'<div class="bub u">why do I feel so flat today?</div>'
+   +'<div class="bub w">'+p.interv.what+'</div>'
+   +'<div class="cite" '+go('C3')+'>▸ From the rules that fired this morning · see the full trace</div>'
+   +'<div class="bub w">That’s why your '+p.interv.time+' '+p.interv.from.toLowerCase()+' became '+p.interv.to.toLowerCase()+'.</div>'
+   +'<div class="bub w">I can’t tell you <em>why</em> your recovery is down — only that it is, and what I changed because of it.</div>'
+   +'</div>'+chatbar('Ask about today…')+'</div>'},
+
+{id:'W3',sec:'W',name:'Wrapper — what it won’t answer',badge:'new',
+ note:'Without a designed refusal, the first screenshot of Weyos naming a condition is an MHRA and FDA problem at once.',
+ render:p=>'<div class="wrapcol">'+wrapHead('balance')
+   +'<div class="chat">'
+   +'<div class="bub u">should I take ashwagandha for my thyroid?</div>'
+   +'<div class="refuse"><div class="rh">I can’t answer that one.</div>'
+   +'A thyroid condition is a diagnosis, and supplements can interact with thyroid medication. That’s a conversation for a pharmacist or your doctor — not for me, and not for an app that isn’t a medical device.</div>'
+   +'<div class="bub w">What I can do is tell you what your own signals are doing, and what I’ve already changed tonight because of them.</div>'
+   +'<div class="cite" '+go('W9')+'>▸ What Weyos can and can’t answer</div>'
+   +'</div>'+chatbar('Ask about today…')+'</div>'},
+
+{id:'W4',sec:'W',name:'Wrapper — voice',badge:'new',
+ note:'Pav’s feedback mechanism. Voice is its own consent, not covered by the Art.9 health toggle, and nothing is kept until the transcript is shown.',
+ render:p=>{
+  const hs=[14,26,40,22,52,34,46,18,38,28,50,20,32,42,24,36,16,44,30,22];
+  return '<div class="wrapcol">'+wrapHead((p.defaultState==='partial')?'partial':'balance')
+   +'<div style="flex:1;display:flex;flex-direction:column;justify-content:center">'
+   +'<div class="wave">'+hs.map(h=>'<i style="height:'+h+'px"></i>').join('')+'</div>'
+   +'<p class="sub" style="text-align:center;font-weight:600;color:var(--danger)">Listening…</p>'
+   +'<div class="card"><div class="cap" style="font-weight:600;letter-spacing:.08em;text-transform:uppercase">What Weyos heard</div>'
+   +'<p class="body" style="margin-top:8px">“Slept badly again, third night now. Work’s been heavy and I keep waking up about four.”</p></div>'
+   +'<div class="note">Nothing is kept until you tap Save. Voice is its own permission — you can turn it off in You → Wrapper &amp; voice, and delete every recording there.</div>'
+   +'</div>'
+   +'<div style="padding-bottom:20px"><button class="btn primary" '+go('W1')+'>Save this</button>'
+   +'<button class="btn quiet" '+go('W1')+'>Discard</button></div></div>';
+ }},
+
+{id:'W5',sec:'W',name:'Wrapper — handing off to the takeover',badge:'new',
+ note:'The boundary that protects the design. Layer 1 hands off to the structured takeover — the strikethrough is load-bearing, and prose would lose it.',
+ render:p=>'<div class="wrapcol" style="position:relative">'+wrapHead('intervene',null,'B5')
+   +'<div class="chat" style="opacity:.32">'
+   +'<div class="bub u">morning</div>'
+   +'<div class="bub w">Something changed overnight. Let me show you properly.</div>'
+   +'</div>'
+   +'<div style="position:absolute;left:-20px;right:-20px;bottom:-4px;top:150px;background:var(--cream);border-radius:24px 24px 0 0;'
+   +'box-shadow:0 -14px 40px rgba(0,0,0,.16);padding:22px 20px;overflow:hidden">'
+   +'<div class="to-kicker">Something changed</div>'
+   +'<div class="to-what" style="font-size:22px">'+p.interv.what+'</div>'
+   +'<div class="evid">'+p.interv.evid.slice(0,2).map(e=>'<span class="chip warm">'+e+'</span>').join('')+'</div>'
+   +'<div class="swap"><div class="planrow" style="border:0;padding-bottom:3px"><div class="t">'+p.interv.time+'</div><div><span class="strike">'+p.interv.from+'</span></div></div>'
+   +'<div style="padding-left:78px" class="arrow">↓</div>'
+   +'<div class="planrow" style="border:0;padding-top:3px"><div class="t">'+p.interv.time+'</div><div style="font-weight:600">'+p.interv.to+'</div></div></div>'
+   +'<button class="btn primary" '+go('C2')+'>Open it</button></div></div>'},
+
+{id:'W6',sec:'W',name:'Wrapper — while calibrating',badge:'new',
+ note:'The strongest argument for the wrapper. Layer 3 needs no baseline, so it has something true to say through the 2–4 week cold start.',
+ render:p=>'<div class="wrapcol">'+wrapHead('calibrating','Calibrating · day '+p.calib.daysIn+' of '+p.calib.total,'B1')
+   +'<div class="chat">'
+   +'<div class="bub w">I don’t know your baseline yet — about '+(p.calib.total-p.calib.daysIn)+' days to go before I can tell a real change from an ordinary one.</div>'
+   +'<div class="bub w">What I do know is your food profile. That works from today.</div>'
+   +'<div class="bub u">what should I eat tonight?</div>'
+   +'<div class="bub w">'+p.meal.why+'</div>'
+   +'<div class="cite" '+go('E1')+'>▸ '+p.meal.name+' · '+p.meal.time+'</div>'
+   +'</div>'+chatbar('Ask about today…')+'</div>'},
+
+{id:'W7',sec:'W',name:'Wrapper — progressive onboarding',badge:'new',
+ note:'Pav’s open question answered progressively. A1–A11 is the seven-minute form; this is the alternative, and only the wrapper makes it possible.',
+ render:p=>'<div class="wrapcol">'+wrapHead('calibrating','Day 1 of 4','A1')
+   +'<div class="chat">'
+   +'<div class="bub w">I’ll ask you a few things over the next few days rather than all at once. Today, just one.</div>'
+   +'<div class="bub w"><strong>When were you born?</strong></div>'
+   +'<div class="bub u">'+(p.name==='Sarah'?'14 March 1988':(p.name==='James'?'2 June 1984':'9 November 1987'))+'</div>'
+   +'<div class="bub w">Thank you. That’s enough for today — I’ll ask about how you eat tomorrow, and where you are the day after.</div>'
+   +'<div class="bub quiet">Rather do it all now? It takes about seven minutes.</div>'
+   +'</div>'
+   +'<div style="padding-bottom:16px"><button class="btn secondary" '+go('A5')+'>Do it all now instead</button></div>'
+   +chatbar('Answer…')+'</div>'},
+
+{id:'W8',sec:'W',name:'Wrapper — distress',badge:'new',
+ note:'Non-negotiable on any surface a person can type into freely. No signals, no guidance — the wrapper drops everything and says one honest thing.',
+ render:p=>'<div class="wrapcol">'+wrapHead('balance')
+   +'<div class="chat">'
+   +'<div class="bub u">honestly I don’t see the point of any of this anymore</div>'
+   +'<div class="refuse care"><div class="rh">I’m glad you told me, and I’m not the right thing to help with it.</div>'
+   +'I’m an app that watches sleep and heart rate. What you’ve said deserves a person. If you’re in danger right now, call '+emerg()+'.</div>'
+   +'<div class="bub w">If you’d rather talk to someone who isn’t in your life, I can show you the lines available where you are.</div>'
+   +'</div>'
+   +'<div style="padding-bottom:16px"><button class="btn primary" '+go('W8')+'>Show me who to call</button></div>'
+   +'<div class="note" style="margin-bottom:14px">Weyos says nothing about signals, food or tonight’s plan on this path. It doesn’t log the message as feedback, and it doesn’t bring it up again.</div></div>'},
+
+{id:'W9',sec:'W',name:'Wrapper — what it can and can’t answer',badge:'new',
+ note:'The wrapper’s equivalent of H9 — what you screenshot when someone asks whether this is an LLM giving medical advice.',
+ render:p=>'<span class="back" '+go('W1')+'>‹ Back</span>'
+   +'<div class="title">What Weyos can and can’t answer</div>'
+   +'<p class="sub">Weyos isn’t a chatbot with opinions. It’s a way of asking the engine what it decided, in your own words.</p>'
+   +'<div class="sect">It can</div>'
+   +'<div class="card">'
+   + rowlink('Tell you what your signals are doing','Against your own baseline, with the number','Yes')
+   + rowlink('Explain any decision it made','The same trace, read aloud','Yes')
+   + rowlink('Say why an ingredient changed','Which layer added it, which withdrew it','Yes')
+   + rowlink('Take what you tell it as a signal','Sleep, stress, how a session felt','Yes')+'</div>'
+   +'<div class="sect">It can’t</div>'
+   +'<div class="card">'
+   + rowlink('Name a condition, or rule one out','That’s diagnosis. Weyos isn’t a medical device','No')
+   + rowlink('Advise on medication or interactions','Pharmacist or doctor','No')
+   + rowlink('Answer from general knowledge','If no rule fired on it, Weyos has nothing to say','No')
+   + rowlink('Predict a result','It reports what changed, not what will happen','No')+'</div>'
+   +'<div class="note">Every sentence the wrapper writes comes from a decision the engine already made. If you ever see it claim something it can’t show you the reason for, that’s a bug worth reporting.</div>'
+   + disclaim()},
+
+/* ------------------------------------------------------------- A: FIRST RUN */
+{id:'A1',sec:'A',name:'Welcome',note:'Wellness statement up front. Open in v0.5: this tagline is the calm-guardian promise, and a daily-use wrapper pulls against it.',render:p=>
+  '<div style="padding-top:40px">'+lockup(132)+'</div>'
+ +'<div class="title" style="font-size:29px;margin-top:26px">Weyos watches, so you don’t have to.</div>'
+ +'<p class="body">Weyos learns what normal looks like for <em>you</em> — your recovery, your sleep, your cycle, your labs — and speaks up only when something has changed.</p>'
+ +'<div class="card flat"><div class="body" style="margin:0"><strong>What Weyos is not.</strong></div>'
+ +'<p class="sub">It isn’t a medical device and doesn’t diagnose, treat or monitor illness. It’s wellness guidance. In an emergency call your local emergency number — 999 in the UK, 911 in the US.</p></div>'
+ +'<div class="stepdots"><i class="on"></i><i></i><i></i><i></i><i></i></div>'
+ +'<button class="btn primary" '+go('A2')+'>Get started</button>'
+ +'<button class="btn quiet" '+go('B3')+'>I already have an account</button>'},
+
+{id:'A2',sec:'A',name:'Create account',note:'Sign in with Apple is mandatory once any third-party auth ships.',render:p=>
+  '<div class="title" style="margin-top:30px">Create your account</div>'
+ +'<p class="sub">One account, on every device you use.</p>'
+ +'<div class="card"><div class="cap">Email</div><div class="body" style="margin:4px 0 0;color:var(--muted-2)">you@example.com</div></div>'
+ +'<button class="btn primary" '+go('A3')+'>Continue with email</button>'
+ +'<button class="btn secondary" '+go('A3')+'> Sign in with Apple</button>'
+ +'<button class="btn secondary" '+go('A3')+'>Continue with Google</button>'
+ +'<p class="cap" style="margin-top:18px">By continuing you agree to our terms. We’ll ask separately, and explicitly, before touching any health data.</p>'
+ +'<div class="stepdots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>'
+ +'<span class="back" '+go('A1')+'>‹ Back</span>'},
+
+{id:'A3',sec:'A',name:'Region',note:'Drives the consent stack, units, retailers, emergency number and legal copy.',render:p=>
+  '<div class="title" style="margin-top:30px">Where are you?</div>'
+ +'<p class="sub">This sets which privacy law protects you, which shops Weyos suggests, and whether you see °C or °F.</p>'
+ +'<div class="card tap" '+go('A4')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">United Kingdom</div>'
+ +'<div class="cap">UK GDPR · °C · Tesco, Sainsbury’s, Waitrose, Ocado</div></div><span class="chip act">Selected</span></div></div>'
+ +'<div class="card tap" '+go('A4')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">United States</div>'
+ +'<div class="cap">CCPA/CPRA + state consumer-health law · °F · Trader Joe’s, Whole Foods</div></div><span class="chip">Select</span></div></div>'
+ +'<div class="note">Weyos ships in both markets from day one. Your health data is stored in your own region and does not leave it.</div>'
+ +'<div class="stepdots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>'
+ +'<button class="btn primary" '+go('A4')+'>Continue</button>'
+ +'<span class="back" '+go('A2')+'>‹ Back</span>'},
+
+{id:'A4',sec:'A',name:'Consent',note:'Six unbundled toggles. Art.9 health consent is separate and affirmative; analytics defaults off.',render:p=>
+  '<div class="title" style="margin-top:24px">What Weyos may use</div>'
+ +'<p class="sub">Six separate permissions. Turn any of them off now or later — you’ll always see what it costs you.</p>'
+ +'<div class="card">'
+ + togrow('Health &amp; biometric data','So Weyos can learn your baseline and notice changes. Required — the app can’t work without it.','<div class="switch locked"></div>')
+ + togrow('Cycle data','So guidance follows your cycle phase. <em>Off = no cycle-based guidance.</em>','<div class="switch on"></div>')
+ + togrow('Lab results','So values from a blood test can override general guidance. <em>Off = lab layer inactive.</em>','<div class="switch on"></div>')
+ + togrow('Location &amp; environment','Local heat and season, for your area. <em>Off = no environmental guidance.</em>','<div class="switch on"></div>')
+ + togrow('Notifications','So Weyos can reach you when something changes. <em>Off = guidance only when you open the app.</em>','<div class="switch on"></div>')
+ + togrow('Voice <span class="badge new" style="margin-left:6px">new</span>','So you can talk to Weyos instead of typing. <em>Off = the wrapper stays text only.</em>','<div class="switch"></div>')
+ + togrow('Conversation processing <span class="badge new" style="margin-left:6px">new</span>','What you say is processed to phrase Weyos’ replies. <em>Off = the wrapper answers from templates only.</em>','<div class="switch on"></div>')
+ + togrow('Product analytics','Helps improve Weyos. Never affects your guidance.','<div class="switch"></div>')
+ +'</div>'
+ +'<p class="cap">Your health data is encrypted and stored in your region. It is never sold, and never shared with an employer or insurer.</p>'
+ +'<div class="note">v0.5 — the wrapper adds two consents, so this stack is eight rather than six. Voice defaults <strong>off</strong>: a recording surface that is on by default is the wrong first impression for a health app in either market.</div>'
+ +'<div class="stepdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>'
+ +'<button class="btn primary" '+go('A5')+'>Agree and continue</button>'
+ +'<span class="back" '+go('A3')+'>‹ Back</span>'},
+
+{id:'A5',sec:'A',name:'Profile basics',note:'Sex at birth gates whether A6 is offered at all.',render:p=>
+  '<div class="title" style="margin-top:30px">A little about you</div>'
+ +'<p class="sub">Weyos uses these to pick which rules can apply to you at all.</p>'
+ +'<div class="card"><div class="togrow"><div class="tx"><div class="tn">Name</div><div class="td">'+p.name+'</div></div><span class="chip">Edit</span></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">Date of birth</div><div class="td">'+(p.name==='Sarah'?'14 March 1988':(p.name==='James'?'2 June 1984':'9 November 1987'))+'</div></div><span class="chip">Edit</span></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">Sex at birth</div><div class="td">'+(p.name==='Sarah'?'Female':'Male')+' · determines whether cycle-phase rules apply</div></div><span class="chip">Edit</span></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">City</div><div class="td">'+p.city+'</div></div><span class="chip">Edit</span></div></div>'
+ +'<div class="stepdots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>'
+ +'<button class="btn primary" '+go(p.name==='Sarah'?'A6':'A7')+'>Continue</button>'
+ +'<span class="back" '+go('A4')+'>‹ Back</span>'},
+
+{id:'A6',sec:'A',name:'Cycle setup',note:'Conditional. Skipping it disables Layer 2 rather than blocking setup.',render:p=>
+  '<div class="title" style="margin-top:30px">Your cycle</div>'
+ +'<p class="sub">Weyos changes what it asks of you across the month. Two questions is enough to start.</p>'
+ +'<div class="card"><div class="togrow"><div class="tx"><div class="tn">First day of your last period</div><div class="td">31 July 2026 — day 20 today</div></div><span class="chip">Edit</span></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">Typical cycle length</div><div class="td">28 days</div></div><span class="chip">Edit</span></div></div>'
+ +'<div class="note">If you’d rather not share this, skip it. You’ll keep everything else — you’ll just lose the cycle-phase guidance.</div>'
+ +'<button class="btn primary" '+go('A7')+'>Continue</button>'
+ +'<button class="btn quiet" '+go('A7')+'>Skip this</button>'
+ +'<span class="back" '+go('A5')+'>‹ Back</span>'},
+
+{id:'A7',sec:'A',name:'Food profile',note:'Layer 3. Works from day one with no baseline, which is what makes the app useful before it is smart.',render:p=>
+  '<div class="title" style="margin-top:24px">Your food profile</div>'
+ +'<p class="sub">Question 1 of 3. This sets a persistent food baseline that works from today, while Weyos learns your biometrics.</p>'
+ +'<div class="card"><div class="body" style="margin:0;font-weight:600">In general, you feel worse when…</div>'
+ + checks(['You’re cold, dry or unsettled','You’re overheated or wound up','You’re heavy, sluggish or congested'])+'</div>'
+ +'<div class="card flat"><div class="cap" style="font-weight:600;letter-spacing:.08em;text-transform:uppercase">Your result</div>'
+ +'<div style="display:flex;align-items:center;gap:14px;margin-top:10px">'+mark(p.pillar,84)
+ +'<div><div class="body" style="margin:0;font-weight:600">'+p.profileLine+'</div><div class="cap">'+p.dosha+' in the engine’s own vocabulary</div></div></div>'
+ + pillarLegend()+'</div>'
+ +'<div class="note">A traditional constitutional model, used here for food preferences only. It sits below your live biometrics and your lab results — those always win.</div>'
+ +'<button class="btn primary" '+go('A8')+'>Continue</button>'
+ +'<span class="back" '+go('A5')+'>‹ Back</span>'},
+
+{id:'A8',sec:'A',name:'Lab values',note:'Manual entry only in the MVP. PDF/OCR and test kits are Phase 2.',render:p=>
+  '<div class="title" style="margin-top:30px">Any recent blood tests?</div>'
+ +'<p class="sub">Optional, and you can add them any time. A diagnosed value outranks almost everything else Weyos knows about you.</p>'
+ +'<div class="card">'
+ + rowlink('hs-CRP','Inflammation','Add')
+ + rowlink('HbA1c or fasting glucose','Blood sugar','Add')
+ + rowlink('PM cortisol','Adrenal','Add')+'</div>'
+ +'<div class="note">Type them in from your results letter. Photo upload and at-home test kits come later — for now Weyos would rather you enter three numbers than mis-read thirty.</div>'
+ +'<button class="btn primary" '+go('A9')+'>Continue</button>'
+ +'<button class="btn quiet" '+go('A9')+'>I don’t have any</button>'
+ +'<span class="back" '+go('A7')+'>‹ Back</span>'},
+
+{id:'A9',sec:'A',name:'Layers disclosure',note:'Validated-signals-only offered at first run, not hidden in settings.',render:p=>
+  '<div class="title" style="margin-top:24px">What Weyos reads</div>'
+ +'<p class="sub">Five layers, in priority order. Your live body always outranks everything below it.</p>'
+ +'<div class="card">'
+ +'<div class="trace l1"><div class="n">Your live biometrics</div><div class="lay">Layer 1 · always wins</div><div class="e">HRV, resting heart rate, sleep, temperature.</div></div>'
+ +'<div class="trace l5"><div class="n">Your lab results</div><div class="lay">Layer 5</div><div class="e">Only when a value is on file and out of range.</div></div>'
+ +'<div class="trace l2"><div class="n">Your cycle phase</div><div class="lay">Layer 2</div><div class="e">Where it applies.</div></div>'
+ +'<div class="trace l3"><div class="n">Your food profile</div><div class="lay">Layer 3</div><div class="e">A persistent preference, not a reading.</div></div>'
+ +'<div class="trace l4"><div class="n">Your environment</div><div class="lay">Layer 4</div><div class="e">Heat, season and the lunar cycle.</div></div></div>'
+ +'<div class="card">'+togrow('Validated signals only','Use only layers 1, 2 and 5 — live biometrics, cycle phase and labs. Turns off your food profile and your environment. <strong>You’ll see fewer food suggestions.</strong>','<div class="switch"></div>')+'</div>'
+ +'<button class="btn primary" '+go('A10')+'>Continue</button>'
+ +'<span class="back" '+go('A8')+'>‹ Back</span>'},
+
+{id:'A10',sec:'A',name:'Connect signals',note:'Sets the BLE-vs-smartwatch expectation before it becomes a support ticket.',render:p=>
+  '<div class="title" style="margin-top:30px">Connect your signals</div>'
+ +'<p class="sub">Weyos reads from what you already wear. Nothing is written back.</p>'
+ +'<div class="card tap"><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+(us()?'Apple Health':'Apple Health / Health Connect')+'</div>'
+ +'<div class="cap">HRV, resting heart rate, sleep stages, wrist temperature</div></div><span class="chip">Connect</span></div></div>'
+ +'<div class="card tap"><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Chest strap (Bluetooth)</div>'
+ +'<div class="cap">Optional. The only source that streams live.</div></div><span class="chip">Pair</span></div></div>'
+ +'<div class="note"><strong>Worth knowing:</strong> a smartwatch gives Weyos your data in batches, not live. Only a Bluetooth chest strap streams in real time. Weyos works well either way — it just reacts sooner with a strap.</div>'
+ +'<button class="btn primary" '+go('A11')+'>Continue</button>'
+ +'<span class="back" '+go('A9')+'>‹ Back</span>'},
+
+{id:'A11',sec:'A',name:'Baseline learning',note:'The cold-start screen. Backfill at connect could collapse this from weeks to minutes — open question 2.',render:p=>
+  '<div style="padding-top:52px;text-align:center">'+mark(null,110)+'</div>'
+ +'<div class="title" style="margin-top:20px">Weyos is learning you</div>'
+ +'<p class="body">Weyos needs about three weeks of your data to know what normal looks like for you specifically. Until then it stays quiet about your biometrics rather than guessing.</p>'
+ +'<div class="card"><div class="rowlink" style="font-size:13.5px;font-weight:600"><span>Baseline</span><span style="color:var(--muted)">Day 1 of 21</span></div>'
+ +'<div style="height:7px;background:var(--surface-2);border-radius:4px;margin-top:10px;overflow:hidden"><div style="width:5%;height:100%;background:var(--accent)"></div></div>'
+ +'<p class="cap" style="margin-top:12px">Your food profile is active from today, so you’ll get real food guidance while the biometrics calibrate.</p></div>'
+ +'<button class="btn primary" '+go('B1')+'>Go to Today</button>'},
+
+/* ----------------------------------------------------------------- B: TODAY */
+{id:'B1',sec:'B',name:'Today — Calibrating',note:'No deviations shown, because there is nothing yet to deviate from.',render:p=>{
+  const c=p.calib, pct=Math.round(c.daysIn/c.total*100);
+  return '<div class="h-date">'+datestr()+'</div>'
+  + verdictBlock('calibrating','Still learning your baseline.', p.calibSub)
+  + '<div class="card"><div class="rowlink" style="font-size:13.5px;font-weight:600"><span>Baseline</span><span style="color:var(--muted)">'+(c.total-c.daysIn)+' days to go</span></div>'
+  + '<div style="height:7px;background:var(--surface-2);border-radius:4px;margin-top:10px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--accent)"></div></div>'
+  + '<div class="cap" style="margin-top:10px">Day '+c.daysIn+' of '+c.total+'</div></div>'
+  + tiles(p.calmSignals,false)
+  + '<div class="sect">Tonight</div><div class="card"><div class="planrow"><div class="t">'+p.interv.time+'</div><div>'+p.plan[0][1]
+  + '<div class="cap" style="margin-top:3px">As you planned it</div></div></div></div>'
+  + '<div class="sect">Tonight’s food</div><div class="card tap" '+go('E1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+p.meal.name+'</div>'
+  + '<div class="cap" style="margin-top:3px">From your food profile only, while the biometrics calibrate</div></div><span style="color:var(--muted)">›</span></div></div>'
+  + disclaim();}},
+
+{id:'B2',sec:'B',name:'Today — Partial',note:'The state three-valued evaluation exists for. A missing signal is unevaluable, not false.',render:p=>{
+  const pf = p.partialFlag || 'One of your signals hasn’t come through today, so a rule that needs it couldn’t be checked either way.';
+  return '<div class="h-date">'+datestr()+'</div>'
+  + verdictBlock('partial', p.calm.v.indexOf('what I can see')>-1?p.calm.v:'In balance on what I can see.',
+      p.calm.v.indexOf('what I can see')>-1?p.calm.s:'No rule fired on the signals I have — but one signal is missing, so I’m not telling you you’re fine.')
+  + '<div class="warnbox" '+go('C3')+' style="cursor:pointer">'+pf+' <span style="text-decoration:underline">Why this?</span></div>'
+  + tiles(p.name==='James'?p.calmSignals:p.calmSignals.map((s,i)=>i===3?Object.assign({},s,{v:'—',unknown:true,d:'No reading since Monday'}):s), true)
+  + '<div class="sect">Tonight</div><div class="card"><div class="planrow"><div class="t">'+p.interv.time+'</div><div>'+p.plan[0][1]
+  + '<div class="cap" style="margin-top:3px">As you planned it</div></div></div></div>'
+  + '<div class="sect">Tonight’s food</div><div class="card tap" '+go('E1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+p.meal.name+'</div>'
+  + '<div class="cap" style="margin-top:3px">'+p.meal.count+'</div></div><span style="color:var(--muted)">›</span></div></div>'
+  + disclaim();}},
+
+{id:'B3',sec:'B',name:'Today — In balance',note:'The screen users see most. One sentence, four tiles, nothing to do.',render:p=>
+  '<div class="h-date">'+datestr()+'</div>'
+ + (validated?'<div style="margin-top:12px"><span class="chip">◐ Validated signals only</span></div>':'')
+ + verdictBlock('balance', p.balance.v, validated?'No rule fired on your live signals. Food guidance is off in validated-signals-only mode.':p.balance.s)
+ + (p.balance.unreachable?'<div class="note">'+p.balance.unreachable+'</div>':'')
+ + tiles(p.calmSignals.map(s=>s.unknown?Object.assign({},s,{v:'+0.1',u:'°C',unknown:false,d:'About your usual'}):Object.assign({},s,{flag:false})),true)
+ + '<div class="sect">Tonight</div><div class="card"><div class="planrow"><div class="t">'+p.interv.time+'</div><div>'+p.plan[0][1]
+ + '<div class="cap" style="margin-top:3px">As you planned it</div></div></div></div>'
+ + (validated
+    ? '<div class="note" style="margin-top:18px">Food guidance is off while <strong>validated signals only</strong> is on — your food profile and your environment are layers 3 and 4. Turn it off in You → Layers &amp; modes.</div>'
+    : '<div class="sect">Tonight’s food</div><div class="card tap" '+go('E1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+p.meal.name+'</div>'
+      + '<div class="cap" style="margin-top:3px">'+p.meal.count+'</div></div><span style="color:var(--muted)">›</span></div></div>')
+ + disclaim()},
+
+{id:'B4',sec:'B',name:'Today — Advisory',note:'Rules fired below Layer 1. The plan changes, but nothing interrupts the user to say so.',render:p=>
+  '<div class="h-date">'+datestr()+'</div>'
+ + verdictBlock('advisory', p.advisory.v, p.advisory.s)
+ + tiles(p.calmSignals,true)
+ + '<div class="sect">Tonight</div><div class="card">'
+ + (p.advisory.planChange
+    ? '<div class="planrow"><div class="t">'+p.interv.time+'</div><div><span class="strike">'+p.interv.from+'</span>'
+      + '<div style="font-weight:600;margin-top:4px"><span class="arrow">↓</span> '+p.advisory.to+'</div></div></div>'
+    : '<div class="planrow"><div class="t">'+p.interv.time+'</div><div>'+p.plan[0][1]
+      + '<div class="cap" style="margin-top:3px">Unchanged</div></div></div>')
+ + '<div class="link" '+go('C3')+'>ⓘ Why this?</div></div>'
+ + '<div class="sect">Tonight’s food</div><div class="card tap" '+go('E1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+p.meal.name+'</div>'
+ + '<div class="cap" style="margin-top:3px">'+p.meal.count+'</div></div><span style="color:var(--muted)">›</span></div></div>'
+ + '<div class="note">'+p.advisory.note+'</div>'
+ + disclaim()},
+
+{id:'B5',sec:'B',name:'Today — Intervention',note:'What the user returns to after the takeover. The mark shows the pillar driving the decision.',render:p=>
+  '<div class="h-date">'+datestr()+'</div>'
+ + '<div style="margin-top:10px">'+mark(p.drivingPillar,72)+'</div>'
+ + verdictBlock('intervene','Tonight changed.', p.interv.what)
+ + tiles(p.signals,true)
+ + '<div class="sect">Tonight</div><div class="card">'
+ + '<div class="planrow"><div class="t">'+p.interv.time+'</div><div><span class="strike">'+p.interv.from+'</span>'
+ + '<div style="font-weight:600;margin-top:4px"><span class="arrow">↓</span> '+p.interv.to+'</div></div></div>'
+ + '<div class="link" '+go('C3')+'>ⓘ Why this?</div></div>'
+ + '<div class="btnrow" style="margin-top:14px"><button class="btn primary" '+go('D1')+'>Do it now</button>'
+ + '<button class="btn secondary" '+go('E1')+'>See my food</button></div>'
+ + disclaim()},
+
+{id:'B6',sec:'B',name:'Today — Declined',note:'Saying no is respected and visibly recorded. The rule is suppressed for the rest of the day.',render:p=>
+  '<div class="h-date">'+datestr()+'</div>'
+ + verdictBlock('declined','Noted.','I’ve left tonight exactly as you planned it. I won’t raise this again today.')
+ + tiles(p.signals,true)
+ + '<div class="sect">Tonight</div><div class="card"><div class="planrow"><div class="t">'+p.interv.time+'</div><div>'+p.interv.from
+ + '<div class="cap" style="margin-top:3px">Kept, at your request</div></div></div>'
+ + '<div class="link" '+go('C3')+'>ⓘ See what I suggested and why</div></div>'
+ + '<div class="note">Your signals are still being recorded, and this decision is in your history. Nothing is being hidden from you — it just isn’t being pushed at you.</div>'
+ + disclaim()},
+
+{id:'B7',sec:'B',name:'Signal detail',note:'Gaps drawn as gaps. Never a zero, never an interpolated line.',render:p=>{
+  const s=p.signals[0];
+  return '<span class="back" '+go('B5')+'>‹ Today</span>'
+  + '<div class="title">Heart rate variability</div>'
+  + '<div class="pillrow"><span class="pilllab"><i style="background:'+PILLAR.air+'"></i>Air — the pillar that carries variability</span></div>'
+  + '<div class="verdict" style="font-size:42px;margin-top:14px">'+s.v+'<span style="font-size:20px;color:var(--muted)"> '+s.u+'</span></div>'
+  + '<p class="sub">'+s.d+'</p>'
+  + '<div class="trend"><div class="cap">Last 14 days against your baseline</div>'+spark(true)
+  + '<div class="cap" style="margin-top:8px">Gaps are days with no reading. Weyos doesn’t fill them in.</div></div>'
+  + '<div class="card flat"><div class="cap">Source</div><div class="body" style="margin:4px 0 0">Apple Health · last sync '+(us()?'5:52 PM':'17:52')+'</div></div>'
+  + disclaim('A single number rarely means much on its own. Weyos looks at it against your own 14-day average, alongside your other signals.');}},
+
+{id:'B8',sec:'B',name:'Today — environment driving',badge:'new',
+ note:'Spec v0.4, missing from v0.3. The layers in their fired state — 11% of the build, the #1 risk. Reasoning on the surface, not behind a tap.',
+ render:p=>'<div class="h-date">'+datestr()+'</div>'
+  + verdictBlock('advisory','A quieter change tonight.','Nothing in your live signals moved. Your environment did.')
+  +'<div class="sect">What Weyos is reading</div>'
+  +'<div class="card"><div class="pillrow"><span class="pilllab"><i style="background:'+PILLAR.water+'"></i>Water — temperature and fluid balance</span></div>'
+  +'<div class="togrow"><div class="tx"><div class="tn">Moon phase</div><div class="td">Full, tonight</div></div></div>'
+  +'<div class="togrow"><div class="tx"><div class="tn">Temperature</div><div class="td">'+(us()?'72°F':'19°C')+' · no heat rule active</div></div></div>'
+  +'<div class="togrow"><div class="tx"><div class="tn">Season</div><div class="td">Late summer</div></div></div></div>'
+  +'<div class="sect">Tonight</div>'
+  +'<div class="card"><div class="planrow" style="border:0"><div class="t">'+p.interv.time+'</div><div><div class="body" style="margin:0;font-weight:600">'+p.interv.from+'</div>'
+  +'<div class="cap">Unchanged — this layer never touches your training on its own.</div></div></div></div>'
+  +'<div class="sect">What changed, and why</div>'
+  + traceRows([['l4','Full moon','Layer 4 · lowest priority','A full moon tonight.','→ Added salt and salted snacks set aside for the evening. Nothing else.'],
+               ['l3','Your food profile','Layer 3',p.profileLine+' type.','→ Warm, grounding foods preferred, as they are every day.']])
+  +'<div class="warnbox"><strong>Where this came from.</strong><br>Your environmental layer — the part of Weyos with the least evidence behind it. It only ever adjusts food, and it can never overrule what your live biometrics or your lab results have said. Switch it off and nothing else changes.</div>'
+  +'<div class="link" '+go('H9')+'>About this layer ›</div>'
+  +'<div class="card tap" '+go('E1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">'+p.meal.name+'</div>'
+  +'<div class="cap">One ingredient swapped</div></div><span class="chip">›</span></div></div>'
+  + disclaim()},
+
+/* ---------------------------------------------------------- C: INTERVENTION */
+{id:'C1',sec:'C',name:'Notification',note:'Time-sensitive. Exactly one per decision — a duplicate would destroy the credibility the design runs on.',render:p=>
+  '<div style="position:absolute;inset:0;background:linear-gradient(165deg,#3A342E,#1C1A18);padding:0 20px">'
+ +'<div style="text-align:center;color:#FDF6F1;padding-top:52px"><div style="font-size:15px;opacity:.72">'+datestr()+'</div>'
+ +'<div style="font-size:72px;font-weight:300;letter-spacing:-2px;line-height:1.1">'+(us()?'6:04':'18:04')+'</div></div>'
+ +'<div style="margin-top:32px"><div class="notif" '+go('C2')+'>'
+ +'<div class="nh"><span>WEYOS · TIME SENSITIVE</span><span>now</span></div>'
+ +'<div class="nt">'+p.interv.notif[0]+'</div><div class="nb">'+p.interv.notif[1]+'</div></div></div>'
+ +'<p style="text-align:center;color:#FDF6F1;opacity:.42;font-size:12.5px;margin-top:26px">One interruption a day, maximum. Everything else waits for you.</p></div>'},
+
+{id:'C2',sec:'C',name:'Takeover',note:'Evidence, then instruction, then actions. The order is not negotiable.',render:p=>
+  '<div class="takeover" style="position:static;padding:14px 0 0">'
+ +'<div class="to-kicker">Something changed</div>'
+ +'<div class="to-what">'+p.interv.what+'</div>'
+ +'<div class="evid">'+p.interv.evid.map(e=>'<span class="chip warm">'+e+'</span>').join('')+'</div>'
+ +'<div class="swap"><div class="cap" style="text-transform:uppercase;letter-spacing:.08em;font-weight:600">What I’m doing</div>'
+ +'<div class="planrow" style="border:0;padding-bottom:3px"><div class="t">'+p.interv.time+'</div><div><span class="strike">'+p.interv.from+'</span></div></div>'
+ +'<div style="padding-left:78px" class="arrow">↓</div>'
+ +'<div class="planrow" style="border:0;padding-top:3px"><div class="t">'+p.interv.time+'</div><div style="font-weight:600">'+p.interv.to+'</div></div>'
+ +'<div class="cap" style="margin-top:8px;padding-left:78px">'+(validated?'':p.interv.food)+'</div></div>'
+ +'<div class="link" '+go('C3')+'>ⓘ Why this?</div>'
+ +'<div style="margin-top:22px"><button class="btn primary" '+go('D1')+'>'+(p.act.name==='Rest tonight'?'Alright, resting':'Do it now')+'</button>'
+ +'<button class="btn secondary" '+go('E1')+'>See my food</button>'
+ +'<div class="btnrow" style="margin-top:6px"><button class="btn quiet" '+go('B5')+'>Later</button>'
+ +'<button class="btn quiet" '+go('C4')+'>Not for me</button></div></div></div>'},
+
+{id:'C3',sec:'C',name:'Why this? — decision trace',note:'The trust surface, and the artifact a clinical reviewer will ask for. Shows what did not apply, and why.',render:p=>{
+  const usingCalm = (p.defaultState==='partial' && p.calmTrace);
+  let fired = usingCalm ? p.calmTrace : p.trace;
+  let off   = usingCalm ? p.calmTraceOff : p.traceOff;
+  const tech = usingCalm ? p.calmTech : p.tech;
+  let suppressed=[];
+  if(validated){ suppressed = fired.filter(t=>t[0]==='l3'||t[0]==='l4'); fired = fired.filter(t=>t[0]!=='l3'&&t[0]!=='l4'); }
+  return '<span class="back" '+go('B5')+'>‹ Back to tonight</span>'
+  + '<div class="title">'+(usingCalm?'Why nothing changed':'Why tonight changed')+'</div>'
+  + '<p class="sub">Every rule Weyos applied, most important first — and the ones it didn’t.</p>'
+  + traceRows(fired)
+  + '<div class="sect">Not applied</div>'
+  + offRows(off)
+  + suppressed.map(t=>'<div class="trace off"><div class="n">'+t[1]+'</div><div class="lay">'+t[2]+' · suppressed</div><div class="e">Switched off because validated signals only is on.</div></div>').join('')
+  + '<div class="card flat" style="margin-top:18px"><div class="cap" style="font-weight:600">Technical detail ›</div>'
+  + '<div class="cap" style="margin-top:6px">'+tech+(validated?'<br>validated_only_layers = [1,2,5]':'')+'</div></div>'
+  + '<p class="disclaim">Rulebook v1 · decision 8f2a…c91 · '+(us()?'19 Aug 6:04 PM':'19 Aug 18:04')+(validated?' · validated signals only':'')
+  + '<br>These are wellness suggestions, not medical advice.</p>';}},
+
+{id:'C4',sec:'C',name:'Response — not for me',note:'Reason capture, optional. "The reading looks wrong" is flagged, never used to rewrite the device’s data.',render:p=>
+  '<div class="title" style="margin-top:36px">That’s fine.</div>'
+ +'<p class="body">I’ll leave tonight exactly as you planned it, and I won’t raise this again today.</p>'
+ +'<div class="sect">Anything you want me to know? (optional)</div>'
+ +'<div class="card">'+checks(['I feel fine','I want to train anyway','The reading looks wrong','Bad timing'])+'</div>'
+ +'<div class="note">If you tell me the reading looks wrong I’ll flag it, but I won’t change what your device reported.</div>'
+ +'<button class="btn primary" '+go('B6')+'>Done</button>'
+ +'<button class="btn quiet" '+go('C2')+'>Actually, show me again</button>'},
+
+{id:'C5',sec:'C',name:'Post-action check-in',note:'One tap, skippable, no streaks. This is a feedback signal, not an engagement mechanic.',render:p=>
+  '<div style="padding-top:48px;text-align:center">'+mark(p.act.pillar,96)+'</div>'
+ +'<div class="title" style="margin-top:16px">Done.</div>'
+ +'<p class="body">That’s logged. Weyos will watch how your recovery responds over the next day or two.</p>'
+ +'<div class="sect">How do you feel?</div>'
+ +'<div class="card">'+checks(['Better','About the same','Worse'])+'</div>'
+ +'<button class="btn primary" '+go('E1')+'>See tonight’s food</button>'
+ +'<button class="btn quiet" '+go('B5')+'>Back to Today</button>'
+ + disclaim()},
+
+/* -------------------------------------------------------------- D: ACTIVITY */
+{id:'D1',sec:'D',name:'Activity detail',note:'Shows what it replaces. Arriving from the library instead, that block is hidden.',render:p=>
+  '<span class="back" '+go('C2')+'>‹ Back</span>'
+ +'<div class="title">'+p.act.name+'</div>'
+ +'<div class="evid" style="margin-top:10px"><span class="chip warm">'+p.act.tag+'</span><span class="chip">'+p.act.dur+'</span><span class="chip">No equipment</span></div>'
+ +'<p class="body">'+p.act.why+'</p>'
+ +'<div class="card flat"><div class="body" style="margin:0;font-weight:600">What this replaces</div>'
+ +'<div class="planrow"><div class="t">'+p.interv.time+'</div><div><span class="strike">'+p.interv.from+'</span></div></div></div>'
+ +'<div class="sect">What you’ll do</div><div class="card">'+checks(p.act.steps)+'</div>'
+ +'<button class="btn primary" '+go('D2')+'>Start</button>'
+ +'<button class="btn quiet" '+go('B5')+'>Not now</button>'
+ + disclaim()},
+
+{id:'D2',sec:'D',name:'Player',note:'Breath pacer, timer and stage list. No video needed for the MVP.',render:p=>
+  '<span class="back" '+go('D1')+'>‹ Back</span>'
+ +'<div class="pacer"><span>Breathe out</span></div>'
+ +'<div style="text-align:center;margin-top:26px"><div class="verdict" style="font-size:38px;font-variant-numeric:tabular-nums">'+p.act.timer+'</div>'
+ +'<p class="sub">'+p.act.stage+'</p></div>'
+ +'<button class="btn secondary" style="margin-top:32px" '+go('D3')+'>Finish early</button>'
+ +'<button class="btn quiet" '+go('D1')+'>Pause</button>'},
+
+{id:'D3',sec:'D',name:'Completion',note:'Feeds C5. Deliberately quiet — no confetti, no streak.',render:p=>
+  '<div style="padding-top:56px;text-align:center">'+mark(p.act.pillar,100)+'</div>'
+ +'<div class="title" style="margin-top:18px;text-align:center">That’s '+p.act.dur.replace('—','it')+' done.</div>'
+ +'<p class="body" style="text-align:center">Logged. Nothing else is needed from you tonight.</p>'
+ +'<button class="btn primary" '+go('C5')+'>Continue</button>'},
+
+{id:'D4',sec:'D',name:'Activity library',note:'Lives under Plan, not as its own tab. Browsing must not fabricate an override.',render:p=>
+  '<span class="back" '+go('F1')+'>‹ Plan</span>'
+ +'<div class="title">Activities</div>'
+ +'<div class="evid" style="margin-top:12px"><span class="chip act">All</span><span class="chip">Breathwork</span><span class="chip">Movement</span><span class="chip">Meditation</span></div>'
+ +'<div class="evid" style="margin-top:8px"><span class="chip">Under 10 min</span><span class="chip">10–20</span><span class="chip">20+</span></div>'
+ +'<div class="card tap" '+go('D1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Extended-exhale breathing</div><div class="cap">Breathwork · 10 min</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="card tap" '+go('D1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Warming Vinyasa</div><div class="cap">Movement · 20 min</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="card tap" '+go('D1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Restorative floor sequence</div><div class="cap">Movement · 25 min</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="card tap" '+go('D1')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Body scan</div><div class="cap">Meditation · 15 min</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="note">Browsing here doesn’t change your plan. Weyos only overrides something when your signals say so.</div>'},
+
+/* ------------------------------------------------------------------ E: FOOD */
+{id:'E1',sec:'E',name:'Meal',note:'One line of why-this-for-you-right-now. The photo is decorative and never the reason.',render:p=>
+  '<span class="back" '+go('B5')+'>‹ Back</span>'
+ +'<div class="title">'+p.meal.name+'</div>'
+ +'<div class="evid" style="margin-top:10px"><span class="chip">'+p.meal.time+'</span><span class="chip calm">Adjusted for tonight</span></div>'
+ +'<p class="body">'+p.meal.why+'</p>'
+ +'<div class="card tap" '+go('E2')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Why this meal</div>'
+ +'<div class="cap">'+p.meal.count+'</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<button class="btn primary" '+go('E3')+'>Build my shopping list</button>'
+ + disclaim()},
+
+{id:'E2',sec:'E',name:'Why this meal',note:'The reverse-precedence chain, in order. Alex carries the F10 collision.',render:p=>
+  '<span class="back" '+go('E1')+'>‹ Back</span>'
+ +'<div class="title">Why this meal</div>'
+ +'<p class="sub">Weyos starts from a base meal and applies the layers from least to most authoritative, so a higher layer can withdraw what a lower one added.</p>'
+ + p.foodTrace.map(t=>'<div class="trace '+t[0]+'"><div class="n">'+t[1]+'</div><div class="lay">'+t[2]+'</div><div class="o">'+t[3]+'</div></div>').join('')
+ + (p.foodWarn
+   ? '<div class="sect">One conflict</div><div class="warnbox">'+p.foodWarn+'</div>'
+   : '<div class="note" style="margin-top:18px">No conflicts tonight — every layer agreed, so nothing had to be overruled.</div>')
+ + disclaim('Rulebook v1 · food resolution L4 → L3 → L2 → L5 → L1')},
+
+{id:'E3',sec:'E',name:'Basket',note:'No Order button — there is no grocery integration in the MVP. Copy and Share are the honest terminal actions.',render:p=>
+  '<span class="back" '+go('E1')+'>‹ Back</span>'
+ +'<div class="title">Shopping list</div>'
+ +'<div class="toggle2"><button class="on">Budget</button><button>Premium</button></div>'
+ +'<p class="cap">'+p.meal.budget.store+'</p>'
+ +'<div class="card">'+checks(p.meal.budget.items)+'</div>'
+ +'<div class="card tap" '+go('E4')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Supplement cues</div>'
+ +'<div class="cap">'+p.meal.supp.length+' suggestions</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="btnrow" style="margin-top:14px"><button class="btn secondary">Copy list</button><button class="btn secondary">Share</button></div>'
+ +'<div class="note">Retailers are suggestions to help you find items. Weyos has no ordering integration in this version, and doesn’t pretend to.</div>'},
+
+{id:'E4',sec:'E',name:'Supplement cues',note:'No doses, and never tied to an individual lab value — that edges toward a treatment claim.',render:p=>
+  '<span class="back" '+go('E3')+'>‹ Back</span>'
+ +'<div class="title">Supplement cues</div>'
+ +'<p class="sub">Suggestions to look into, not instructions.</p>'
+ +'<div class="card">'+p.meal.supp.map(s=>'<div class="togrow"><div class="tx"><div class="tn">'+s[0]+'</div><div class="td">'+s[1]+'</div></div></div>').join('')+'</div>'
+ +'<div class="warnbox">Suggestions only — not medical advice, and no doses. Check with a pharmacist or doctor before starting supplements, especially if you take medication.</div>'
+ +'<div class="note">Weyos won’t tell you how much of anything to take, and won’t link a supplement to one of your blood results. That’s a conversation for a clinician.</div>'},
+
+/* ------------------------------------------------------------------ F: PLAN */
+{id:'F1',sec:'F',name:'Plan',note:'The empty-state copy earns the friction of manual entry.',render:p=>
+  '<div class="h-date" style="padding-top:16px">'+datestr()+'</div>'
+ +'<div class="title" style="margin-top:6px">Plan</div>'
+ +'<p class="sub">Add what you’re planning so Weyos can adjust it if your signals change.</p>'
+ +'<div class="card">'
+ +'<div class="planrow"><div class="t">'+p.plan[0][0]+'</div><div><span class="strike">'+p.plan[0][1]+'</span>'
+ +'<div style="font-weight:600;margin-top:4px"><span class="arrow">↓</span> '+p.interv.to+'</div>'
+ +'<div class="cap" style="margin-top:3px">Changed by Weyos · <span style="text-decoration:underline" '+go('C3')+'>why?</span></div></div></div>'
+ +'<div class="planrow"><div class="t">'+p.plan[1][0]+'</div><div><span style="color:var(--muted)">'+p.plan[1][1]+'</span>'
+ +'<div class="cap" style="margin-top:3px">Done</div></div></div></div>'
+ +'<button class="btn secondary" '+go('F2')+'>+ Add an activity</button>'
+ +'<div class="sect">Browse</div>'
+ +'<div class="card tap" '+go('D4')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">Activities</div>'
+ +'<div class="cap">20 sessions · breathwork, movement, meditation</div></div><span style="color:var(--muted)">›</span></div></div>'
+ + disclaim()},
+
+{id:'F2',sec:'F',name:'Add activity',note:'Manual only. The design must not imply a calendar sync that does not exist.',render:p=>
+  '<span class="back" '+go('F1')+'>‹ Plan</span>'
+ +'<div class="title">Add an activity</div>'
+ +'<div class="card"><div class="togrow"><div class="tx"><div class="tn">What</div><div class="td" style="color:var(--muted-2)">e.g. evening run</div></div></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">When</div><div class="td">Today, '+p.interv.time+'</div></div><span class="chip">Edit</span></div>'
+ +'<div class="togrow"><div class="tx"><div class="tn">How hard</div><div class="td">Easy · Moderate · <strong>Hard</strong></div></div></div></div>'
+ +'<div class="note">No calendar connection in this version. Weyos would rather you tell it four things than silently read your whole diary.</div>'
+ +'<button class="btn primary" '+go('F1')+'>Add</button>'
+ +'<button class="btn quiet" '+go('F1')+'>Cancel</button>'},
+
+/* -------------------------------------------------------------- G: INSIGHTS */
+{id:'G1',sec:'G',name:'Insights timeline',note:'Every decision and what the user did about it. Rows with no decision are not clickable.',render:p=>
+  '<div class="title" style="margin-top:18px">Insights</div>'
+ +'<div class="trend"><div class="rowlink"><span class="cap">Heart rate variability · 30 days</span>'
+ +'<span class="cap">baseline '+p.calmSignals[0].b+'ms</span></div>'+spark(true)
+ +'<div class="cap">The dotted line is your baseline. Gaps are missing days, not zeroes.</div></div>'
+ +'<div class="card tap" '+go('G2')+'><div class="rowlink"><div><div class="body" style="margin:0;font-weight:600">All trends</div>'
+ +'<div class="cap">HRV, resting heart rate, sleep, temperature</div></div><span style="color:var(--muted)">›</span></div></div>'
+ +'<div class="sect">What Weyos has done</div><div class="card">'
+ + p.tl.map(r=>'<div class="tl '+r[0]+'" '+(r[3]?go('G3'):'')+' style="cursor:'+(r[3]?'pointer':'default')+'">'
+   +'<div class="bar"></div><div><div class="d">'+r[1]+'</div><div class="t">'+r[2]+'</div>'
+   +'<div class="r">'+(r[3]||'Nothing fired')+'</div></div></div>').join('')+'</div>'
+ + disclaim('Weyos keeps a record of every decision and the reasoning behind it. You can export all of it from You → Privacy &amp; data.')},
+
+{id:'G2',sec:'G',name:'Trends',badge:'p2',deferred:true,
+ note:'Deferred to Phase 2 per the roadmap’s longitudinal-insights track. Designed and shown greyed so the deferral stays visible.',render:p=>
+  '<span class="back" '+go('G1')+'>‹ Insights</span>'
+ +'<div class="title">Trends</div>'
+ +'<div class="evid" style="margin-top:10px"><span class="chip act">30 days</span><span class="chip">90 days</span></div>'
+ + p.calmSignals.map(s=>'<div class="trend"><div class="rowlink"><span class="cap" style="display:flex;align-items:center;gap:6px">'
+   +'<i style="width:8px;height:8px;border-radius:50%;background:'+PILLAR[s.p]+';display:inline-block"></i>'+s.k+'</span>'
+   +'<span class="cap">'+(s.b?'baseline '+s.b+(s.k==='HRV'?'ms':'bpm'):'against your usual')+'</span></div>'+spark(s.flag)+'</div>').join('')
+ + disclaim()},
+
+{id:'G3',sec:'G',name:'Past decision',note:'The same trace view as C3, read-only. History has to be as auditable as the live decision.',render:p=>
+  '<span class="back" '+go('G1')+'>‹ Insights</span>'
+ +'<div class="chip" style="margin-top:14px">Friday 14 August · 19:20</div>'
+ +'<div class="title">Evening session dropped</div>'
+ +'<p class="sub">You declined this one. Here’s what Weyos saw at the time.</p>'
+ + traceRows(p.trace.slice(0,2))
+ +'<div class="sect">What you did</div>'
+ +'<div class="card flat"><div class="body" style="margin:0">Declined — “I want to train anyway.”</div>'
+ +'<div class="cap" style="margin-top:6px">Weyos left the session in place and didn’t raise it again that day.</div></div>'
+ +'<p class="disclaim">Rulebook v1 · decision 4b71…8ae · read-only<br>These were wellness suggestions, not medical advice.</p>'},
+
+/* ------------------------------------------------------------------- H: YOU */
+{id:'H1',sec:'H',name:'You — profile',note:'The hub. The mark shows the user’s own pillar profile.',render:p=>
+  '<div class="title" style="margin-top:18px">You</div>'
+ +'<div class="card"><div style="display:flex;align-items:center;gap:14px">'+mark(p.pillar,80)
+ +'<div><div class="body" style="margin:0;font-weight:600">'+p.name+'</div><div class="cap">'+p.meta+'</div></div></div>'
+ + pillarLegend()+'</div>'
+ +'<div class="card">'
+ + rowlink('Signal sources','Apple Health connected · chest strap not paired','Open','H2')
+ + rowlink('Layers &amp; modes',validated?'Validated signals only is ON':'All five layers active','Open','H3')
+ + rowlink('Notifications','One interruption a day · quiet 22:00–07:00','Open','H4')
+ + rowlink('Lab results',p.labs,'Open','H6')
+ + rowlink('Privacy &amp; data','Six consents · export · delete','Open','H5')
+ + rowlink('About Weyos','What this is, and what it isn’t','Open','H7')
+ + rowlink('Help &amp; support','Guides and contact','Open','H8')
+ +'</div>'},
+
+{id:'H2',sec:'H',name:'Signal sources',note:'Per-source health and last sync. A stale source is a visible fact, not a silent gap.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Signal sources</div>'
+ +'<div class="card">'
+ + togrow('Apple Health','Connected · last sync '+(us()?'5:52 PM':'17:52'),'<span class="chip calm">On</span>')
+ + togrow('Chest strap (Bluetooth)','Not paired. The only source that streams live — Weyos reacts sooner with one.','<span class="chip">Pair</span>')
+ + togrow('Location &amp; environment',p.env,'<span class="chip">Edit</span>')
+ +'</div>'
+ +'<div class="sect">What’s coming through</div><div class="card">'
+ + p.calmSignals.map(s=>'<div class="togrow"><div class="tx"><div class="tn" style="display:flex;align-items:center;gap:7px">'
+   +'<i style="width:8px;height:8px;border-radius:50%;background:'+PILLAR[s.p]+';display:inline-block"></i>'+s.k+'</div>'
+   +'<div class="td">'+(s.unknown?'No reading since Monday':'Updating normally')+'</div></div>'
+   +'<span class="chip'+(s.unknown?'':' calm')+'">'+(s.unknown?'Stale':'OK')+'</span></div>').join('')+'</div>'
+ +'<div class="note">Each signal maps to one pillar: Air carries variability, Fire metabolic load, Ether sleep depth, Water temperature, Earth recovery.</div>'},
+
+{id:'H3',sec:'H',name:'Layers & modes',note:'The consequence sentence is mandatory. A toggle that silently thins the product is a support ticket.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Layers &amp; modes</div>'
+ +'<div class="card">'+togrow('Validated signals only',
+     'Use only live biometrics, cycle phase and your lab results. Turns off your food profile and your environment. <strong>You’ll see fewer food suggestions.</strong>',
+     '<div class="switch'+(validated?' on':'')+'" data-toggle="validated"></div>')+'</div>'
+ +'<div class="sect">What’s active right now</div>'
+ +'<div class="card">'
+ +'<div class="trace l1"><div class="n">Live biometrics</div><div class="lay">Layer 1 · on</div></div>'
+ +'<div class="trace l5"><div class="n">Lab results</div><div class="lay">Layer 5 · '+(p.labs.indexOf('No values')>-1?'no values on file':'on')+'</div></div>'
+ +'<div class="trace l2"><div class="n">Cycle phase</div><div class="lay">Layer 2 · '+(p.name==='Sarah'?'on':'not applicable')+'</div></div>'
+ +'<div class="trace l3'+(validated?' off':'')+'"><div class="n">Food profile</div><div class="lay">Layer 3 · '+(validated?'off':'on')+'</div></div>'
+ +'<div class="trace l4'+(validated?' off':'')+'"><div class="n">Environment</div><div class="lay">Layer 4 · '+(validated?'off':'on')+'</div></div></div>'
+ +'<div class="note">This mode exists so Weyos can be shown to a clinician or a regulator running on validated signals alone. It’s a real setting, not a demo switch.</div>'},
+
+{id:'H4',sec:'H',name:'Notifications',note:'One interruption a day is a product decision with trust and retention pulling opposite ways — open question 5.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Notifications</div>'
+ +'<div class="card">'
+ + togrow('Interruptions','At most one a day, and only when your live biometrics change. Everything else waits until you open the app.','<div class="switch on"></div>')
+ + togrow('Quiet hours','22:00 – 07:00. Anything that fires inside this window waits for the morning, or is dropped if it’s gone stale.','<span class="chip">Edit</span>')
+ + togrow('Weekly summary','A short read on Sunday evening. Off by default.','<div class="switch"></div>')
+ +'</div>'
+ +'<div class="note">Weyos will never send you a streak, a reminder to open the app, or a nudge with nothing behind it.</div>'},
+
+{id:'H5',sec:'H',name:'Privacy & data',note:'Export and delete two taps from the hub. Consent copy switches on the A3 region choice.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Privacy &amp; data</div>'
+ +'<p class="sub">'+(us()?'Your data is covered by CCPA/CPRA and your state’s consumer-health-data law.':'Your health data is special-category data under UK GDPR Article 9.')+'</p>'
+ +'<div class="card">'
+ + rowlink('Manage consents','Six separate permissions, each revocable','Open','A4')
+ + rowlink('Where your data lives','Encrypted, stored in '+(us()?'the United States':'the United Kingdom')+', never sold','View')
+ + rowlink('Export my data','Everything Weyos holds, including every decision','Export')
+ +'</div>'
+ +'<div class="card"><div class="togrow"><div class="tx"><div class="tn" style="color:var(--danger)">Delete my account and data</div>'
+ +'<div class="td">Permanent. Everything goes, including your decision history.</div></div><span class="chip">Delete</span></div></div>'
+ +'<div class="note">Weyos has never shared your data with an employer or an insurer, and there is no product plan in which it does.</div>'},
+
+{id:'H6',sec:'H',name:'Lab results',note:'Manual entry, user-confirmed. The Phase 2 upgrade path is stated rather than implied.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Lab results</div>'
+ +'<p class="sub">'+p.labs+'</p>'
+ +'<div class="card">'
+ + (p.name==='James'
+   ? togrow('hs-CRP','4.2 mg/L · entered 2 Aug 2026 · <strong>raised</strong>','<span class="chip warm">Active</span>')
+     + togrow('HbA1c','34 mmol/mol · entered 2 Aug 2026 · in range','<span class="chip">No effect</span>')
+   : (p.name==='Sarah'
+     ? togrow('HbA1c','33 mmol/mol · entered 11 Jul 2026 · in range','<span class="chip">No effect</span>')
+     : '<div class="togrow"><div class="tx"><div class="tn">Nothing on file</div><div class="td">Layer 5 is inactive until you add a value.</div></div></div>'))
+ +'</div>'
+ +'<button class="btn secondary">+ Add a value</button>'
+ +'<div class="note">Type these in from your results letter. Photo upload and at-home test kits are planned, but not in this version — Weyos would rather you enter three numbers than mis-read thirty.</div>'},
+
+{id:'H7',sec:'H',name:'About',note:'Where the wellness statement and the correct regional emergency guidance live permanently.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div style="padding-top:20px">'+lockup(120)+'</div>'
+ +'<div class="title">About Weyos</div>'
+ +'<div class="card flat"><div class="body" style="margin:0;font-weight:600">What Weyos is</div>'
+ +'<p class="sub">A wellness product that learns your own baseline and suggests changes to your day when your signals move away from it. Every suggestion comes with its reasoning.</p></div>'
+ +'<div class="card flat"><div class="body" style="margin:0;font-weight:600">What Weyos is not</div>'
+ +'<p class="sub">It is not a medical device. It does not diagnose, treat, cure or monitor any condition, and it is not a substitute for a doctor.</p></div>'
+ +'<div class="card" style="border-color:#E9D2B9;background:#FBF0E4"><div class="body" style="margin:0;font-weight:600;color:#7E5426">In an emergency</div>'
+ +'<p class="sub" style="color:#7E5426">Call '+emerg()+'. Do not wait for Weyos, and do not use it to decide whether something is serious.</p></div>'
+ +'<div class="card">'+rowlink('Terms of service','Last updated August 2026','View')+rowlink('Privacy notice','How your data is handled','View')
+ +rowlink('The rulebook','The 16 rules Weyos runs on, in plain English','View')+'</div>'
+ +'<p class="cap" style="margin-top:16px">Weyos · rulebook v1 · app 0.3.0</p>'},
+
+{id:'H8',sec:'H',name:'Help & support',note:'The three questions that will actually arrive, answered before they are asked.',render:p=>
+  '<span class="back" '+go('H1')+'>‹ You</span>'
+ +'<div class="title">Help</div>'
+ +'<div class="sect">The usual questions</div>'
+ +'<div class="card">'
+ + rowlink('Why is Weyos so quiet?','It only speaks when something has changed','Read')
+ + rowlink('Why can’t it use my watch in real time?','Only a chest strap streams live','Read')
+ + rowlink('Why did it take an ingredient away?','How the five layers overrule each other','Read')
+ + rowlink('How long until it knows me?','About three weeks of your own data','Read')
+ +'</div>'
+ +'<div class="sect">Still stuck</div>'
+ +'<div class="card">'+rowlink('Message support','We reply within a working day','Open')
+ +rowlink('Send diagnostics','Technical detail only — never your health data','Send')+'</div>'
+ + disclaim()},
+
+{id:'H9',sec:'H',name:'Elemental & environmental layers',badge:'new',
+ note:'Spec v0.4, missing from v0.3. The screen you hand a sceptic. It must always state the layer’s actual contents — see the standing note in §5.',
+ render:p=>'<span class="back" '+go('H1')+'>‹ You</span>'
+  +'<div class="title">Elemental &amp; environmental layers</div>'
+  +'<p class="sub">Two of the five layers, and the two people ask about most.</p>'
+  +'<div class="sect">What they are</div>'
+  + traceRows([['l3','Your food profile','Layer 3','A traditional constitutional model — '+p.profileLine+' in your case.','→ Used for food preferences only.'],
+               ['l4','Environment','Layer 4','Lunar cycle, local temperature, season.','→ Used for food and, in heat, for moving a session indoors.']])
+  +'<div class="sect">What they’re reading right now</div>'
+  +'<div class="card flat"><div class="cap">'+p.env+'</div></div>'
+  +'<div class="sect">What they can’t do</div>'
+  +'<div class="card">'
+  + rowlink('They never overrule your body','Layers 1 and 5 outrank them, always','Fixed')
+  + rowlink('They never stop you training on their own','Heat is the single exception','Fixed')
+  + rowlink('They are not clinical','Traditional and environmental inputs — not evidence-based in the way your biometrics are, and Weyos won’t pretend otherwise','Fixed')+'</div>'
+  +'<div class="warnbox"><strong>What’s not in here.</strong><br>Weyos uses the lunar cycle, temperature and season. It does not use a birth chart, a star sign or numerology, and it never will without telling you first.</div>'
+  +'<div class="sect">Turn them off</div>'
+  +'<div class="card">'+togrow('Validated signals only','Use only live biometrics, cycle phase and your lab results. <em>When this is on, you’ll see fewer food suggestions.</em>','<div class="switch'+(validated?' on':'')+'" data-toggle="validated"></div>')+'</div>'
+  + disclaim()},
+
+{id:'H10',sec:'H',name:'Wrapper & voice',badge:'new',
+ note:'A user who can’t turn something off doesn’t trust it. Switching the wrapper off returns the app to v0.4 exactly — Today becomes the root.',
+ render:p=>'<span class="back" '+go('H1')+'>‹ You</span>'
+  +'<div class="title">Wrapper &amp; voice</div>'
+  +'<div class="card">'
+  + togrow('Open into the wrapper','Weyos opens into a conversation rather than the Today screen. <em>Off = the app opens on Today, as it always did.</em>','<div class="switch on"></div>')
+  + togrow('Voice','Talk to Weyos instead of typing. <em>Off = text only.</em>','<div class="switch"></div>')
+  + togrow('Keep my messages','Weyos treats what you tell it as a signal. <em>Off = nothing you say is stored or used.</em>','<div class="switch on"></div>')+'</div>'
+  +'<div class="sect">Your conversations</div>'
+  +'<div class="card">'
+  + rowlink('Review what Weyos has kept','41 messages · 6 voice notes','Open')
+  + rowlink('Delete all conversations','Removes transcripts and recordings. Your signals and decisions stay','Delete')+'</div>'
+  +'<div class="note">The wrapper never invents guidance. Every sentence it writes comes from a decision the engine already made — see What Weyos can and can’t answer.</div>'
+  +'<div class="link" '+go('W9')+'>What Weyos can and can’t answer ›</div>'
+  + disclaim()}
+];
+
+/* ================================================================ FLOW MAP */
+function flowMap(){
+  const box=(x,y,w,h,fill,stroke)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="10" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>';
+  const lab=(x,y,t,c,sz,wt)=>'<text x="'+x+'" y="'+y+'" fill="'+(c||'#FDF6F1')+'" font-size="'+(sz||12)+'" font-weight="'+(wt||600)+'" font-family="-apple-system,Helvetica,Arial,sans-serif">'+t+'</text>';
+  const arrow=(x1,y1,x2,y2,c)=>'<path d="M'+x1+' '+y1+' L'+x2+' '+y2+'" stroke="'+(c||'#6B625A')+'" stroke-width="1.6" marker-end="url(#ah)"/>';
+  return '<div class="flowmap"><h2>How the app moves — v0.5</h2>'
+  +'<svg width="1500" height="278" viewBox="0 0 1500 278">'
+  +'<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+  +'<path d="M0 0 L10 5 L0 10 z" fill="#6B625A"/></marker></defs>'
+
+  /* A */
+  +box(14,100,150,64,'#2F2A25','#453E37')+lab(28,124,'A · First run')+lab(28,144,'11 screens · consent','#8A817A',11,400)
+  +arrow(170,132,204,132)
+
+  /* W — the wrapper, now the root */
+  +box(210,88,190,92,'#33291F','#C4794F')+lab(226,114,'W · The wrapper','#E0A277')
+  +lab(226,134,'9 screens · the root surface','#A79C93',11,400)
+  +lab(226,154,'every session starts here','#C4794F',10.5,600)
+  +arrow(406,116,452,116)
+  +lab(300,196,'v0.5','#C4794F',10.5,700)
+
+  /* B */
+  +box(458,84,186,88,'#38312A','#6B5038')+lab(472,110,'B · Today')
+  +lab(472,130,'7 states + signal detail','#A79C93',11,400)
+  +lab(472,150,'“no, take me to the app”','#6B5038',10.5,600)
+  +arrow(650,110,700,110)
+
+  /* C */
+  +box(706,60,200,80,'#3A2E26','#C4794F')+lab(722,86,'C · Intervention','#E0A277')
+  +lab(722,106,'notification → takeover → why','#A79C93',11,400)
+  +lab(722,124,'L1 only. One a day, capped.','#C4794F',10.5,600)
+
+  /* W5 handoff arrow */
+  +'<path d="M305 88 Q305 40 700 40 L790 40 L790 56" fill="none" stroke="#C4794F" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ah)"/>'
+  +lab(420,32,'W5 · Layer 1 hands off to the takeover — never flattened into chat','#C4794F',11,400)
+
+  /* D + E */
+  +box(950,20,190,64,'#2F2A25','#453E37')+lab(966,44,'D · Activity')+lab(966,64,'detail · player · done · library','#8A817A',11,400)
+  +box(950,102,190,64,'#2F2A25','#453E37')+lab(966,126,'E · Food')+lab(966,146,'meal · why · basket · supplements','#8A817A',11,400)
+  +arrow(912,88,946,54)+arrow(912,112,946,132)
+
+  /* back to today */
+  +'<path d="M1140 134 Q1178 134 1178 196 L560 196 L560 178" fill="none" stroke="#6B625A" stroke-width="1.6" marker-end="url(#ah)"/>'
+  +lab(880,212,'every action returns to Today, and is written to Insights','#6B625A',11,400)
+
+  /* tabs row */
+  +box(458,228,186,36,'#2F2A25','#453E37')+lab(472,251,'F · Plan','#D8CFC6',12,600)+lab(534,251,'2 screens','#6B625A',11,400)
+  +box(658,228,186,36,'#2F2A25','#453E37')+lab(672,251,'G · Insights','#D8CFC6',12,600)+lab(748,251,'2 + 1 P2','#6B625A',11,400)
+  +box(858,228,186,36,'#2F2A25','#453E37')+lab(872,251,'H · You','#D8CFC6',12,600)+lab(928,251,'10 screens','#6B625A',11,400)
+  +lab(1060,251,'← reachable any time from the tab bar','#6B625A',11,400)
+
+  /* legend */
+  +lab(1196,96,'The wrapper is the front door.','#E0A277',11,600)
+  +lab(1196,114,'The four-tab app is what the','#8A817A',11,400)
+  +lab(1196,132,'user overrides into.','#8A817A',11,400)
+  +lab(1196,158,'The only route that interrupts','#8A817A',11,400)
+  +lab(1196,176,'is C — and only Layer 1 opens it.','#8A817A',11,400)
+  +'</svg></div>';
+}
+
+/* =============================================================== FLOW VIEW */
+function renderFlow(){
+  const p=d();
+  const W=390, H=844, fw=Math.round(W*zoom), fh=Math.round(H*zoom);
+  let html = flowMap();
+  SECTIONS.forEach(sec=>{
+    const list = SCREENS.filter(s=>s.sec===sec.code);
+    html += '<div class="secgroup"><div class="sechead"><span class="code">'+sec.code+'</span><h3>'+sec.name+'</h3>'
+          + '<span class="cnt">'+list.length+' screen'+(list.length>1?'s':'')+'</span></div>'
+          + '<p class="secnote">'+sec.note+'</p><div class="rail">';
+    list.forEach((s,i)=>{
+      let inner='';
+      try{ inner = s.render(p); }catch(e){ inner='<p class="sub">render error: '+e.message+'</p>'; }
+      const showTabs = ['B1','B2','B3','B4','B5','B6','F1','G1','H1'].indexOf(s.id)>-1;
+      const tabOn = {B1:0,B2:0,B3:0,B4:0,B5:0,B6:0,F1:1,G1:2,H1:3}[s.id];
+      const tabs = showTabs ? '<div class="tabbar">'
+        + [['◐','Today'],['☰','Plan'],['◇','Insights'],['○','You']].map((t,ti)=>
+          '<div class="tab'+(ti===tabOn?' on':'')+'"><div class="ic">'+t[0]+'</div><div class="lb">'+t[1]+'</div></div>').join('')
+        + '</div>' : '';
+      const bare = (s.id==='C1');
+      const isW = (s.sec==='W' && s.id!=='W9');
+      const bdg = s.badge==='new' ? '<span class="badge new">new</span>'
+                : s.badge==='p2'  ? '<span class="badge p2">Phase 2</span>' : '';
+      html += '<div class="cell'+(s.deferred?' deferred':'')+'" style="width:'+Math.max(fw,220)+'px">'
+        + '<div class="celltop"><span class="id">'+s.id+'</span><span class="nm">'+s.name+'</span>'+bdg+'</div>'
+        + '<div class="mini" data-open="'+s.id+'" style="--fw:'+fw+'px;--fh:'+fh+'px">'
+        +   '<div class="scaler" style="transform:scale('+zoom+')">'
+        +     (bare?'':'<div class="sb"><span>'+clock()+'</span><span style="letter-spacing:2px">▮▮▮ ᯤ ▰</span></div>')
+        +     '<div class="pg" style="'+(bare?'inset:0;padding:0':(isW?'padding:0 20px 0':''))+'">'+inner+'</div>'
+        +     tabs
+        +   '</div></div>'
+        + '<div class="cellnote">'+s.note+'</div></div>';
+      if(i<list.length-1) html += '<div class="arrowcell">›</div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('flowView').innerHTML = html;
+}
+
+/* ============================================================ PROTOTYPE VIEW */
+let current='W1', hist=['W1'];
+function screenById(id){ return SCREENS.filter(s=>s.id===id)[0]; }
+function mount(id, push){
+  const s=screenById(id); if(!s) return;
+  current=id;
+  if(push!==false && hist[hist.length-1]!==id) hist.push(id);
+  const pg=document.getElementById('pPage');
+  pg.innerHTML = s.render(d());
+  pg.scrollTop=0;
+  pg.style.animation='none'; void pg.offsetWidth; pg.style.animation='';
+  const bare = (id==='C1');
+  const isW = (id.charAt(0)==='W' && id!=='W9');
+  pg.style.padding = bare?'0':(isW?'0 20px 0':'0 20px 110px');
+  pg.style.inset = bare?'46px 0 0 0':'46px 0 0 0';
+  const tabMap={B1:0,B2:0,B3:0,B4:0,B5:0,B6:0,B7:0,B8:0,F1:1,F2:1,D4:1,G1:2,G2:2,G3:2,H1:3,H2:3,H3:3,H4:3,H5:3,H6:3,H7:3,H8:3,H9:3,H10:3};
+  const hideTabs = ['C1','C2','C4','C5','D2','D3','A1','A2','A3','A4','A5','A6','A7','A8','A9','A10','A11',
+                    'W1','W2','W3','W4','W5','W6','W7','W8','W9'].indexOf(id)>-1;
+  const tb=document.getElementById('pTabs');
+  tb.style.display = hideTabs?'none':'flex';
+  [].forEach.call(tb.children,(t,i)=>t.classList.toggle('on', tabMap[id]===i));
+  document.getElementById('pClock').textContent = clock();
+}
+document.getElementById('pTabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  hist=[t.dataset.tab]; mount(t.dataset.tab,false);
+});
+
+/* --------------------------------------------------------- event delegation */
+document.addEventListener('click',e=>{
+  /* open a screen from the flow board */
+  const mini=e.target.closest('.mini');
+  if(mini && view==='flow'){ setView('proto'); hist=[mini.dataset.open]; mount(mini.dataset.open,false); return; }
+
+  if(view!=='proto') return;
+
+  const tog=e.target.closest('[data-toggle="validated"]');
+  if(tog){ setValidated(!validated); mount(current,false); return; }
+
+  const sw=e.target.closest('.switch');
+  if(sw && !sw.classList.contains('locked')){ sw.classList.toggle('on'); return; }
+
+  const ck=e.target.closest('.check');
+  if(ck){ ck.classList.toggle('done'); return; }
+
+  const t2=e.target.closest('.toggle2 button');
+  if(t2){ [].forEach.call(t2.parentNode.children,b=>b.classList.remove('on')); t2.classList.add('on');
+    const store=document.querySelector('#pPage .cap'); const p=d();
+    const which = t2.textContent.trim()==='Budget'?'budget':'premium';
+    if(store) store.textContent = p.meal[which].store;
+    const card=document.querySelectorAll('#pPage .card')[0];
+    if(card) card.innerHTML = checks(p.meal[which].items);
+    return; }
+
+  const g=e.target.closest('[data-go]');
+  if(g){ mount(g.getAttribute('data-go')); return; }
+});
+
+/* ==================================================================== CHROME */
+function setView(v){
+  view=v;
+  document.querySelectorAll('#segView button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.getElementById('flowView').style.display = v==='flow'?'block':'none';
+  document.getElementById('protoView').style.display = v==='proto'?'flex':'none';
+  document.getElementById('segZoom').parentNode.querySelectorAll('.ctl-label').forEach(()=>{});
+  if(v==='flow') renderFlow(); else mount(current,false);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setValidated(v){
+  validated=v;
+  document.getElementById('btnValidated').textContent='Validated signals only: '+(v?'on':'off');
+  document.getElementById('btnValidated').classList.toggle('hot',v);
+}
+document.querySelectorAll('#segView button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+document.querySelectorAll('#segPersona button').forEach(b=>b.onclick=()=>{
+  persona=b.dataset.p;
+  document.querySelectorAll('#segPersona button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  if(view==='flow') renderFlow(); else { hist=['W1']; mount('W1',false); }
+});
+document.querySelectorAll('#segZoom button').forEach(b=>b.onclick=()=>{
+  zoom=parseFloat(b.dataset.z);
+  document.querySelectorAll('#segZoom button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  if(view==='flow') renderFlow();
+});
+document.getElementById('btnValidated').onclick=()=>{
+  setValidated(!validated);
+  if(view==='flow') renderFlow(); else mount(current,false);
+};
+
+document.getElementById('legend').innerHTML =
+  '<strong>Reading this.</strong> Flow view shows all 56 MVP surfaces grouped by section, in the order a user meets them; click any screen to open it in the clickable prototype. '
+ +'Persona changes the data behind every screen at once. Screens badged <span class="badge new">new</span> are v0.5 additions; <span class="badge p2">Phase 2</span> is designed and deliberately deferred.<br><br>'
+ +'<strong>The wrapper (section W).</strong> Built to reading (a) — a conversational surface over the deterministic engine, not a generative advisor. Every sentence it writes comes from a decision the engine already made, and W2 shows the citation back to the trace. '
+ +'W1 is the screen to argue about: it is the reconciliation between "the app should mostly say nothing" and "the wrapper is the front door on every session". The answer drawn here is that the wrapper opens, states where you are, and then stops talking. '
+ +'W5 is the boundary that protects the rest of the design — Layer 1 hands off to the structured takeover rather than being narrated in prose, because the strikethrough on the user’s own plan is load-bearing and the trace has to stay auditable. '
+ +'W3, W8 and W9 exist to bound a surface a person can type anything into; without them the wrapper is a compliance liability rather than a feature.<br><br>'
+ +'<strong>Brought up to spec v0.4.</strong> B8 and H9 were specified in v0.4 and absent from the v0.3 board — they are the two screens that give the elemental and environmental layers a design, which is 11% of the build and the project’s #1 listed risk. G2 Trends is deferred and shown greyed. H10 is new in v0.5.<br><br>'
+ +'<strong>What this board does not answer.</strong> Whether the wrapper replaces A1–A11 (W7 shows the progressive alternative Pav asked for), whether it ships in Phase 1 or 1.5, and what comes out of the 691h to pay for it.<br><br>'
+ +'<strong>Brand.</strong> Palette, mark and typography are brand kit v3. Signal tiles are pillar-coded per the brand sheet’s own mapping — Air carries variability, Fire metabolic load, Ether sleep depth, Water temperature, Earth recovery — and each tile shows the pillar dot beside the signal’s name, never colour alone. Buttons are Fire only; no Water buttons anywhere. The mark appears as a live state readout on B5, A7, C5, D3 and H1, one arc lit.<br><br>'
+ +'<strong>Sarah</strong> — the canonical intervention: HRV 22% below baseline (rule 1.1) and deep+REM at 58% of baseline (rule 1.2), on cycle day 20 (rule 2.3).<br>'
+ +'<strong>James</strong> — fixture F5. His resting heart rate is 26% over baseline and nothing fires on that alone, and his wrist temperature is missing so rule 1.3 is <em>unevaluable, not false</em>. That is why his default Today is B2 Partial rather than B3 In balance.<br>'
+ +'<strong>Alex</strong> — fixture F10, on E2. His live biometrics add ginger for immune support; his Fire-and-Water profile blocks warming foods; the Layer 1 addition wins and raises a warning instead of being silently dropped.';
+
+setValidated(false);
+setView('flow');
+</script>
+</body>
+</html>

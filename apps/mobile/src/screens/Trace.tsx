@@ -1,110 +1,93 @@
 /**
  * C3 — "Why this?", the decision trace.
  *
- * The trace is not a debug artifact. It is the product's trust surface, its differentiator
- * against a black-box wellness app, and the document a regulator will ask for. It gets a
- * first-class screen, not a tooltip.
+ * The trust surface, and the same artifact a clinical reviewer will ask to see. Not a
+ * tooltip.
  *
- * Requirements, all load-bearing:
- *
- *   - Show rules that did NOT apply, and why. Absence is information; a trace that lists
- *     only hits reads as a justification rather than a record.
- *   - Distinguish "did not apply" from "could not be evaluated". An unevaluable rule is not
- *     a rule that came out false, and collapsing the two is exactly the dishonesty the
- *     three-valued logic exists to prevent.
- *   - Show collision warnings where the engine raised one.
- *   - Show the rulebook version. Boring, and the thing that makes the screen auditable.
- *   - Plain English only. Rule ids live in a collapsed technical block for support and QA.
+ * Layer-ordered, each row bordered in its layer's pillar colour. Shows rules that did NOT
+ * apply, dimmed rather than omitted — absence is information, and a trace listing only hits
+ * reads as a justification rather than a record. Keeps "did not apply" distinct from "could
+ * not be checked".
  */
 
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
-import { Disclaimer, EngineWarning } from "../components/primitives";
-import { radius, space, type } from "../theme/tokens";
-import { useTheme } from "../theme/useTheme";
-import { LAYER_NAMES } from "./copy";
+import { Disclaimer, Link, TraceRow, WarnBox } from "../components/primitives";
+import { color, space, type } from "../theme/tokens";
+import { LAYER_NAMES, layerPillar } from "./copy";
 
 export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
-  const palette = useTheme();
   const decision = day.decision;
-  const [showTechnical, setShowTechnical] = useState(false);
-
+  const [technical, setTechnical] = useState(false);
   const fired = [...decision.fired_rules].sort((a, b) => a.layer - b.layer);
+  const warnings = decision.warnings ?? [];
 
   return (
-    <ScrollView
-      style={{ backgroundColor: palette.bg }}
-      contentContainerStyle={st.page}
-      testID="screen-trace"
-    >
-      <Pressable onPress={onBack} accessibilityRole="button">
-        <Text style={[st.back, { color: palette.textMuted }]}>← Back</Text>
-      </Pressable>
-
-      <Text style={[st.h1, { color: palette.text }]}>Why today changed</Text>
+    <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-trace">
+      <Link text="‹ Back" onPress={onBack} />
+      <Text style={s.h1}>Why tonight changed</Text>
 
       {fired.map((rule) => (
-        <View key={rule.rule_id} style={st.block}>
-          <Text style={[st.layer, { color: palette.text }]}>
-            ▸ {LAYER_NAMES[rule.layer] ?? `Layer ${rule.layer}`}
-          </Text>
-          {(rule.because ?? []).map((line) => (
-            <Text key={line} style={[st.reason, { color: palette.textMuted }]}>
-              {line}
-            </Text>
-          ))}
-        </View>
+        <TraceRow
+          key={rule.rule_id}
+          name={rule.name ?? rule.rule_id}
+          layerLabel={LAYER_NAMES[rule.layer] ?? `Layer ${rule.layer}`}
+          evidence={(rule.because ?? []).join(" · ")}
+          pillar={layerPillar(rule.layer)}
+        />
       ))}
 
-      {/* Absence is information. Not the same thing as "did not apply". */}
+      {/* Could not be checked — deliberately NOT the same as "did not apply". */}
       {day.unevaluable.length > 0 && (
-        <View style={st.block}>
-          <Text style={[st.layer, { color: palette.textMuted }]}>Couldn't be checked</Text>
-          <Text style={[st.reason, { color: palette.textMuted }]}>
-            {day.unevaluable.length} guideline
-            {day.unevaluable.length === 1 ? "" : "s"} needed a reading I don't have today, so I
-            left {day.unevaluable.length === 1 ? "it" : "them"} alone rather than assuming
-            everything was fine.
-          </Text>
-        </View>
+        <>
+          <Text style={s.sect}>Couldn't be checked</Text>
+          <TraceRow
+            name={`${day.unevaluable.length} guideline${day.unevaluable.length === 1 ? "" : "s"}`}
+            layerLabel="Not evaluated"
+            evidence={
+              "A reading these needed hasn't come through, so I left them alone rather than " +
+              "assuming everything was fine."
+            }
+            off
+          />
+        </>
       )}
 
-      {decision.warnings !== undefined && decision.warnings.length > 0 && (
-        <View style={st.block}>
-          <Text style={[st.layer, { color: palette.text }]}>Where two guidelines disagreed</Text>
-          {decision.warnings.map((warning) => (
-            <EngineWarning key={warning} text={warning} />
+      {warnings.length > 0 && (
+        <>
+          <Text style={s.sect}>Where two guidelines disagreed</Text>
+          {warnings.map((w) => (
+            <WarnBox key={w} text={w} />
           ))}
-        </View>
+        </>
       )}
 
-      {/* Boring, and the reason this screen is auditable. decision_id lands in Phase 3 —
-          the Decision contract carries no id today. See DESIGN-DEBT.md. */}
-      <View style={[st.provenance, { borderColor: palette.border }]}>
-        <Text style={[st.meta, { color: palette.textMuted }]}>
+      {/* Boring, and the reason this screen is auditable. decision_id lands in Phase 3 — the
+          Decision contract carries no id today. */}
+      <View style={s.provenance}>
+        <Text style={s.meta}>
           Rulebook v{decision.rulebook_version} · {decision.as_of}
           {decision.elemental_layer_enabled === false ? " · validated signals only" : ""}
         </Text>
       </View>
 
-      <Pressable onPress={() => setShowTechnical(!showTechnical)} accessibilityRole="button">
-        <Text style={[st.toggle, { color: palette.textMuted }]}>
-          {showTechnical ? "Hide" : "Show"} technical detail
-        </Text>
-      </Pressable>
+      <Link
+        text={technical ? "Hide technical detail" : "Show technical detail"}
+        onPress={() => setTechnical(!technical)}
+      />
 
-      {showTechnical && (
-        <View style={[st.technical, { borderColor: palette.border }]}>
-          {fired.map((rule) => (
-            <Text key={rule.rule_id} style={[st.mono, { color: palette.textMuted }]}>
-              {rule.rule_id}  L{rule.layer}  p{rule.priority}  {rule.name ?? ""}
+      {technical && (
+        <View style={s.tech}>
+          {fired.map((r) => (
+            <Text key={r.rule_id} style={s.mono}>
+              {r.rule_id}  L{r.layer}  p{r.priority}  {r.name ?? ""}
             </Text>
           ))}
           {day.unevaluable.map((id) => (
-            <Text key={id} style={[st.mono, { color: palette.textMuted }]}>
+            <Text key={id} style={s.mono}>
               {id}  unevaluable
             </Text>
           ))}
@@ -116,16 +99,26 @@ export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
   );
 }
 
-const st = StyleSheet.create({
-  page: { padding: space.lg, paddingTop: space.xl * 2, paddingBottom: space.xl },
-  back: { fontSize: type.label, marginBottom: space.md },
-  h1: { fontSize: type.display, marginBottom: space.lg },
-  block: { marginBottom: space.lg },
-  layer: { fontSize: type.body, marginBottom: space.xs },
-  reason: { fontSize: type.label, lineHeight: type.label * 1.5, marginLeft: space.md },
-  provenance: { borderTopWidth: 1, paddingTop: space.md, marginTop: space.sm },
-  meta: { fontSize: type.caption },
-  toggle: { fontSize: type.caption, marginTop: space.md },
-  technical: { borderWidth: 1, borderRadius: radius.sm, padding: space.sm, marginTop: space.sm },
-  mono: { fontSize: type.caption, fontFamily: "monospace", lineHeight: type.caption * 1.6 },
+const s = StyleSheet.create({
+  page: { backgroundColor: color.cream },
+  content: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: space.sm },
+  h1: { ...{ fontSize: type.title.size, fontWeight: "600" }, color: color.ink, marginVertical: 16 },
+  sect: {
+    fontSize: type.section.size,
+    color: color.muted,
+    textTransform: "uppercase",
+    letterSpacing: 1.15,
+    fontWeight: "600",
+    marginTop: 24,
+  },
+  provenance: { borderTopWidth: 1, borderTopColor: color.line, paddingTop: 14, marginTop: 20 },
+  meta: { fontSize: 12, color: color.muted },
+  tech: {
+    borderWidth: 1,
+    borderColor: color.line,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  mono: { fontSize: 11.5, fontFamily: "monospace", color: color.muted, lineHeight: 19 },
 });
