@@ -1,19 +1,34 @@
 /**
- * C2 — the intervention takeover. The product lives or dies here.
+ * C2 — the takeover. Ported from the design pack.
  *
- * Evidence before instruction. The user's own plan visibly struck through. "Not for me"
- * always present at the same distance. One takeover a day, hard-capped.
+ * "Evidence, then instruction, then actions. The order is not negotiable."
  *
- * No red, no siren iconography. Intervention is Fire (accent); `danger` is reserved for
- * destructive account actions.
+ *   kicker → what changed → evidence chips → the swap → Why this? → actions
+ *
+ * The swap uses the same 66px time column top and bottom, so the struck plan and its
+ * replacement line up vertically with the arrow between them. That alignment is what makes
+ * the change legible without reading a word.
+ *
+ * "Not for me" sits in the quiet row beside "Later" — always present, always the same
+ * distance away, never smaller on a repeat showing. No red, no siren iconography.
  */
 
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
-import { Button, Chip, Disclaimer, Link, Section, WarnBox } from "../components/primitives";
-import { color, space, type } from "../theme/tokens";
+import { Button, Chip, Disclaimer, Link, WarnBox } from "../components/primitives";
+import {
+  ButtonRow,
+  EvidenceRow,
+  Kicker,
+  PlanRow,
+  Struck,
+  Swap,
+  SwapLabel,
+  WhatChanged,
+} from "../components/layout";
+import { color, space } from "../theme/tokens";
 
 export function Takeover({
   day,
@@ -29,50 +44,53 @@ export function Takeover({
   const evidence = decision.fired_rules.flatMap((r) => r.because ?? []);
   const messages = decision.messages ?? [];
   const warnings = decision.warnings ?? [];
+  const at = activity.location ?? "";
+
+  // Rest is not something you "do now". The pack changes the primary label for it.
+  const primary = activity.verdict === "rest" ? "Alright, resting" : "Do it now";
 
   return (
     <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-takeover">
-      {/* 1. WHAT CHANGED — evidence first. */}
-      <Section title="What changed">
-        <Text style={s.what}>
-          {messages[0] ?? "Your live signals moved today."}
-        </Text>
-        <View style={s.chips}>
-          {evidence.slice(0, 3).map((e) => (
-            <Chip key={e} text={e} tone="calm" />
-          ))}
-        </View>
-      </Section>
+      <Kicker text="Something changed" />
+      <WhatChanged text={messages[0] ?? "Your live signals moved today."} />
 
-      {/* 2. WHAT I'M DOING — the strikethrough is load-bearing. The user must see THEIR OWN
-          plan being changed, not a generic suggestion appearing. */}
-      <Section title="What I'm doing">
-        <View style={s.planrow}>
-          <Text style={s.time}>{activity.location ?? ""}</Text>
-          <Text style={s.strike}>{activity.planned ?? "your session"}</Text>
-        </View>
-        <View style={s.planrow}>
-          <Text style={s.arrow}>→</Text>
+      <EvidenceRow>
+        {evidence.slice(0, 3).map((e) => (
+          <Chip key={e} text={e} tone="warm" />
+        ))}
+      </EvidenceRow>
+
+      <Swap>
+        <SwapLabel text="What I'm doing" />
+        <PlanRow time={at} last>
+          <Struck text={activity.planned ?? "your session"} />
+        </PlanRow>
+        <Text style={s.arrow}>↓</Text>
+        <PlanRow time={at} last>
           <Text style={s.to}>{activity.prescribed ?? "rest"}</Text>
-        </View>
+        </PlanRow>
         {decision.supplements.length > 0 && (
-          <Text style={s.plus}>+ {decision.supplements.join(", ")}</Text>
+          <Text style={s.food}>+ {decision.supplements.join(", ")}</Text>
         )}
-        <Link text="ⓘ  Why this?" onPress={onWhyThis} />
-      </Section>
+      </Swap>
+
+      <Link text="ⓘ Why this?" onPress={onWhyThis} />
 
       {warnings.map((w) => (
         <WarnBox key={w} text={w} />
       ))}
 
-      {/* 3. ACTIONS — thumb zone. "Not for me" never hidden, never smaller on a repeat. */}
       <View style={s.actions}>
-        <Button label="Do it now" kind="primary" onPress={onDismiss} />
+        <Button label={primary} kind="primary" onPress={onDismiss} />
         <Button label="See my food" kind="secondary" onPress={onDismiss} />
-        <View style={s.tertiary}>
-          <Button label="Later" kind="quiet" onPress={onDismiss} />
-          <Button label="Not for me" kind="quiet" onPress={onDismiss} />
-        </View>
+        <ButtonRow>
+          <View style={s.half}>
+            <Button label="Later" kind="quiet" onPress={onDismiss} />
+          </View>
+          <View style={s.half}>
+            <Button label="Not for me" kind="quiet" onPress={onDismiss} />
+          </View>
+        </ButtonRow>
       </View>
 
       <Disclaimer />
@@ -82,22 +100,10 @@ export function Takeover({
 
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: space.lg },
-  what: { fontSize: type.title.size, lineHeight: type.title.size * 1.25, color: color.ink },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.md },
-  planrow: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "flex-start",
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: color.line,
-  },
-  time: { fontSize: 13, color: color.muted, width: 66 },
-  strike: { fontSize: 15.5, color: color.muted, textDecorationLine: "line-through", flex: 1 },
-  arrow: { color: color.accent, fontWeight: "700", width: 66, fontSize: 15.5 },
-  to: { fontSize: 15.5, color: color.ink, fontWeight: "600", flex: 1 },
-  plus: { fontSize: 14, color: color.muted, marginTop: 10 },
-  actions: { marginTop: space.xl },
-  tertiary: { flexDirection: "row", justifyContent: "space-between", marginTop: space.sm },
+  content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: space.md },
+  arrow: { color: color.accent, fontWeight: "700", paddingLeft: 78, fontSize: 15.5 },
+  to: { fontSize: 15.5, fontWeight: "600", color: color.ink },
+  food: { fontSize: 12.5, color: color.muted, marginTop: 8, paddingLeft: 78 },
+  actions: { marginTop: 22 },
+  half: { flex: 1 },
 });

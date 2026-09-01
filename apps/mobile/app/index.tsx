@@ -77,7 +77,13 @@ export default function Home() {
         </Text>
       </View>
 
-      {route === "today" && <Today day={day} onOpen={() => setRoute("trace")} />}
+      {route === "today" && (
+        <Today
+          day={day}
+          onWhyThis={() => setRoute("trace")}
+          onTakeover={() => setRoute("takeover")}
+        />
+      )}
       {route === "takeover" && (
         <Takeover day={day} onWhyThis={() => setRoute("trace")} onDismiss={() => setRoute("today")} />
       )}

@@ -1,59 +1,78 @@
 /**
- * C3 — "Why this?", the decision trace.
+ * C3 — "Why this?", the decision trace. Ported from the design pack.
  *
- * The trust surface, and the same artifact a clinical reviewer will ask to see. Not a
- * tooltip.
+ * "The trust surface, and the artifact a clinical reviewer will ask for. Shows what did not
+ * apply, and why."
  *
- * Layer-ordered, each row bordered in its layer's pillar colour. Shows rules that did NOT
- * apply, dimmed rather than omitted — absence is information, and a trace listing only hits
- * reads as a justification rather than a record. Keeps "did not apply" distinct from "could
- * not be checked".
+ *   back → title → "Every rule Weyos applied, most important first — and the ones it didn't"
+ *   → fired rows (pillar-bordered, layer-ordered) → Not applied → Technical detail → provenance
+ *
+ * The title changes with the outcome: "Why nothing changed" when no live rule fired, "Why
+ * tonight changed" when one did. Both are honest; only one of them is true on a given day.
+ *
+ * "Not applied" and "couldn't be checked" are rendered as separate blocks. Collapsing them
+ * would be the exact dishonesty three-valued evaluation exists to prevent.
  */
 
-import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { DemoDay } from "@weyos/demo-fixtures";
 
-import { Disclaimer, Link, TraceRow, WarnBox } from "../components/primitives";
+import { Card, Disclaimer, Link, TraceRow, WarnBox } from "../components/primitives";
 import { color, space, type } from "../theme/tokens";
-import { LAYER_NAMES, layerPillar } from "./copy";
+import { LAYER_NAMES, layerPillar, longDate } from "./copy";
 
 export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
   const decision = day.decision;
-  const [technical, setTechnical] = useState(false);
   const fired = [...decision.fired_rules].sort((a, b) => a.layer - b.layer);
   const warnings = decision.warnings ?? [];
+  const validatedOnly = decision.elemental_layer_enabled === false;
+
+  // A live-biometric rule firing is what makes tonight "changed" rather than "unchanged".
+  const liveRuleFired = fired.some((r) => r.layer === 1);
 
   return (
     <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-trace">
-      <Link text="‹ Back" onPress={onBack} />
-      <Text style={s.h1}>Why tonight changed</Text>
+      <Link text="‹ Back to tonight" onPress={onBack} />
+      <Text style={s.title}>{liveRuleFired ? "Why tonight changed" : "Why nothing changed"}</Text>
+      <Text style={s.sub}>
+        Every rule Weyos applied, most important first — and the ones it didn't.
+      </Text>
 
       {fired.map((rule) => (
         <TraceRow
           key={rule.rule_id}
           name={rule.name ?? rule.rule_id}
-          layerLabel={LAYER_NAMES[rule.layer] ?? `Layer ${rule.layer}`}
+          layerLabel={layerLabel(rule.layer)}
           evidence={(rule.because ?? []).join(" · ")}
           pillar={layerPillar(rule.layer)}
         />
       ))}
 
-      {/* Could not be checked — deliberately NOT the same as "did not apply". */}
+      {/* Absence is information. A trace that lists only hits reads as a justification
+          rather than a record. */}
       {day.unevaluable.length > 0 && (
         <>
-          <Text style={s.sect}>Couldn't be checked</Text>
+          <Text style={s.sect}>Not applied</Text>
           <TraceRow
-            name={`${day.unevaluable.length} guideline${day.unevaluable.length === 1 ? "" : "s"}`}
-            layerLabel="Not evaluated"
+            name="Couldn't be checked"
+            layerLabel={`${day.unevaluable.length} rule${day.unevaluable.length === 1 ? "" : "s"} · unevaluable`}
             evidence={
-              "A reading these needed hasn't come through, so I left them alone rather than " +
+              "A reading these need hasn't come through, so I left them alone rather than " +
               "assuming everything was fine."
             }
             off
           />
         </>
+      )}
+
+      {validatedOnly && (
+        <TraceRow
+          name="Your food profile and your environment"
+          layerLabel="Layers 3 and 4 · suppressed"
+          evidence="Switched off because validated signals only is on."
+          off
+        />
       )}
 
       {warnings.length > 0 && (
@@ -65,44 +84,47 @@ export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
         </>
       )}
 
-      {/* Boring, and the reason this screen is auditable. decision_id lands in Phase 3 — the
-          Decision contract carries no id today. */}
-      <View style={s.provenance}>
-        <Text style={s.meta}>
-          Rulebook v{decision.rulebook_version} · {decision.as_of}
-          {decision.elemental_layer_enabled === false ? " · validated signals only" : ""}
-        </Text>
+      <View style={s.tech}>
+        <Card flat>
+          <Text style={s.techHead}>Technical detail</Text>
+          <Text style={s.mono}>
+            {fired.map((r) => `${r.rule_id} L${r.layer} p${r.priority}`).join("  ·  ")}
+            {day.unevaluable.length > 0
+              ? `\nunevaluable: ${day.unevaluable.join(", ")}`
+              : ""}
+            {validatedOnly ? "\nvalidated_only_layers = [1,2,5]" : ""}
+          </Text>
+        </Card>
       </View>
 
-      <Link
-        text={technical ? "Hide technical detail" : "Show technical detail"}
-        onPress={() => setTechnical(!technical)}
+      {/* Boring, and the reason the screen is auditable. The pack shows a decision id here;
+          decision.schema.json carries none today — Phase 3 adds it as a content hash. */}
+      <Disclaimer
+        extra={`Rulebook v${decision.rulebook_version} · ${longDate(decision.as_of)}${
+          validatedOnly ? " · validated signals only" : ""
+        }`}
       />
-
-      {technical && (
-        <View style={s.tech}>
-          {fired.map((r) => (
-            <Text key={r.rule_id} style={s.mono}>
-              {r.rule_id}  L{r.layer}  p{r.priority}  {r.name ?? ""}
-            </Text>
-          ))}
-          {day.unevaluable.map((id) => (
-            <Text key={id} style={s.mono}>
-              {id}  unevaluable
-            </Text>
-          ))}
-        </View>
-      )}
-
-      <Disclaimer />
     </ScrollView>
   );
 }
 
+function layerLabel(layer: number): string {
+  const name = LAYER_NAMES[layer] ?? `Layer ${layer}`;
+  return layer === 4 ? `${name} · lowest priority` : `${name} · layer ${layer}`;
+}
+
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: space.sm },
-  h1: { ...{ fontSize: type.title.size, fontWeight: "600" }, color: color.ink, marginVertical: 16 },
+  content: { paddingHorizontal: 20, paddingBottom: 60 },
+  title: {
+    fontSize: type.title.size,
+    fontWeight: "600",
+    letterSpacing: -0.3,
+    color: color.ink,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  sub: { fontSize: type.sub.size, lineHeight: type.sub.size * 1.5, color: color.muted },
   sect: {
     fontSize: type.section.size,
     color: color.muted,
@@ -110,15 +132,9 @@ const s = StyleSheet.create({
     letterSpacing: 1.15,
     fontWeight: "600",
     marginTop: 24,
+    marginBottom: 10,
   },
-  provenance: { borderTopWidth: 1, borderTopColor: color.line, paddingTop: 14, marginTop: 20 },
-  meta: { fontSize: 12, color: color.muted },
-  tech: {
-    borderWidth: 1,
-    borderColor: color.line,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10,
-  },
-  mono: { fontSize: 11.5, fontFamily: "monospace", color: color.muted, lineHeight: 19 },
+  tech: { marginTop: 18 },
+  techHead: { fontSize: 12.5, fontWeight: "600", color: color.muted },
+  mono: { fontSize: 12.5, color: color.muted, marginTop: 6, lineHeight: 19 },
 });

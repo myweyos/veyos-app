@@ -28,6 +28,44 @@ export interface Tile {
 
 const round1 = (n: number): string => (Math.round(n * 10) / 10).toString();
 
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/**
+ * "Wednesday 19 August" — the pack's UK `datestr()`.
+ *
+ * Parsed as UTC so the rendered date is the snapshot's `as_of`, not whatever the device's
+ * timezone would shift it to. The engine reads no clock and neither does this.
+ *
+ * US formatting ("Wednesday, August 19") is region-dependent and belongs with the region
+ * work in A3; not implemented here rather than guessed at.
+ */
+export function longDate(iso: string): string {
+  const t = Date.parse(`${iso}T00:00:00Z`);
+  if (Number.isNaN(t)) return iso;
+  const d = new Date(t);
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+}
+
+/**
+ * The Partial state's warn-box sentence.
+ *
+ * Names what could not be checked, and says plainly that this is not reassurance. The pack's
+ * copy for James is the model: "with no wrist temperature, I can't check your immune and
+ * inflammatory rule either way — so I'm not telling you you're fine."
+ */
+export function unevaluableSentence(day: DemoDay): string {
+  const absent = absentLabels(day);
+  const what = absent.length === 0 ? "One of your signals" : absent.join(" and ");
+  return (
+    `${what} hasn't come through today, so a rule that needs it couldn't be checked ` +
+    `either way — I'm not telling you you're fine.`
+  );
+}
+
 /** One sentence for Today. Follows the pack's verdict voice per state. */
 export function headlineFor(day: DemoDay): string {
   switch (day.app_state) {

@@ -195,10 +195,17 @@ export function TraceRow({
  * L3 so the item stays, and the disagreement is SHOWN. Filtering these to make a screen look
  * clean would defeat the point.
  */
-export function WarnBox({ text }: { text: string }) {
+export function WarnBox({ text, onPress }: { text: string; onPress?: () => void }) {
   return (
-    <View style={s.warnbox}>
-      <Text style={s.warnText}>{text}</Text>
+    <View
+      style={s.warnbox}
+      accessibilityRole={onPress === undefined ? undefined : "button"}
+      onTouchEnd={onPress}
+    >
+      <Text style={s.warnText}>
+        {text}
+        {onPress !== undefined && <Text style={s.warnLink}> Why this?</Text>}
+      </Text>
     </View>
   );
 }
@@ -334,6 +341,7 @@ const s = StyleSheet.create({
     marginVertical: 14,
   },
   warnText: { fontSize: 13.5, lineHeight: 13.5 * 1.5, color: color.warnInk },
+  warnLink: { textDecorationLine: "underline", fontWeight: "600" },
   note: { backgroundColor: color.surface2, borderRadius: radius.note, padding: 10, marginTop: 14 },
   noteText: { fontSize: 12, color: color.muted, lineHeight: 12 * 1.45 },
   btn: {
