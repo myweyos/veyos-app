@@ -1,0 +1,42 @@
+[project]
+name = "weyos-engine-http"
+version = "0.1.0"
+description = "HTTP boundary for the Weyos arbitration engine. The engine stays pure; this does the I/O."
+requires-python = ">=3.11"
+dependencies = [
+  "weyos-engine",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27", "jsonschema>=4.21", "ruff>=0.5", "mypy>=1.10", "types-jsonschema>=4.21"]
+
+[project.scripts]
+weyos-engine-http = "weyos_engine_http.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["weyos_engine_http"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+# The engine is installed editable, and mypy does not follow setuptools' import-finder shim.
+# Point it at the source tree instead. The engine ships a py.typed marker, so its types are
+# used rather than treated as Any.
+mypy_path = "../engine"

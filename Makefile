@@ -31,6 +31,12 @@ demo-regenerate: ## Rebuild demo-fixtures expected/ + decisions/ after a scenari
 web: ## Serve the app in a browser on localhost:8081 (review screens without a device)
 	cd apps/mobile && npx expo start --web
 
+sidecar: ## Run the engine over HTTP on 127.0.0.1:8000 (loopback only — it has no auth)
+	cd services/engine-http && python3 -m weyos_engine_http
+
+sidecar-test: ## Sidecar suite, lint and types
+	cd services/engine-http && python3 -m pytest && python3 -m ruff check . && python3 -m mypy weyos_engine_http
+
 api-test: ## API unit tests
 	npm run test --workspace @weyos/api --if-present
 
@@ -52,4 +58,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate web infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate web sidecar sidecar-test infra-up infra-down dev

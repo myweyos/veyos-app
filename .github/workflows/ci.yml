@@ -20,6 +20,14 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install -e "services/engine[dev]"
+      - name: Engine environment is web-free
+        # ADR 0004: the engine's install must never pull a web framework. If this starts
+        # failing, something has been added to services/engine that belongs in engine-http.
+        run: |
+          if python -m pip freeze | grep -qiE '^(fastapi|uvicorn|starlette|httpx|requests)'; then
+            echo "::error::A web dependency reached the engine environment. See ADR 0004."
+            exit 1
+          fi
       - name: Golden fixtures
         run: cd services/engine && python -m pytest -v
       - name: Lint
@@ -30,6 +38,26 @@ jobs:
         # Cheap grid. Catches a harness that has drifted from the engine's trace format or a
         # sweep that no longer reaches every enabled rule.
         run: cd services/engine && python -m backtest run --synthetic --grid quick --quiet
+
+  sidecar:
+    name: Engine sidecar (HTTP boundary)
+    runs-on: ubuntu-latest
+    # Deliberately a SEPARATE job from `engine`, not an extra step in it. That separation is
+    # the CI-level proof that the engine's own environment never contains FastAPI — which is
+    # the whole argument in ADR 0004 for splitting the distributions. Do not merge them.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -e "services/engine" -e "services/engine-http[dev]"
+      - name: Sidecar tests
+        run: cd services/engine-http && python -m pytest -v
+      - name: Lint
+        run: cd services/engine-http && python -m ruff check .
+      - name: Types
+        run: cd services/engine-http && python -m mypy weyos_engine_http
 
   contract:
     name: Contract (schema is the source of truth)

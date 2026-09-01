@@ -26,6 +26,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["weyos_engine", "backtest", "demo_driver"]
 
+[tool.setuptools.package-data]
+# PEP 561. These packages are mypy --strict clean, so consumers should use their types rather
+# than treating them as Any — services/engine-http depends on exactly that.
+weyos_engine = ["py.typed"]
+backtest = ["py.typed"]
+demo_driver = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
