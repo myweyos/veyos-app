@@ -22,6 +22,12 @@ venv/
 .idea/
 .vscode/
 
+# TypeScript emitted beside its own source. packages/shared-schema points `main` and `types`
+# at src/index.ts, so a sibling index.js silently WINS node module resolution over the source
+# — consumers would import a stale compiled copy of the contract with no error to say so.
+packages/shared-schema/src/*.js
+packages/shared-schema/src/*.d.ts
+
 # Never commit real subject data. Simulated personas live in tests/fixtures and are the
 # only signal data allowed in this repo.
 data/
