@@ -9,7 +9,7 @@
     "dev": "nest start --watch",
     "test": "jest",
     "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",

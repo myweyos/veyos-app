@@ -147,3 +147,52 @@ export interface Decision {
   warnings?: string[];
   trace: TraceEntry[];
 }
+
+/** Engine warnings, classified. Raw strings interpolate subject values; these do not. */
+export type WarningKind =
+  | "cold_start"
+  | "cycle_undefined"
+  | "no_baseline"
+  | "layer2_conflict"
+  | "tag_collision"
+  | "zscore_fallback"
+  | "uncategorised";
+
+/**
+ * Facts a client needs that the Decision does not carry in machine-readable form.
+ *
+ * Deliberately has NO `ui_state`. The engine emits three states and the product design needs
+ * six; every mapping between them resolves an open spec question, so the mapping lives in
+ * `packages/demo-fixtures/app-states.json` as reviewable data. See ADR 0006.
+ */
+export interface DecisionPresentation {
+  fired_layers: number[];
+  /** Rules whose conditions came out UNKNOWN. NOT the same as rules that did not fire. */
+  unevaluable_rule_ids: string[];
+  /** Rules skipped because validated-signals-only mode is on. */
+  suppressed_rule_ids: string[];
+  warning_kinds: WarningKind[];
+}
+
+/**
+ * A Decision plus what is true *about* it.
+ *
+ * `decision_id` is the first 16 hex characters of sha256 over the canonical JSON of
+ * `decision` — derived, not minted, which is why it needs no store to be resolvable. It is
+ * computed once, in Python: JS and Python `JSON.stringify`/`json.dumps` disagree on number
+ * formatting and escaping, so a second implementation would drift invisibly. Treat it as
+ * opaque here.
+ *
+ * `decision` is transmitted byte-for-byte unmodified. Mutating it anywhere in the chain
+ * breaks both the id and the schema validation.
+ */
+export interface DecisionEnvelope {
+  envelope_version: 1;
+  decision_id: string;
+  decision: Decision;
+  presentation: DecisionPresentation;
+  engine: {
+    rulebook_version: number;
+    elemental_layer_enabled: boolean;
+  };
+}

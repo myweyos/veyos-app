@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.weyos.app/v1/decision-envelope.json",
+  "title": "DecisionEnvelope",
+  "description": "A Decision plus the things that are true ABOUT it rather than in it: a content-derived id, and facts a client needs that the Decision does not carry. Additive — decision.json is unchanged and its schema_version stays 1. See docs/adr/0006-decision-identity-and-envelope.md.",
+  "type": "object",
+  "required": ["envelope_version", "decision_id", "decision", "presentation", "engine"],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_version": { "const": 1 },
+
+    "decision_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "description": "First 16 hex characters of sha256 over the canonical JSON of `decision`. Derived, not minted: the engine is pure and its determinism is proved by test_engine_is_deterministic, so the same snapshot against the same rulebook yields the same id anywhere, with no store. Anyone holding this payload can recompute it. This is CONTENT identity — the same person on two identical days gets the same id — not delivery identity."
+    },
+
+    "decision": {
+      "$ref": "https://schema.weyos.app/v1/decision.json",
+      "description": "The engine's output, transmitted byte-for-byte unmodified. If anything in the chain mutates it, decision_id stops being re-derivable and validating it against the published schema stops meaning anything."
+    },
+
+    "presentation": {
+      "type": "object",
+      "description": "Re-projections of facts already inside the decision, so a client does not have to string-parse the trace. Deliberately carries NO ui_state: the engine emits three states and the product needs six, and every mapping between them resolves an open spec question. Its absence is the statement.",
+      "required": ["fired_layers", "unevaluable_rule_ids", "suppressed_rule_ids", "warning_kinds"],
+      "additionalProperties": false,
+      "properties": {
+        "fired_layers": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 5 }
+        },
+        "unevaluable_rule_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Rules whose conditions came out UNKNOWN. Not the same as rules that did not fire."
+        },
+        "suppressed_rule_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Rules skipped because validated-signals-only mode is on."
+        },
+        "warning_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "cold_start",
+              "cycle_undefined",
+              "no_baseline",
+              "layer2_conflict",
+              "tag_collision",
+              "zscore_fallback",
+              "uncategorised"
+            ]
+          },
+          "description": "Engine warnings classified into kinds. The raw strings interpolate subject values (days_of_history, cycle_day) and are carried in decision.warnings for the subject's own device — never in a log. Classification happens in Python beside the engine, not by prefix-matching prose in a controller."
+        }
+      }
+    },
+
+    "engine": {
+      "type": "object",
+      "required": ["rulebook_version", "elemental_layer_enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "rulebook_version": { "type": "integer" },
+        "elemental_layer_enabled": { "type": "boolean" }
+      }
+    }
+  }
+}

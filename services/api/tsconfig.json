@@ -1,11 +1,12 @@
 {
+  "$comment": "rootDir is the repo root, not ./src. The API imports @weyos/shared-schema from SOURCE (it ships no build output yet — VEY-SCHEMA-GEN), and TypeScript requires rootDir to contain every file in the program. With rootDir ./src this was TS6059 by construction, which is why `nest build` and `nest start` had never worked. Emit therefore lands at dist/services/api/src/, and nest-cli.json points entryFile at it. Revert both once shared-schema publishes built declarations.",
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2022",
     "lib": ["ES2022"],
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../..",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

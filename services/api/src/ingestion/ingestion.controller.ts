@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
-import type { Decision, SignalSnapshot } from "@weyos/shared-schema";
+import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 
+import { EngineClient } from "../engine/engine.client";
 import { SnapshotValidator } from "./snapshot.validator";
 
 /**
@@ -16,14 +17,18 @@ import { SnapshotValidator } from "./snapshot.validator";
  *     ends up in a store we then have to justify to a regulator.
  *
  * TODO(VEY-INGEST-2): persist to Timescale, enqueue for the engine, return 202 with a
- * decision id rather than computing inline. Inline is fine while the engine is <5ms.
+ * decision id rather than computing inline. Inline is fine while the engine is <5ms — see
+ * ADR 0004, which sequences the queue for when the execution layer lands.
  */
 @Controller("v1/ingest")
 export class IngestionController {
-  constructor(private readonly validator: SnapshotValidator) {}
+  constructor(
+    private readonly validator: SnapshotValidator,
+    private readonly engine: EngineClient,
+  ) {}
 
   @Post("snapshot")
-  async ingest(@Body() body: unknown): Promise<{ accepted: true; decision: Decision | null }> {
+  async ingest(@Body() body: unknown): Promise<{ accepted: true; decision: DecisionEnvelope }> {
     const result = this.validator.validate(body);
     if (!result.ok) {
       // Deliberately returns field paths and rule messages, never the offending VALUES —
@@ -32,10 +37,10 @@ export class IngestionController {
     }
 
     const snapshot: SignalSnapshot = result.value;
-    void snapshot;
 
-    // TODO(VEY-ENGINE-1): call the Python engine. Decision: in-process via a sidecar HTTP
-    // call, or a queue? See docs/adr/0004-engine-invocation.md — UNDECIDED, do not guess.
-    return { accepted: true, decision: null };
+    // VEY-ENGINE-1, resolved. ADR 0004 chose a FastAPI sidecar; EngineClient is the seam that
+    // becomes a queue publisher when option 2 lands, without moving this controller.
+    const decision = await this.engine.decide(snapshot);
+    return { accepted: true, decision };
   }
 }
