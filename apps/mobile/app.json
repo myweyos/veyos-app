@@ -6,7 +6,6 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "ios": {
       "bundleIdentifier": "app.weyos.client",
       "supportsTablet": false,
@@ -14,7 +13,11 @@
         "NSHealthShareUsageDescription": "Weyos reads your heart-rate variability, resting heart rate, sleep and temperature to decide what your body needs today.",
         "NSHealthUpdateUsageDescription": "Weyos writes completed sessions back to Health so your record stays in one place.",
         "NSBluetoothAlwaysUsageDescription": "Weyos connects to your chest strap for real-time heart-rate variability.",
-        "UIBackgroundModes": ["bluetooth-central", "fetch", "processing"]
+        "UIBackgroundModes": [
+          "bluetooth-central",
+          "fetch",
+          "processing"
+        ]
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
@@ -34,10 +37,25 @@
         "android.permission.health.READ_STEPS"
       ]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "extra": {
       "$comment": "eas.projectId is added by `eas init`. Do not hand-write it.",
-      "apiBaseUrl": "http://localhost:3000"
+      "apiBaseUrl": "http://localhost:3000",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "58b5b2d9-a951-41be-97d6-c18c3c9447b7"
+      }
+    },
+    "owner": "robert-qordev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/58b5b2d9-a951-41be-97d6-c18c3c9447b7"
     }
   }
 }

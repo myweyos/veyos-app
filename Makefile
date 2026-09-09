@@ -4,9 +4,10 @@ SHELL := /bin/bash
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Install everything (node workspaces + engine dev deps)
+setup: ## Install everything (node workspaces + engine + sidecar dev deps)
 	npm install
 	python3 -m pip install -e "services/engine[dev]"
+	python3 -m pip install -e "services/engine-http[dev]"
 
 test: engine-test api-test ## Run every suite
 
@@ -28,8 +29,8 @@ demo: ## Walk the scripted demo scenarios, e.g. make demo PERSONA=james
 demo-regenerate: ## Rebuild demo-fixtures expected/ + decisions/ after a scenario or rulebook change
 	cd services/engine && python3 -m demo_driver --generate
 
-web: ## Serve the app in a browser on localhost:8081 (review screens without a device)
-	cd apps/mobile && npx expo start --web
+web: ## Run the app on the Android Studio emulator (expo run:android)
+	npm run android --workspace @weyos/mobile
 
 sidecar: ## Run the engine over HTTP on 127.0.0.1:8000 (loopback only — it has no auth)
 	cd services/engine-http && python3 -m weyos_engine_http
@@ -42,6 +43,9 @@ api-test: ## API unit tests
 
 typecheck: ## TypeScript across all workspaces
 	npm run typecheck
+
+boundaries: ## Enforce service boundaries (no cross-imports except via shared packages)
+	python3 tools/check_service_boundaries.py
 
 decision: ## Print a decision trace, e.g. make decision PERSONA=alex STATE=crash
 	cd services/engine && python3 -m weyos_engine.cli --persona $(or $(PERSONA),sarah) --state $(or $(STATE),crash)
@@ -58,4 +62,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck decision decision-validated backtest backtest-validated demo demo-regenerate web sidecar sidecar-test infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck boundaries decision decision-validated backtest backtest-validated demo demo-regenerate web sidecar sidecar-test infra-up infra-down dev
