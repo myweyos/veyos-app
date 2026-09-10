@@ -87,6 +87,17 @@ jobs:
           npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/signal-snapshot.schema.json --spec=draft2020
           npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/decision.schema.json --spec=draft2020
 
+  boundaries:
+    name: Service boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: No cross-service imports except via shared packages
+        run: python3 tools/check_service_boundaries.py
+
   guardrails:
     name: Guardrails
     runs-on: ubuntu-latest
@@ -112,3 +123,28 @@ jobs:
             echo "::error::Logging biometric data. Log rule ids and deltas only."
             exit 1
           fi
+
+  mobile_build:
+    name: Mobile dev build (compiles)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - run: npm ci || npm install
+      - name: Expo config health
+
+        run: cd apps/mobile && npx --yes expo-doctor
+      - name: Prebuild Android from committed config
+
+        run: cd apps/mobile && npx expo prebuild --platform android --no-install
+      - name: Compile development client (Android debug)
+        run: cd apps/mobile/android && ./gradlew :app:assembleDebug --no-daemon
