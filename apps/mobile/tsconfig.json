@@ -5,6 +5,7 @@
     "strict": true,
     "noEmit": true,
     "paths": {
+      "@weyos/demo-fixtures": ["../../packages/demo-fixtures/src/index.ts"],
       "@weyos/shared-schema": ["../../packages/shared-schema/src/index.ts"]
     }
   },
