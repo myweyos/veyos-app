@@ -140,7 +140,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
       - run: npm ci || npm install
       - name: Expo config health
 
