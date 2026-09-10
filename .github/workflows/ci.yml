@@ -95,6 +95,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Boundary checker self-tests
+        run: python3 -m unittest discover -s tools/tests
       - name: No cross-service imports except via shared packages
         run: python3 tools/check_service_boundaries.py
 
@@ -127,7 +129,7 @@ jobs:
   mobile_build:
     name: Mobile dev build (compiles)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'development')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -45,6 +45,7 @@ typecheck: ## TypeScript across all workspaces
 	npm run typecheck
 
 boundaries: ## Enforce service boundaries (no cross-imports except via shared packages)
+	python3 -m unittest discover -s tools/tests
 	python3 tools/check_service_boundaries.py
 
 decision: ## Print a decision trace, e.g. make decision PERSONA=alex STATE=crash
