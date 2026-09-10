@@ -76,8 +76,17 @@ export class JiraClient {
     this.auth = "Basic " + Buffer.from(`${cfg.email}:${cfg.token}`).toString("base64");
   }
 
-  async request(method, path, body) {
-    const url = `${this.cfg.baseUrl}/rest/api/3${path}`;
+  /** Boards and sprints live on the Agile API, which is a different base path. */
+  agile(method, path, body) {
+    return this.raw(method, `/rest/agile/1.0${path}`, body);
+  }
+
+  request(method, path, body) {
+    return this.raw(method, `/rest/api/3${path}`, body);
+  }
+
+  async raw(method, path, body) {
+    const url = `${this.cfg.baseUrl}${path}`;
     const response = await fetch(url, {
       method,
       headers: {
