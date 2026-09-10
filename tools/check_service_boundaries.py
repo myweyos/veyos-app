@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -54,14 +55,19 @@ SKIP_DIR_NAMES = {"node_modules", "dist", "build", ".next", "__pycache__", ".ven
 TS_IMPORT_RE = re.compile(
     r"""(?:from|import|require)\s*\(?\s*['"]([^'"]+)['"]"""
 )
-# from x import ...  |  import x
-PY_IMPORT_RE = re.compile(r"""^\s*(?:from\s+([.\w]+)\s+import|import\s+([.\w]+))""")
+# from x import ...   (one module)
+PY_FROM_RE = re.compile(r"""^\s*from\s+([.\w]+)\s+import\b""")
+# import a, b.c as d, ...   (the comma-separated tail is parsed per-module below)
+PY_IMPORT_RE = re.compile(r"""^\s*import\s+(.+)""")
+
+SOURCE_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts", ".py")
+TS_SUFFIXES = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"}
 
 
-def discover_units() -> list[str]:
+def discover_units(root: Path) -> list[str]:
     units: list[str] = []
     for parent in UNIT_PARENTS:
-        pdir = REPO_ROOT / parent
+        pdir = root / parent
         if not pdir.is_dir():
             continue
         for child in sorted(pdir.iterdir()):
@@ -70,10 +76,10 @@ def discover_units() -> list[str]:
     return units
 
 
-def discover_shared_packages() -> set[str]:
+def discover_shared_packages(root: Path) -> set[str]:
     """Published package names under packages/* -- the allowed shared layer."""
     names: set[str] = set()
-    pkg_root = REPO_ROOT / "packages"
+    pkg_root = root / "packages"
     if not pkg_root.is_dir():
         return names
     for child in sorted(pkg_root.iterdir()):
@@ -88,28 +94,43 @@ def discover_shared_packages() -> set[str]:
     return names
 
 
-def owning_unit(path: Path, units: list[str]) -> str | None:
-    rel = path.resolve().relative_to(REPO_ROOT).as_posix()
+def iter_source_files(root: Path, units: list[str]) -> Iterator[tuple[str, Path]]:
     for unit in units:
-        if rel == unit or rel.startswith(unit + "/"):
-            return unit
-    return None
-
-
-def iter_source_files(units: list[str]):
-    for unit in units:
-        for path in (REPO_ROOT / unit).rglob("*"):
-            if path.suffix not in (".ts", ".tsx", ".py"):
+        for path in (root / unit).rglob("*"):
+            if path.suffix not in SOURCE_SUFFIXES:
                 continue
             if any(part in SKIP_DIR_NAMES for part in path.parts):
                 continue
             yield unit, path
 
 
-def check_ts(unit: str, path: Path, shared_packages: set[str]) -> list[str]:
+def _strip_ts_comment(line: str) -> str:
+    """Return the code portion of a line, dropping a // line-comment.
+
+    Quote-aware so a // inside a string (e.g. a "https://" specifier) is preserved;
+    lines that are purely a /* ... */ or * block-comment carry no import and are dropped.
+    """
+    stripped = line.lstrip()
+    if stripped.startswith(("/*", "*")):
+        return ""
+    quote: str | None = None
+    for i in range(len(line) - 1):
+        c = line[i]
+        if quote:
+            if c == quote:
+                quote = None
+        elif c in "\"'`":
+            quote = c
+        elif c == "/" and line[i + 1] == "/":
+            return line[:i]
+    return line
+
+
+def check_ts(root: Path, unit: str, path: Path, shared_packages: set[str]) -> list[str]:
     violations: list[str] = []
-    unit_root = (REPO_ROOT / unit).resolve()
-    for lineno, line in enumerate(path.read_text().splitlines(), 1):
+    unit_root = (root / unit).resolve()
+    for lineno, raw_line in enumerate(path.read_text().splitlines(), 1):
+        line = _strip_ts_comment(raw_line)
         m = TS_IMPORT_RE.search(line)
         if not m:
             continue
@@ -119,56 +140,79 @@ def check_ts(unit: str, path: Path, shared_packages: set[str]) -> list[str]:
             target = (path.parent / spec).resolve()
             if unit_root not in target.parents and target != unit_root:
                 violations.append(
-                    f"{path.relative_to(REPO_ROOT)}:{lineno}: relative import "
+                    f"{path.relative_to(root)}:{lineno}: relative import "
                     f'"{spec}" escapes {unit}'
                 )
         elif spec.startswith("@weyos/"):
             # Cross-unit only via a shared package under packages/*.
             if spec not in shared_packages:
                 violations.append(
-                    f"{path.relative_to(REPO_ROOT)}:{lineno}: import of "
+                    f"{path.relative_to(root)}:{lineno}: import of "
                     f'"{spec}" is not a shared packages/* package'
                 )
         # Bare third-party specifiers (react, @nestjs/*, ...) are fine.
     return violations
 
 
-def check_py(unit: str, path: Path) -> list[str]:
+def _py_imported_tops(line: str) -> list[str]:
+    """Top-level package names a Python line imports (empty for relative imports).
+
+    Handles `from x.y import z` (one module) and `import a, b.c as d` (several),
+    stripping `as` aliases. Leading-dot (relative) imports stay inside the unit.
+    """
+    m = PY_FROM_RE.match(line)
+    if m:
+        raw = m.group(1)
+        return [] if raw.startswith(".") else [raw.split(".")[0]]
+    m = PY_IMPORT_RE.match(line)
+    if not m:
+        return []
+    tops: list[str] = []
+    for part in m.group(1).split(","):
+        name = part.strip().split(" as ")[0].strip()
+        if not name or name.startswith("."):
+            continue
+        tops.append(name.split(".")[0])
+    return tops
+
+
+def check_py(root: Path, unit: str, path: Path) -> list[str]:
     violations: list[str] = []
     allowed = ALLOWED_PYTHON_CROSS_IMPORTS.get(unit, set())
     is_engine = unit == "services/engine"
     for lineno, line in enumerate(path.read_text().splitlines(), 1):
-        m = PY_IMPORT_RE.match(line)
-        if not m:
-            continue
-        module = (m.group(1) or m.group(2) or "").lstrip(".")
-        top = module.split(".")[0]
-        if not top:
-            continue  # purely relative (from . import x) stays inside the unit
-        if is_engine and top in ENGINE_FORBIDDEN_PYTHON:
-            violations.append(
-                f"{path.relative_to(REPO_ROOT)}:{lineno}: engine imports web "
-                f'framework "{top}" (ADR 0004: engine is pure)'
-            )
-            continue
-        owner = PYTHON_PACKAGE_OWNER.get(top)
-        if owner and owner != unit and top not in allowed:
-            violations.append(
-                f"{path.relative_to(REPO_ROOT)}:{lineno}: cross-unit import "
-                f'"{top}" (owned by {owner}); go through a shared package or HTTP'
-            )
+        for top in _py_imported_tops(line):
+            if is_engine and top in ENGINE_FORBIDDEN_PYTHON:
+                violations.append(
+                    f"{path.relative_to(root)}:{lineno}: engine imports web "
+                    f'framework "{top}" (ADR 0004: engine is pure)'
+                )
+                continue
+            owner = PYTHON_PACKAGE_OWNER.get(top)
+            if owner and owner != unit and top not in allowed:
+                violations.append(
+                    f"{path.relative_to(root)}:{lineno}: cross-unit import "
+                    f'"{top}" (owned by {owner}); go through a shared package or HTTP'
+                )
+    return violations
+
+
+def scan(root: Path) -> list[str]:
+    """Return all service-boundary violations found under ``root`` (empty == clean)."""
+    units = discover_units(root)
+    shared_packages = discover_shared_packages(root)
+    violations: list[str] = []
+    for unit, path in iter_source_files(root, units):
+        if path.suffix == ".py":
+            violations.extend(check_py(root, unit, path))
+        else:
+            violations.extend(check_ts(root, unit, path, shared_packages))
     return violations
 
 
 def main() -> int:
-    units = discover_units()
-    shared_packages = discover_shared_packages()
-    violations: list[str] = []
-    for unit, path in iter_source_files(units):
-        if path.suffix == ".py":
-            violations.extend(check_py(unit, path))
-        else:
-            violations.extend(check_ts(unit, path, shared_packages))
+    units = discover_units(REPO_ROOT)
+    violations = scan(REPO_ROOT)
 
     if violations:
         print("Service boundary violations (SCRUM-20 AC2):", file=sys.stderr)
