@@ -3,6 +3,20 @@
 Read this before making changes. It applies to Claude Code, to any other agent, and
 honestly to humans too.
 
+## Current plan — read this before picking up any ticket
+
+**As of 2026-09-10 the plan is `docs/build-plan-v2-direct-to-product.md`. It supersedes
+`docs/build-plan-stage1-wrapper.md`, which is retained for history only.**
+
+Two things changed:
+
+1. **There is no investor demo stage.** We build the full MVP as specified — all five layers, the
+   complete surface set, UK and US — on live HealthKit / Health Connect / BLE data against a real
+   backend. Fixtures are tests and a dev harness, never a runtime data source.
+2. **The conversational layer is full agent orchestration**, not a chat wrapper: an agent with a
+   tool surface that can read engine state *and take bounded actions on the user's plan*, under the
+   authority model in §6 of the plan.
+
 ## What this project is
 
 Weyos ingests biometric signals (HRV, RHR, sleep stages, wrist temperature, steps, plus
@@ -26,6 +40,19 @@ threshold Z".
 6. **Layer separation is a product requirement, not a preference.** With
    `features.elemental_layer = false` the engine must produce a decision derived solely
    from L1/L2/L5. Fixture F11 proves this. If F11 goes red, stop.
+
+7. **The engine is the sole author of every health judgement.** The agent orchestrates around it.
+   It never decides, never overrides, never re-weights, and never narrates a Layer 1 decision — it
+   hands off to the structured takeover. Everything the agent says about the user's body arrives as
+   an already-decided object through the context builder. No tool reaches a signal store directly.
+8. **Agent actions are proposals, not writes.** Every mutating tool call goes through the effect
+   layer: deterministic precondition check, confirmation policy, turn-scoped idempotency key,
+   append-only audit entry. An action that contradicts today's engine decision is refused, not
+   warned. The agent never changes consent state, never edits a signal, a baseline, a rule or a
+   stored trace, and never confirms on the user's behalf.
+9. **No demo mode, in any build.** No fixture-backed screens, no scenario switcher outside a
+   dev-only harness, no simulated intervention a user could reach. If a code path exists so that
+   something *looks* like it works, delete it.
 
 ## Conventions
 
@@ -55,6 +82,14 @@ one, raise it rather than picking an answer:
 - **Ginger-for-a-Pitta:** L1's immunity basket mandates warming ginger while L3 Pitta blocks
   hot/spicy. L1 correctly wins, but it reads badly in the UI on a 30 °C day. Likely needs
   per-item substitution in L1 effects.
+
+- **Dosha vs baseline phenotype.** The Baseline Phenotype epic *replaces* the dosha model, while
+  rules 3.1–3.3 fire on dosha membership today and the personas, fixtures, L3 trace rows and food
+  chain all assume it. Largest source of rework in the backlog. Do not start either side of it
+  without an answer.
+
+The full decision list, with owners and what each one blocks, is §9 of
+`docs/build-plan-v2-direct-to-product.md`. That list is authoritative; this one is the short form.
 
 ## Do not port from the Base44 prototype
 
