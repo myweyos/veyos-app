@@ -1,0 +1,9 @@
+{
+  "$comment": "TypeScript config for test files. Extends tsconfig.json and adds jest globals. Used by ts-jest and the IDE for *.spec.ts files.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
+  },
+  "include": ["src/**/*.spec.ts", "src/**/*.ts"]
+}

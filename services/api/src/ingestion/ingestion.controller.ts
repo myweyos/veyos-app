@@ -1,7 +1,9 @@
-import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
-import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
+import { BadRequestException, Body, Controller, HttpCode, Post } from "@nestjs/common";
+import type { SignalSnapshot } from "@weyos/shared-schema";
 
 import { EngineClient } from "../engine/engine.client";
+import { DecisionRepository } from "../store/decision.repository";
+import { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 import { SnapshotValidator } from "./snapshot.validator";
 
 /**
@@ -16,31 +18,47 @@ import { SnapshotValidator } from "./snapshot.validator";
  *  2. This is Art.9 special-category data. An unvalidated field that slips through here
  *     ends up in a store we then have to justify to a regulator.
  *
- * TODO(VEY-INGEST-2): persist to Timescale, enqueue for the engine, return 202 with a
- * decision id rather than computing inline. Inline is fine while the engine is <5ms — see
- * ADR 0004, which sequences the queue for when the execution layer lands.
+ * Persistence order (SCRUM-72):
+ *   validate → upsert snapshot → call engine → persist decision → return decision_id
+ *
+ * The snapshot is persisted BEFORE the engine call so that if the engine fails the payload
+ * is not lost and can be retried. If the decision persist fails after the engine call, the
+ * snapshot is stored and a retry will produce the same decision_id (content-addressed,
+ * ADR 0006) — ON CONFLICT DO NOTHING makes the re-insert safe.
  */
 @Controller("v1/ingest")
 export class IngestionController {
   constructor(
     private readonly validator: SnapshotValidator,
     private readonly engine: EngineClient,
+    private readonly snapshots: SignalSnapshotRepository,
+    private readonly decisions: DecisionRepository,
   ) {}
 
   @Post("snapshot")
-  async ingest(@Body() body: unknown): Promise<{ accepted: true; decision: DecisionEnvelope }> {
+  @HttpCode(202)
+  async ingest(@Body() body: unknown): Promise<{ accepted: true; decision_id: string }> {
     const result = this.validator.validate(body);
     if (!result.ok) {
       // Deliberately returns field paths and rule messages, never the offending VALUES —
       // error payloads get logged and we do not log biometrics.
-      throw new BadRequestException({ message: "snapshot failed schema validation", errors: result.errors });
+      throw new BadRequestException({
+        message: "snapshot failed schema validation",
+        errors: result.errors,
+      });
     }
 
     const snapshot: SignalSnapshot = result.value;
 
-    // VEY-ENGINE-1, resolved. ADR 0004 chose a FastAPI sidecar; EngineClient is the seam that
-    // becomes a queue publisher when option 2 lands, without moving this controller.
-    const decision = await this.engine.decide(snapshot);
-    return { accepted: true, decision };
+    // Persist before dispatch — a failed engine call leaves the snapshot available for retry.
+    await this.snapshots.upsert(snapshot);
+
+    // ADR 0004: EngineClient is the seam that becomes a queue publisher when option 2 lands.
+    const envelope = await this.engine.decide(snapshot);
+
+    // decision_id is content-addressed (ADR 0006); ON CONFLICT DO NOTHING makes retries safe.
+    await this.decisions.save(envelope);
+
+    return { accepted: true, decision_id: envelope.decision_id };
   }
 }
