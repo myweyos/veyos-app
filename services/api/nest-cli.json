@@ -4,6 +4,7 @@
   "sourceRoot": "src",
   "entryFile": "services/api/src/main",
   "compilerOptions": {
+    "assets": [{ "include": "database/migrations/*.sql", "outDir": "dist/services/api/src" }],
     "deleteOutDir": true
   }
 }
