@@ -1,9 +1,20 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit, Optional } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+  Optional,
+} from "@nestjs/common";
 import type { DecisionEnvelope } from "@weyos/shared-schema";
+import type Redis from "ioredis";
 
 import { EngineClient } from "../engine/engine.client";
+import { REDIS_CLIENT } from "../redis/redis.tokens";
 import { DecisionRepository } from "../store/decision.repository";
 import { PersonaSource, type Selector } from "./personas.source";
+
+const DECISION_TTL_S = 86_400; // 24 h
 
 /**
  * One decision per request, projected five ways.
@@ -17,20 +28,11 @@ import { PersonaSource, type Selector } from "./personas.source";
 export class DecisionService implements OnModuleInit {
   private readonly log = new Logger(DecisionService.name);
 
-  /**
-   * Resolves `/decision/:id/trace` with no persistence.
-   *
-   * The engine is deterministic, so the whole demo matrix — 3 personas × 2 states × 2
-   * elemental settings — is 12 decisions that can be computed at boot in one batched call and
-   * held in memory. When the decisions table lands this becomes a repository lookup and
-   * nothing else changes. Empty when demo fixtures are off.
-   */
-  private readonly byId = new Map<string, DecisionEnvelope>();
-
   constructor(
     private readonly engine: EngineClient,
     private readonly personas: PersonaSource,
     @Optional() private readonly decisionRepo?: DecisionRepository,
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -58,29 +60,60 @@ export class DecisionService implements OnModuleInit {
   async forSelector(selector: Selector): Promise<DecisionEnvelope> {
     const { snapshot } = await this.personas.resolve(selector);
     const envelope = await this.engine.decide(snapshot, selector.elemental);
-    this.byId.set(envelope.decision_id, envelope);
+    await this.cacheDecision(envelope);
     return envelope;
   }
 
   /**
    * Look up a decision by id.
    *
-   * Checks the in-memory demo cache first (avoids a DB round-trip for fixture decisions).
-   * Falls through to the decisions table when the cache misses. Throws NotFoundException
-   * for ids that exist in neither — consistent with the previous synchronous behaviour.
+   * Checks Redis first (avoids a DB round-trip for recently computed decisions and survives
+   * process restarts and horizontal scaling). Falls through to the decisions table on a cache
+   * miss. Throws NotFoundException for ids that exist in neither.
    */
   async byDecisionId(id: string): Promise<DecisionEnvelope> {
-    const cached = this.byId.get(id);
-    if (cached !== undefined) return cached;
+    if (this.redis !== undefined) {
+      const raw = await this.redis.get(this.decisionKey(id));
+      if (raw !== null) {
+        this.log.debug(`decision cache hit: ${id}`);
+        return JSON.parse(raw) as DecisionEnvelope;
+      }
+      this.log.debug(`decision cache miss: ${id}`);
+    }
+
     if (this.decisionRepo !== undefined) {
       const found = await this.decisionRepo.findById(id);
-      if (found !== null) return found;
+      if (found !== null) {
+        await this.cacheDecision(found);
+        return found;
+      }
     }
+
     throw new NotFoundException({ error: "unknown_decision" });
+  }
+
+  /** Cache a freshly computed or retrieved envelope — fire-and-forget, never throws. */
+  async cacheDecision(envelope: DecisionEnvelope): Promise<void> {
+    if (this.redis === undefined) return;
+    try {
+      await this.redis.set(
+        this.decisionKey(envelope.decision_id),
+        JSON.stringify(envelope),
+        "EX",
+        DECISION_TTL_S,
+      );
+    } catch (err) {
+      // Cache write failures are not fatal — the source of truth is Postgres.
+      this.log.warn(`decision cache write failed for ${envelope.decision_id}: ${String(err)}`);
+    }
   }
 
   /** The snapshot a decision was computed from. `/v1/signals` needs it; a Decision has no readings. */
   async snapshotFor(selector: Selector) {
     return (await this.personas.resolve(selector)).snapshot;
+  }
+
+  private decisionKey(id: string): string {
+    return `decision:${id}`;
   }
 }

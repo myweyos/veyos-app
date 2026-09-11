@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 
 import type { BaselineComputationService } from "../baseline/baseline-computation.service";
+import type { DecisionsQueue } from "../decisions-queue/decisions.queue";
 import type { EngineClient } from "../engine/engine.client";
 import type { NormalisationService } from "../normalisation/normalisation.service";
 import type { DecisionRepository } from "../store/decision.repository";
@@ -28,8 +29,11 @@ function makeNormaliser(snapshot = makeSnapshot()): jest.Mocked<Pick<Normalisati
 }
 
 /** Default baselines: undefined (cold start, no history). */
-function makeBaselines(): jest.Mocked<Pick<BaselineComputationService, "computeFor">> {
-  return { computeFor: jest.fn().mockResolvedValue(undefined) };
+function makeBaselines(): jest.Mocked<Pick<BaselineComputationService, "computeFor" | "invalidate">> {
+  return {
+    computeFor: jest.fn().mockResolvedValue(undefined),
+    invalidate: jest.fn().mockResolvedValue(undefined),
+  };
 }
 
 function makeController({
@@ -37,11 +41,13 @@ function makeController({
   envelope = makeEnvelope(),
   upsert = jest.fn().mockResolvedValue(undefined),
   save = jest.fn().mockResolvedValue(undefined),
+  queue,
 }: {
   validationResult?: { ok: true; value: SignalSnapshot } | { ok: false; errors: string[] };
   envelope?: DecisionEnvelope;
   upsert?: jest.Mock;
   save?: jest.Mock;
+  queue?: jest.Mocked<Pick<DecisionsQueue, "enqueue">> | undefined;
 } = {}) {
   const normaliser = makeNormaliser(validationResult.ok ? validationResult.value : makeSnapshot());
   const baselines = makeBaselines();
@@ -61,9 +67,10 @@ function makeController({
     snapshots as unknown as SignalSnapshotRepository,
     decisions as unknown as DecisionRepository,
     baselines as unknown as BaselineComputationService,
+    queue as unknown as DecisionsQueue | undefined,
   );
 
-  return { controller, normaliser, validator, engine, snapshots, decisions, baselines };
+  return { controller, normaliser, validator, engine, snapshots, decisions, baselines, queue };
 }
 
 describe("IngestionController.ingest()", () => {
@@ -145,5 +152,60 @@ describe("IngestionController.ingest()", () => {
     await expect(controller.ingest({})).rejects.toThrow("engine timeout");
     // Snapshot was already persisted before the engine was called
     expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("invalidates the baseline cache after upsert and before computeFor", async () => {
+    const callOrder: string[] = [];
+    const upsert = jest.fn().mockImplementation(() => { callOrder.push("upsert"); return Promise.resolve(); });
+    const invalidate = jest.fn().mockImplementation(() => { callOrder.push("invalidate"); return Promise.resolve(); });
+    const computeFor = jest.fn().mockImplementation(() => { callOrder.push("computeFor"); return Promise.resolve(undefined); });
+
+    const controller = new IngestionController(
+      makeNormaliser() as unknown as NormalisationService,
+      { validate: jest.fn().mockReturnValue({ ok: true, value: makeSnapshot() }) } as unknown as SnapshotValidator,
+      { decide: jest.fn().mockResolvedValue(makeEnvelope()) } as unknown as EngineClient,
+      { upsert } as unknown as SignalSnapshotRepository,
+      { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
+      { computeFor, invalidate } as unknown as BaselineComputationService,
+    );
+
+    await controller.ingest({});
+
+    expect(callOrder).toEqual(["upsert", "invalidate", "computeFor"]);
+  });
+
+  it("enqueues the decision_id after a successful ingest (fire-and-forget)", async () => {
+    const queue: jest.Mocked<Pick<DecisionsQueue, "enqueue">> = {
+      enqueue: jest.fn().mockResolvedValue(undefined),
+    };
+    const { controller } = makeController({ queue });
+
+    await controller.ingest({});
+
+    // Allow the fire-and-forget promise to settle
+    await Promise.resolve();
+    expect(queue.enqueue).toHaveBeenCalledWith("abcd1234efgh5678");
+  });
+
+  it("does not fail the HTTP response when the queue rejects", async () => {
+    const queue: jest.Mocked<Pick<DecisionsQueue, "enqueue">> = {
+      enqueue: jest.fn().mockRejectedValue(new Error("redis down")),
+    };
+    const { controller } = makeController({ queue });
+
+    // Must resolve — queue failure must not propagate to the HTTP layer
+    await expect(controller.ingest({})).resolves.toEqual({
+      accepted: true,
+      decision_id: "abcd1234efgh5678",
+    });
+  });
+
+  it("succeeds without a queue (optional dependency)", async () => {
+    const { controller } = makeController();
+    // No queue injected — must not throw
+    await expect(controller.ingest({})).resolves.toEqual({
+      accepted: true,
+      decision_id: "abcd1234efgh5678",
+    });
   });
 });

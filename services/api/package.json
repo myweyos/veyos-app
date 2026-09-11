@@ -18,6 +18,8 @@
     "@nestjs/platform-express": "^10.4.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "bullmq": "^5.81.5",
+    "ioredis": "^5.11.1",
     "postgres": "^3.4.9",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

@@ -1,7 +1,8 @@
-import { BadRequestException, Body, Controller, HttpCode, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, HttpCode, Optional, Post } from "@nestjs/common";
 import type { SignalSnapshot } from "@weyos/shared-schema";
 
 import { BaselineComputationService } from "../baseline/baseline-computation.service";
+import { DecisionsQueue } from "../decisions-queue/decisions.queue";
 import { EngineClient } from "../engine/engine.client";
 import { NormalisationService } from "../normalisation/normalisation.service";
 import type { IngestPayload } from "../normalisation/vendor-types";
@@ -46,6 +47,7 @@ export class IngestionController {
     private readonly snapshots: SignalSnapshotRepository,
     private readonly decisions: DecisionRepository,
     private readonly baselines: BaselineComputationService,
+    @Optional() private readonly decisionsQueue?: DecisionsQueue,
   ) {}
 
   @Post("snapshot")
@@ -68,6 +70,11 @@ export class IngestionController {
     // Step 3: persist before dispatch — a failed engine call leaves the snapshot for retry
     await this.snapshots.upsert(snapshot);
 
+    // Step 3b: invalidate the baseline cache so the computeFor below reads fresh Postgres rows.
+    // The snapshot we just wrote may change the 14-day rolling mean (e.g. a second wearable
+    // sending on the same day). Cache-and-recompute is safer than stale-cache-and-skip.
+    await this.baselines.invalidate(snapshot.subject_ref, snapshot.as_of);
+
     // Step 4: compute baselines from DB history (Option B); fall back to client-sent if
     // cold start (Option A). snapshot.baselines carries the Option-A value when present.
     const computedBaselines = await this.baselines.computeFor(
@@ -86,6 +93,10 @@ export class IngestionController {
 
     // Step 7: decision_id is content-addressed (ADR 0006); ON CONFLICT DO NOTHING on retry
     await this.decisions.save(envelope);
+
+    // Step 8: enqueue for the execution layer — fire-and-forget (ADR 0004 §option-2 seam).
+    // A queue failure does not fail the HTTP response; the decision is already in Postgres.
+    void this.decisionsQueue?.enqueue(envelope.decision_id).catch(() => undefined);
 
     return { accepted: true, decision_id: envelope.decision_id };
   }
