@@ -1,7 +1,9 @@
 import { BadRequestException } from "@nestjs/common";
 import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 
+import type { BaselineComputationService } from "../baseline/baseline-computation.service";
 import type { EngineClient } from "../engine/engine.client";
+import type { NormalisationService } from "../normalisation/normalisation.service";
 import type { DecisionRepository } from "../store/decision.repository";
 import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 import { IngestionController } from "./ingestion.controller";
@@ -20,6 +22,16 @@ function makeEnvelope(): DecisionEnvelope {
   return { decision_id: "abcd1234efgh5678" } as unknown as DecisionEnvelope;
 }
 
+/** Default normaliser: pass-through (no vendor conversion needed for these tests). */
+function makeNormaliser(snapshot = makeSnapshot()): jest.Mocked<Pick<NormalisationService, "normalise">> {
+  return { normalise: jest.fn().mockResolvedValue(snapshot) };
+}
+
+/** Default baselines: undefined (cold start, no history). */
+function makeBaselines(): jest.Mocked<Pick<BaselineComputationService, "computeFor">> {
+  return { computeFor: jest.fn().mockResolvedValue(undefined) };
+}
+
 function makeController({
   validationResult = { ok: true as const, value: makeSnapshot() },
   envelope = makeEnvelope(),
@@ -31,6 +43,8 @@ function makeController({
   upsert?: jest.Mock;
   save?: jest.Mock;
 } = {}) {
+  const normaliser = makeNormaliser(validationResult.ok ? validationResult.value : makeSnapshot());
+  const baselines = makeBaselines();
   const validator: jest.Mocked<Pick<SnapshotValidator, "validate">> = {
     validate: jest.fn().mockReturnValue(validationResult),
   };
@@ -41,13 +55,15 @@ function makeController({
   const decisions: jest.Mocked<Pick<DecisionRepository, "save">> = { save };
 
   const controller = new IngestionController(
+    normaliser as unknown as NormalisationService,
     validator as unknown as SnapshotValidator,
     engine as unknown as EngineClient,
     snapshots as unknown as SignalSnapshotRepository,
     decisions as unknown as DecisionRepository,
+    baselines as unknown as BaselineComputationService,
   );
 
-  return { controller, validator, engine, snapshots, decisions };
+  return { controller, normaliser, validator, engine, snapshots, decisions, baselines };
 }
 
 describe("IngestionController.ingest()", () => {
@@ -74,10 +90,12 @@ describe("IngestionController.ingest()", () => {
     };
 
     const controller = new IngestionController(
+      makeNormaliser() as unknown as NormalisationService,
       { validate: jest.fn().mockReturnValue({ ok: true, value: makeSnapshot() }) } as unknown as SnapshotValidator,
       engine as unknown as EngineClient,
       { upsert } as unknown as SignalSnapshotRepository,
       { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
+      makeBaselines() as unknown as BaselineComputationService,
     );
 
     await controller.ingest({});
@@ -116,10 +134,12 @@ describe("IngestionController.ingest()", () => {
     };
 
     const controller = new IngestionController(
+      makeNormaliser() as unknown as NormalisationService,
       { validate: jest.fn().mockReturnValue({ ok: true, value: makeSnapshot() }) } as unknown as SnapshotValidator,
       engine as unknown as EngineClient,
       { upsert } as unknown as SignalSnapshotRepository,
       { save: jest.fn() } as unknown as DecisionRepository,
+      makeBaselines() as unknown as BaselineComputationService,
     );
 
     await expect(controller.ingest({})).rejects.toThrow("engine timeout");

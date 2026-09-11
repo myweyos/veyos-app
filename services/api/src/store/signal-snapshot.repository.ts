@@ -156,4 +156,28 @@ export class SignalSnapshotRepository {
     `;
     return rows[0]?.snapshot_json ?? null;
   }
+
+  /**
+   * Returns biometric readings for the windowDays days BEFORE beforeDate (exclusive),
+   * ordered newest-first. Used by BaselineComputationService to compute rolling means.
+   *
+   * Excludes beforeDate itself to avoid circular baselines (using today's reading to
+   * validate today's reading). Returns only the three fields the baseline service needs.
+   */
+  async biometricHistoryForSubject(
+    subjectRef: string,
+    beforeDate: string,
+    windowDays: number,
+  ): Promise<{ hrv_ms: number | null; rhr_bpm: number | null; sleep_deep_rem_pct: number | null }[]> {
+    return this.sql<
+      { hrv_ms: number | null; rhr_bpm: number | null; sleep_deep_rem_pct: number | null }[]
+    >`
+      SELECT hrv_ms, rhr_bpm, sleep_deep_rem_pct
+      FROM signal_snapshots
+      WHERE subject_ref = ${subjectRef}
+        AND as_of < ${beforeDate}::date
+        AND as_of >= (${beforeDate}::date - ${windowDays} * INTERVAL '1 day')::date
+      ORDER BY as_of DESC
+    `;
+  }
 }

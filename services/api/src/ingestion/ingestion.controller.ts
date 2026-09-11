@@ -1,7 +1,10 @@
 import { BadRequestException, Body, Controller, HttpCode, Post } from "@nestjs/common";
 import type { SignalSnapshot } from "@weyos/shared-schema";
 
+import { BaselineComputationService } from "../baseline/baseline-computation.service";
 import { EngineClient } from "../engine/engine.client";
+import { NormalisationService } from "../normalisation/normalisation.service";
+import type { IngestPayload } from "../normalisation/vendor-types";
 import { DecisionRepository } from "../store/decision.repository";
 import { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 import { SnapshotValidator } from "./snapshot.validator";
@@ -9,39 +12,51 @@ import { SnapshotValidator } from "./snapshot.validator";
 /**
  * Ingestion boundary.
  *
- * Everything that enters the system passes through here and is validated against the
- * published JSON Schema BEFORE it touches storage or the engine. Two reasons that matters
- * more than usual on this project:
+ * Everything that enters the system passes through here. Pipeline:
  *
- *  1. The engine is deterministic and assumes well-formed input. Garbage in produces
- *     confidently wrong health advice out — the worst failure mode this product has.
- *  2. This is Art.9 special-category data. An unvalidated field that slips through here
- *     ends up in a store we then have to justify to a regulator.
+ *   normalise → validate → upsert → compute baselines → inject baselines → decide → persist
  *
- * Persistence order (SCRUM-72):
- *   validate → upsert snapshot → call engine → persist decision → return decision_id
+ * Normalise (SCRUM-71): vendor shapes (HealthKit, Health Connect, BLE) are converted to
+ * the canonical SignalSnapshot and, when a snapshot already exists for the same
+ * (subject_ref, as_of), merged field-by-field using source priority (BLE > HK > HC > manual).
+ * Canonical payloads (no vendor_format) bypass normalisation — preserves test paths.
  *
- * The snapshot is persisted BEFORE the engine call so that if the engine fails the payload
- * is not lost and can be retried. If the decision persist fails after the engine call, the
- * snapshot is stored and a retry will produce the same decision_id (content-addressed,
+ * Validate: AJV against signal-snapshot.schema.json. Error paths return field paths and
+ * rule messages only — never the offending values — because error payloads are logged and
+ * we do not log biometrics.
+ *
+ * Baselines (SCRUM-71): computed server-side from the 14-day rolling history after the
+ * snapshot is persisted. Cold-start fallback uses client-sent baselines when fewer than 1
+ * day of history is available (Option A transitional, per the SCRUM-71 plan). Baselines
+ * are injected in-memory only; the stored snapshot_json does not include them (they are
+ * reproducible from the stored history and recomputed on every ingest).
+ *
+ * Persistence order (SCRUM-72): validate → upsert snapshot → compute baselines → call
+ * engine → persist decision. The snapshot is persisted BEFORE the engine call so that if
+ * the engine fails the payload is not lost and can be retried. If the decision persist
+ * fails after the engine call, a retry will produce the same decision_id (content-addressed,
  * ADR 0006) — ON CONFLICT DO NOTHING makes the re-insert safe.
  */
 @Controller("v1/ingest")
 export class IngestionController {
   constructor(
+    private readonly normaliser: NormalisationService,
     private readonly validator: SnapshotValidator,
     private readonly engine: EngineClient,
     private readonly snapshots: SignalSnapshotRepository,
     private readonly decisions: DecisionRepository,
+    private readonly baselines: BaselineComputationService,
   ) {}
 
   @Post("snapshot")
   @HttpCode(202)
   async ingest(@Body() body: unknown): Promise<{ accepted: true; decision_id: string }> {
-    const result = this.validator.validate(body);
+    // Step 1: normalise vendor payload → canonical SignalSnapshot (or pass-through)
+    const normalised = await this.normaliser.normalise(body as IngestPayload);
+
+    // Step 2: validate canonical shape before touching storage
+    const result = this.validator.validate(normalised);
     if (!result.ok) {
-      // Deliberately returns field paths and rule messages, never the offending VALUES —
-      // error payloads get logged and we do not log biometrics.
       throw new BadRequestException({
         message: "snapshot failed schema validation",
         errors: result.errors,
@@ -50,13 +65,26 @@ export class IngestionController {
 
     const snapshot: SignalSnapshot = result.value;
 
-    // Persist before dispatch — a failed engine call leaves the snapshot available for retry.
+    // Step 3: persist before dispatch — a failed engine call leaves the snapshot for retry
     await this.snapshots.upsert(snapshot);
 
-    // ADR 0004: EngineClient is the seam that becomes a queue publisher when option 2 lands.
-    const envelope = await this.engine.decide(snapshot);
+    // Step 4: compute baselines from DB history (Option B); fall back to client-sent if
+    // cold start (Option A). snapshot.baselines carries the Option-A value when present.
+    const computedBaselines = await this.baselines.computeFor(
+      snapshot.subject_ref,
+      snapshot.as_of,
+      snapshot.baselines,
+    );
 
-    // decision_id is content-addressed (ADR 0006); ON CONFLICT DO NOTHING makes retries safe.
+    // Step 5: inject baselines in-memory — NOT re-persisted to DB
+    const snapshotWithBaselines: SignalSnapshot = computedBaselines
+      ? { ...snapshot, baselines: computedBaselines }
+      : snapshot;
+
+    // Step 6: ADR 0004 — EngineClient is the seam for a future queue publisher
+    const envelope = await this.engine.decide(snapshotWithBaselines);
+
+    // Step 7: decision_id is content-addressed (ADR 0006); ON CONFLICT DO NOTHING on retry
     await this.decisions.save(envelope);
 
     return { accepted: true, decision_id: envelope.decision_id };
