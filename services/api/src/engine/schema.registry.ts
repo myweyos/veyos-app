@@ -38,7 +38,11 @@ export class SchemaRegistry {
     // Register by $id first so $ref between schemas resolves — decision-envelope.json
     // references decision.json by its published URI.
     for (const name of ["signal-snapshot", "decision", "decision-envelope"]) {
-      const schema = JSON.parse(readFileSync(join(SCHEMA_DIR, `${name}.schema.json`), "utf-8"));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const schema = JSON.parse(
+        readFileSync(join(SCHEMA_DIR, `${name}.schema.json`), "utf-8"),
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       this.ajv.addSchema(schema, name);
     }
   }

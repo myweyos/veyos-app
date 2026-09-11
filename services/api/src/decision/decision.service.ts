@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, OnModuleInit, Optional } from "@nestjs/common";
 import type { DecisionEnvelope } from "@weyos/shared-schema";
 
 import { EngineClient } from "../engine/engine.client";
+import { DecisionRepository } from "../store/decision.repository";
 import { PersonaSource, type Selector } from "./personas.source";
 
 /**
@@ -29,6 +30,7 @@ export class DecisionService implements OnModuleInit {
   constructor(
     private readonly engine: EngineClient,
     private readonly personas: PersonaSource,
+    @Optional() private readonly decisionRepo?: DecisionRepository,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -54,20 +56,31 @@ export class DecisionService implements OnModuleInit {
   }
 
   async forSelector(selector: Selector): Promise<DecisionEnvelope> {
-    const { snapshot } = this.personas.resolve(selector);
+    const { snapshot } = await this.personas.resolve(selector);
     const envelope = await this.engine.decide(snapshot, selector.elemental);
     this.byId.set(envelope.decision_id, envelope);
     return envelope;
   }
 
-  byDecisionId(id: string): DecisionEnvelope {
-    const found = this.byId.get(id);
-    if (found === undefined) throw new NotFoundException({ error: "unknown_decision" });
-    return found;
+  /**
+   * Look up a decision by id.
+   *
+   * Checks the in-memory demo cache first (avoids a DB round-trip for fixture decisions).
+   * Falls through to the decisions table when the cache misses. Throws NotFoundException
+   * for ids that exist in neither — consistent with the previous synchronous behaviour.
+   */
+  async byDecisionId(id: string): Promise<DecisionEnvelope> {
+    const cached = this.byId.get(id);
+    if (cached !== undefined) return cached;
+    if (this.decisionRepo !== undefined) {
+      const found = await this.decisionRepo.findById(id);
+      if (found !== null) return found;
+    }
+    throw new NotFoundException({ error: "unknown_decision" });
   }
 
   /** The snapshot a decision was computed from. `/v1/signals` needs it; a Decision has no readings. */
-  snapshotFor(selector: Selector) {
-    return this.personas.resolve(selector).snapshot;
+  async snapshotFor(selector: Selector) {
+    return (await this.personas.resolve(selector)).snapshot;
   }
 }

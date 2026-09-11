@@ -9,7 +9,8 @@ function selectorFrom(q: Record<string, string | undefined>): Selector {
   if (q["subject_ref"] !== undefined) selector.subjectRef = q["subject_ref"];
   if (q["persona"] !== undefined) selector.persona = q["persona"] as PersonaId;
   if (q["state"] !== undefined) selector.state = q["state"] as PersonaState;
-  if (q["elemental"] !== undefined) selector.elemental = q["elemental"] !== "false";
+  if (q["elemental"] !== undefined)
+    selector.elemental = q["elemental"] !== "false";
   return selector;
 }
 
@@ -25,7 +26,9 @@ export class DecisionController {
 
   @Get("decision/today")
   @Header("cache-control", "no-store")
-  async today(@Query() query: Record<string, string>): Promise<DecisionEnvelope> {
+  async today(
+    @Query() query: Record<string, string>,
+  ): Promise<DecisionEnvelope> {
     // `as_of` comes from the snapshot, never from a server clock — so "today" is aspirational
     // until persistence lands and there is a real latest-snapshot to fetch. Flagged rather
     // than papered over by substituting Date.now().
@@ -39,8 +42,8 @@ export class DecisionController {
    */
   @Get("decision/:id/trace")
   @Header("cache-control", "no-store")
-  trace(@Param("id") id: string) {
-    const envelope = this.decisions.byDecisionId(id);
+  async trace(@Param("id") id: string) {
+    const envelope = await this.decisions.byDecisionId(id);
     const d = envelope.decision;
     return {
       decision_id: envelope.decision_id,
@@ -73,7 +76,7 @@ export class DecisionController {
     const envelope = await this.decisions.forSelector(selector);
     return {
       decision_id: envelope.decision_id,
-      snapshot: this.decisions.snapshotFor(selector),
+      snapshot: await this.decisions.snapshotFor(selector),
       coverage: {
         unevaluable_rule_ids: envelope.presentation.unevaluable_rule_ids,
         warning_kinds: envelope.presentation.warning_kinds,
@@ -115,7 +118,10 @@ export class DecisionController {
     const slot = query["slot"];
     return {
       decision_id: envelope.decision_id,
-      meals: slot === undefined ? food.meals : food.meals.filter((m) => m.slot === slot),
+      meals:
+        slot === undefined
+          ? food.meals
+          : food.meals.filter((m) => m.slot === slot),
       mandated_tags: food.mandated_tags ?? [],
       blocked_tags: food.blocked_tags ?? [],
       sodium_pct_delta: food.sodium_pct_delta ?? null,
