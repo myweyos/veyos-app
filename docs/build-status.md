@@ -18,7 +18,7 @@ half-done story imported as Done is worse than one imported as To Do.
 | 🟡 | CI pipeline | ruff + `mypy --strict` + pytest run on every PR ✅. Golden fixtures gate merges ✅. **No EAS build check.** Also repaired three pre-existing failures in the Contract job that had been red since bootstrap. |
 | ✅ | ADR 0004 — how Node invokes Python | Accepted. FastAPI sidecar at `services/engine-http/`, alternatives and failure modes documented, engine purity asserted on the AST in CI. |
 | ⬜ | Apple Developer / Play Console enrolment | Not started. **Calendar risk, blocks all of Native Signals.** Flagged repeatedly. |
-| ⬜ | Shared schema versioning and TS projection | `src/index.ts` is **hand-written**; `generated.ts` does not exist and `npm run generate` has never run. AC explicitly requires generated, not hand-written. |
+| ✅ | Shared schema versioning and TS projection | `src/generated.ts` generated from JSON Schemas via `scripts/generate.js`. `src/index.ts` re-exports from generated. CI gate enforces sync and version bump on breaking changes. ADR 0007. |
 | ⬜ | Environments, secrets, per-region deploy | Not started. |
 
 ## Design System & App Shell

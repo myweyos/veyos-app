@@ -86,6 +86,20 @@ jobs:
         run: |
           npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/signal-snapshot.schema.json --spec=draft2020
           npx --yes ajv-cli compile --strict=false -s packages/shared-schema/schemas/decision.schema.json --spec=draft2020
+      - name: Schema contract tests
+        run: npm test -w @weyos/shared-schema
+      - name: Generated TS types are in sync with schemas
+        # Regenerates src/generated.ts and fails if git detects a diff.
+        # Enforces that generated.ts is always committed and matches the schemas in the PR.
+        run: |
+          npm run generate -w @weyos/shared-schema
+          git diff --exit-code packages/shared-schema/src/generated.ts || \
+            (echo "::error::src/generated.ts is out of sync. Run 'npm run generate -w @weyos/shared-schema' and commit the result." && exit 1)
+      - name: Breaking schema changes require a version bump
+        # Compares schemas against origin/main. If a breaking change is found
+        # (property removed, field added to required, const/enum value changed),
+        # the version in package.json must have been bumped. See ADR 0007.
+        run: node packages/shared-schema/scripts/check-breaking.js
 
   boundaries:
     name: Service boundaries

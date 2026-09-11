@@ -28,7 +28,7 @@
         "properties": {
           "rule_id":  { "type": "string" },
           "name":     { "type": "string" },
-          "layer":    { "type": "integer", "minimum": 1, "maximum": 5 },
+          "layer":    { "type": "integer", "enum": [1, 2, 3, 4, 5] },
           "priority": { "type": "integer" },
           "because":  { "type": "array", "items": { "type": "string" }, "description": "Human-readable condition evaluations. Deltas and thresholds only — never a raw value tied to a subject." }
         }
@@ -61,8 +61,12 @@
             "additionalProperties": false,
             "properties": {
               "slot":    { "type": "string" },
-              "items":   { "type": "array", "items": { "type": "object" } },
-              "removed": { "type": "array", "items": { "type": "object" }, "description": "Each removal carries the rule id that removed it." }
+              "items":   { "type": "array", "items": { "$ref": "#/$defs/foodItem" } },
+              "removed": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/removedItem" },
+                "description": "Each removal carries the rule id that removed it."
+              }
             }
           }
         },
@@ -98,6 +102,28 @@
           "rule_id": { "type": "string" },
           "detail":  { "type": "string" }
         }
+      }
+    }
+  },
+
+  "$defs": {
+    "foodItem": {
+      "type": "object",
+      "required": ["name", "tags"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Controlled vocabulary — see packages/shared-schema/schemas/food-tags.json" }
+      }
+    },
+    "removedItem": {
+      "type": "object",
+      "required": ["name", "rule_id", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "name":    { "type": "string" },
+        "rule_id": { "type": "string" },
+        "reason":  { "type": "string" }
       }
     }
   }
