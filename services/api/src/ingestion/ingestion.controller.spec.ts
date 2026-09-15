@@ -7,6 +7,7 @@ import type { EngineClient } from "../engine/engine.client";
 import type { NormalisationService } from "../normalisation/normalisation.service";
 import type { DecisionRepository } from "../store/decision.repository";
 import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
+import type { ConsentRepository, ConsentState } from "../subjects/consent.repository";
 import type { Profile, SubjectRepository } from "../subjects/subject.repository";
 import { IngestionController } from "./ingestion.controller";
 import type { SnapshotValidator } from "./snapshot.validator";
@@ -27,6 +28,21 @@ function makeSubjects(
   profile: Profile = { region: "UK", constitution: { dosha: "vata" } },
 ): jest.Mocked<Pick<SubjectRepository, "profile">> {
   return { profile: jest.fn().mockResolvedValue(profile) };
+}
+
+const ALL_CONSENTS: ConsentState = {
+  health_data: true,
+  cycle_data: true,
+  lab_results: true,
+  location_environment: true,
+  notifications: true,
+  product_analytics: false,
+};
+
+function makeConsents(
+  state: ConsentState = ALL_CONSENTS,
+): jest.Mocked<Pick<ConsentRepository, "current">> {
+  return { current: jest.fn().mockResolvedValue(state) };
 }
 
 function makeEnvelope(): DecisionEnvelope {
@@ -53,6 +69,7 @@ function makeController({
   save = jest.fn().mockResolvedValue(undefined),
   queue,
   subjects = makeSubjects(),
+  consents = makeConsents(),
 }: {
   validationResult?: { ok: true; value: SignalSnapshot } | { ok: false; errors: string[] };
   envelope?: DecisionEnvelope;
@@ -60,6 +77,7 @@ function makeController({
   save?: jest.Mock;
   queue?: jest.Mocked<Pick<DecisionsQueue, "enqueue">> | undefined;
   subjects?: jest.Mocked<Pick<SubjectRepository, "profile">>;
+  consents?: jest.Mocked<Pick<ConsentRepository, "current">>;
 } = {}) {
   const normaliser = makeNormaliser(validationResult.ok ? validationResult.value : makeSnapshot());
   const baselines = makeBaselines();
@@ -80,6 +98,7 @@ function makeController({
     decisions as unknown as DecisionRepository,
     baselines as unknown as BaselineComputationService,
     subjects as unknown as SubjectRepository,
+    consents as unknown as ConsentRepository,
     queue as unknown as DecisionsQueue | undefined,
   );
 
@@ -109,6 +128,47 @@ describe("IngestionController identity (SCRUM-76)", () => {
     await expect(controller.ingest(SUBJECT, {})).rejects.toThrow(ConflictException);
     expect(upsert).not.toHaveBeenCalled();
     expect(engine.decide).not.toHaveBeenCalled();
+  });
+});
+
+describe("IngestionController consent (A4, Art.9)", () => {
+  it("refuses with 409 consent_required without health-data consent, before any write", async () => {
+    const upsert = jest.fn();
+    const { controller } = makeController({
+      upsert,
+      consents: makeConsents({ ...ALL_CONSENTS, health_data: false }),
+    });
+    await expect(controller.ingest(SUBJECT, {})).rejects.toThrow(ConflictException);
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("drops cycle, labs and environment when their consents are off", async () => {
+    const { controller, normaliser } = makeController({
+      consents: makeConsents({
+        ...ALL_CONSENTS,
+        cycle_data: false,
+        lab_results: false,
+        location_environment: false,
+      }),
+    });
+    await controller.ingest(SUBJECT, {
+      cycle: { cycle_day: 12, tracked: true },
+      labs: { hba1c: { status: "high" } },
+      environment: { ambient_temp_c: 30 },
+      biometrics: { hrv_ms: 50 },
+    });
+    const passed = (normaliser.normalise as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(passed).not.toHaveProperty("cycle");
+    expect(passed).not.toHaveProperty("labs");
+    expect(passed).not.toHaveProperty("environment");
+    expect(passed["biometrics"]).toEqual({ hrv_ms: 50 });
+  });
+
+  it("keeps a consented section", async () => {
+    const { controller, normaliser } = makeController();
+    await controller.ingest(SUBJECT, { cycle: { cycle_day: 12, tracked: true } });
+    const passed = (normaliser.normalise as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(passed["cycle"]).toEqual({ cycle_day: 12, tracked: true });
   });
 });
 
@@ -143,6 +203,7 @@ describe("IngestionController.ingest()", () => {
       { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
       makeBaselines() as unknown as BaselineComputationService,
       makeSubjects() as unknown as SubjectRepository,
+      makeConsents() as unknown as ConsentRepository,
     );
 
     await controller.ingest(SUBJECT, {});
@@ -188,6 +249,7 @@ describe("IngestionController.ingest()", () => {
       { save: jest.fn() } as unknown as DecisionRepository,
       makeBaselines() as unknown as BaselineComputationService,
       makeSubjects() as unknown as SubjectRepository,
+      makeConsents() as unknown as ConsentRepository,
     );
 
     await expect(controller.ingest(SUBJECT, {})).rejects.toThrow("engine timeout");
@@ -209,6 +271,7 @@ describe("IngestionController.ingest()", () => {
       { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
       { computeFor, invalidate } as unknown as BaselineComputationService,
       makeSubjects() as unknown as SubjectRepository,
+      makeConsents() as unknown as ConsentRepository,
     );
 
     await controller.ingest(SUBJECT, {});
