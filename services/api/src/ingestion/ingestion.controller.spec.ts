@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, ConflictException } from "@nestjs/common";
 import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 
 import type { BaselineComputationService } from "../baseline/baseline-computation.service";
@@ -7,6 +7,7 @@ import type { EngineClient } from "../engine/engine.client";
 import type { NormalisationService } from "../normalisation/normalisation.service";
 import type { DecisionRepository } from "../store/decision.repository";
 import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
+import type { Profile, SubjectRepository } from "../subjects/subject.repository";
 import { IngestionController } from "./ingestion.controller";
 import type { SnapshotValidator } from "./snapshot.validator";
 
@@ -17,6 +18,15 @@ function makeSnapshot(): SignalSnapshot {
     as_of: "2026-09-11",
     constitution: { dosha: "vata" },
   };
+}
+
+const SUBJECT = { authUserId: "0b6c1a8e-0000-4000-8000-000000000001", subjectRef: "sub_authed00001" };
+
+/** Default profile: onboarded, vata. */
+function makeSubjects(
+  profile: Profile = { region: "UK", constitution: { dosha: "vata" } },
+): jest.Mocked<Pick<SubjectRepository, "profile">> {
+  return { profile: jest.fn().mockResolvedValue(profile) };
 }
 
 function makeEnvelope(): DecisionEnvelope {
@@ -42,12 +52,14 @@ function makeController({
   upsert = jest.fn().mockResolvedValue(undefined),
   save = jest.fn().mockResolvedValue(undefined),
   queue,
+  subjects = makeSubjects(),
 }: {
   validationResult?: { ok: true; value: SignalSnapshot } | { ok: false; errors: string[] };
   envelope?: DecisionEnvelope;
   upsert?: jest.Mock;
   save?: jest.Mock;
   queue?: jest.Mocked<Pick<DecisionsQueue, "enqueue">> | undefined;
+  subjects?: jest.Mocked<Pick<SubjectRepository, "profile">>;
 } = {}) {
   const normaliser = makeNormaliser(validationResult.ok ? validationResult.value : makeSnapshot());
   const baselines = makeBaselines();
@@ -67,16 +79,43 @@ function makeController({
     snapshots as unknown as SignalSnapshotRepository,
     decisions as unknown as DecisionRepository,
     baselines as unknown as BaselineComputationService,
+    subjects as unknown as SubjectRepository,
     queue as unknown as DecisionsQueue | undefined,
   );
 
   return { controller, normaliser, validator, engine, snapshots, decisions, baselines, queue };
 }
 
+describe("IngestionController identity (SCRUM-76)", () => {
+  it("writes under the token's subject and the profile's constitution, whatever the body says", async () => {
+    const { controller, normaliser } = makeController();
+    await controller.ingest(SUBJECT, {
+      vendor_format: "health_connect",
+      subject_ref: "sub_someoneelse01",
+      constitution: { dosha: "kapha" },
+    });
+    const passed = (normaliser.normalise as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(passed["subject_ref"]).toBe("sub_authed00001");
+    expect(passed["constitution"]).toEqual({ dosha: "vata" });
+    expect(passed["vendor_format"]).toBe("health_connect");
+  });
+
+  it("refuses with 409 before touching storage when onboarding isn't finished", async () => {
+    const upsert = jest.fn();
+    const { controller, engine } = makeController({
+      upsert,
+      subjects: makeSubjects({ region: "UK", constitution: null }),
+    });
+    await expect(controller.ingest(SUBJECT, {})).rejects.toThrow(ConflictException);
+    expect(upsert).not.toHaveBeenCalled();
+    expect(engine.decide).not.toHaveBeenCalled();
+  });
+});
+
 describe("IngestionController.ingest()", () => {
   it("returns {accepted:true, decision_id} — not the full envelope", async () => {
     const { controller } = makeController();
-    const result = await controller.ingest({});
+    const result = await controller.ingest(SUBJECT, {});
     expect(result).toEqual({ accepted: true, decision_id: "abcd1234efgh5678" });
   });
 
@@ -103,16 +142,17 @@ describe("IngestionController.ingest()", () => {
       { upsert } as unknown as SignalSnapshotRepository,
       { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
       makeBaselines() as unknown as BaselineComputationService,
+      makeSubjects() as unknown as SubjectRepository,
     );
 
-    await controller.ingest({});
+    await controller.ingest(SUBJECT, {});
 
     expect(callOrder).toEqual(["upsert", "engine"]);
   });
 
   it("saves the decision envelope after the engine call", async () => {
     const { controller, engine, decisions } = makeController();
-    await controller.ingest({});
+    await controller.ingest(SUBJECT, {});
 
     // engine.decide must have been called before decisions.save
     const engineOrder = (engine.decide as jest.Mock).mock.invocationCallOrder[0]!;
@@ -129,7 +169,7 @@ describe("IngestionController.ingest()", () => {
       save,
     });
 
-    await expect(controller.ingest({})).rejects.toThrow(BadRequestException);
+    await expect(controller.ingest(SUBJECT, {})).rejects.toThrow(BadRequestException);
     expect(upsert).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
@@ -147,9 +187,10 @@ describe("IngestionController.ingest()", () => {
       { upsert } as unknown as SignalSnapshotRepository,
       { save: jest.fn() } as unknown as DecisionRepository,
       makeBaselines() as unknown as BaselineComputationService,
+      makeSubjects() as unknown as SubjectRepository,
     );
 
-    await expect(controller.ingest({})).rejects.toThrow("engine timeout");
+    await expect(controller.ingest(SUBJECT, {})).rejects.toThrow("engine timeout");
     // Snapshot was already persisted before the engine was called
     expect(upsert).toHaveBeenCalledTimes(1);
   });
@@ -167,9 +208,10 @@ describe("IngestionController.ingest()", () => {
       { upsert } as unknown as SignalSnapshotRepository,
       { save: jest.fn().mockResolvedValue(undefined) } as unknown as DecisionRepository,
       { computeFor, invalidate } as unknown as BaselineComputationService,
+      makeSubjects() as unknown as SubjectRepository,
     );
 
-    await controller.ingest({});
+    await controller.ingest(SUBJECT, {});
 
     expect(callOrder).toEqual(["upsert", "invalidate", "computeFor"]);
   });
@@ -180,7 +222,7 @@ describe("IngestionController.ingest()", () => {
     };
     const { controller } = makeController({ queue });
 
-    await controller.ingest({});
+    await controller.ingest(SUBJECT, {});
 
     // Allow the fire-and-forget promise to settle
     await Promise.resolve();
@@ -194,7 +236,7 @@ describe("IngestionController.ingest()", () => {
     const { controller } = makeController({ queue });
 
     // Must resolve — queue failure must not propagate to the HTTP layer
-    await expect(controller.ingest({})).resolves.toEqual({
+    await expect(controller.ingest(SUBJECT, {})).resolves.toEqual({
       accepted: true,
       decision_id: "abcd1234efgh5678",
     });
@@ -203,7 +245,7 @@ describe("IngestionController.ingest()", () => {
   it("succeeds without a queue (optional dependency)", async () => {
     const { controller } = makeController();
     // No queue injected — must not throw
-    await expect(controller.ingest({})).resolves.toEqual({
+    await expect(controller.ingest(SUBJECT, {})).resolves.toEqual({
       accepted: true,
       decision_id: "abcd1234efgh5678",
     });

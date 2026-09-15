@@ -187,6 +187,15 @@ def test_malformed_snapshot_reports_a_field_not_a_value(client: TestClient) -> N
 # --------------------------------------------------------------------- health + purity
 
 
+def test_rulebook_lists_every_rule_with_its_layer_and_no_thresholds(client: TestClient) -> None:
+    body = client.get("/rulebook").json()
+    assert body["version"] == BOOK.version
+    assert {r["id"]: r["layer"] for r in body["rules"]} == {r.id: r.layer for r in BOOK.rules}
+    assert {r["id"] for r in body["rules"] if not r["enabled"]} == {"1.4", "4.4"}
+    for rule in body["rules"]:
+        assert set(rule) == {"id", "name", "layer", "enabled"}, "no conditions or thresholds"
+
+
 def test_healthz_carries_no_subject_data(client: TestClient) -> None:
     body = client.get("/healthz").json()
     assert body["status"] == "ok"

@@ -33,3 +33,6 @@ packages/shared-schema/src/*.d.ts
 data/
 *.subject.json
 *.export.csv
+
+# app-state test build output
+packages/app-state/.test-dist/

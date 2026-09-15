@@ -1,38 +1,24 @@
-import { Controller, Get, Header, Param, Query } from "@nestjs/common";
+import { Controller, Get, Header, Param, Query, UseGuards } from "@nestjs/common";
 import type { DecisionEnvelope } from "@weyos/shared-schema";
 
+import { AuthGuard, CurrentSubject, type AuthedSubject } from "../auth/auth.guard";
 import { DecisionService } from "./decision.service";
-import type { PersonaId, PersonaState, Selector } from "./personas.source";
-
-function selectorFrom(q: Record<string, string | undefined>): Selector {
-  const selector: Selector = {};
-  if (q["subject_ref"] !== undefined) selector.subjectRef = q["subject_ref"];
-  if (q["persona"] !== undefined) selector.persona = q["persona"] as PersonaId;
-  if (q["state"] !== undefined) selector.state = q["state"] as PersonaState;
-  if (q["elemental"] !== undefined)
-    selector.elemental = q["elemental"] !== "false";
-  return selector;
-}
 
 /**
- * The read surface.
+ * The read surface, for the signed-in subject only.
  *
- * Five endpoints, all projections of one envelope. Each carries the decision id and rulebook
- * version as headers so any screen can deep-link to the trace without re-deriving anything.
+ * Five endpoints, all projections of the subject's latest stored envelope (see
+ * DecisionService). There is no `subject_ref` parameter: the subject comes from the token.
  */
 @Controller("v1")
+@UseGuards(AuthGuard)
 export class DecisionController {
   constructor(private readonly decisions: DecisionService) {}
 
   @Get("decision/today")
   @Header("cache-control", "no-store")
-  async today(
-    @Query() query: Record<string, string>,
-  ): Promise<DecisionEnvelope> {
-    // `as_of` comes from the snapshot, never from a server clock — so "today" is aspirational
-    // until persistence lands and there is a real latest-snapshot to fetch. Flagged rather
-    // than papered over by substituting Date.now().
-    return this.decisions.forSelector(selectorFrom(query));
+  async today(@CurrentSubject() subject: AuthedSubject): Promise<DecisionEnvelope> {
+    return this.decisions.today(subject.subjectRef);
   }
 
   /**
@@ -42,8 +28,8 @@ export class DecisionController {
    */
   @Get("decision/:id/trace")
   @Header("cache-control", "no-store")
-  async trace(@Param("id") id: string) {
-    const envelope = await this.decisions.byDecisionId(id);
+  async trace(@CurrentSubject() subject: AuthedSubject, @Param("id") id: string) {
+    const envelope = await this.decisions.byDecisionId(id, subject.subjectRef);
     const d = envelope.decision;
     return {
       decision_id: envelope.decision_id,
@@ -60,7 +46,7 @@ export class DecisionController {
   }
 
   /**
-   * What we read today.
+   * What we read for the latest decision.
    *
    * Returns the snapshot as-is. It is literally biometrics, going to the subject's own device
    * — legitimate, and the reason `no-store` is on every response here.
@@ -71,12 +57,11 @@ export class DecisionController {
    */
   @Get("signals")
   @Header("cache-control", "no-store")
-  async signals(@Query() query: Record<string, string>) {
-    const selector = selectorFrom(query);
-    const envelope = await this.decisions.forSelector(selector);
+  async signals(@CurrentSubject() subject: AuthedSubject) {
+    const envelope = await this.decisions.today(subject.subjectRef);
     return {
       decision_id: envelope.decision_id,
-      snapshot: await this.decisions.snapshotFor(selector),
+      snapshot: await this.decisions.snapshotFor(subject.subjectRef, envelope.decision.as_of),
       coverage: {
         unevaluable_rule_ids: envelope.presentation.unevaluable_rule_ids,
         warning_kinds: envelope.presentation.warning_kinds,
@@ -86,8 +71,8 @@ export class DecisionController {
 
   @Get("plan")
   @Header("cache-control", "no-store")
-  async plan(@Query() query: Record<string, string>) {
-    const envelope = await this.decisions.forSelector(selectorFrom(query));
+  async plan(@CurrentSubject() subject: AuthedSubject) {
+    const envelope = await this.decisions.today(subject.subjectRef);
     const d = envelope.decision;
     return {
       decision_id: envelope.decision_id,
@@ -103,25 +88,18 @@ export class DecisionController {
   /**
    * Tonight's plate.
    *
-   * Named `/meal` per the build plan even though the payload is a list of meals; `/meals`
-   * would be more honest. Noted rather than silently renamed.
-   *
    * `?slot=` is matched loosely on purpose: the engine synthesises an `additions` slot which
    * is NOT in the snapshot schema's slot enum, and validating against that enum would reject
    * the one slot the user most needs to see — the things the engine put on their plate.
    */
   @Get("meal")
   @Header("cache-control", "no-store")
-  async meal(@Query() query: Record<string, string>) {
-    const envelope = await this.decisions.forSelector(selectorFrom(query));
+  async meal(@CurrentSubject() subject: AuthedSubject, @Query("slot") slot?: string) {
+    const envelope = await this.decisions.today(subject.subjectRef);
     const food = envelope.decision.food;
-    const slot = query["slot"];
     return {
       decision_id: envelope.decision_id,
-      meals:
-        slot === undefined
-          ? food.meals
-          : food.meals.filter((m) => m.slot === slot),
+      meals: slot === undefined ? food.meals : food.meals.filter((m) => m.slot === slot),
       mandated_tags: food.mandated_tags ?? [],
       blocked_tags: food.blocked_tags ?? [],
       sodium_pct_delta: food.sodium_pct_delta ?? null,
