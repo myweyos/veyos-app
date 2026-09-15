@@ -76,8 +76,8 @@ fixed by this change.
    `main` only. About twenty commits, including the whole engine sidecar and the API serving
    path, reached `development` with no CI run. PRs #1–#5 were green on every job.
 3. **Two ADRs are numbered 0007:** `0007-schema-versioning-and-ts-generation.md` and
-   `0007-storage-model-and-data-residency.md`. One needs renumbering, and anything citing
-   "ADR 0007" is ambiguous until it is.
+   `0007-storage-model-and-data-residency.md`. Anything citing "ADR 0007" is ambiguous until
+   one is renumbered. **In review: PR #15 moves storage to 0008.**
 4. **The plan that governs the build was committed without a message.** `f1ca6a7` ("Plan commit")
    added `docs/build-plan-v2-direct-to-product.md` and the CLAUDE.md change that supersedes the
    earlier plan. `f1d7d5a` is titled "commit".

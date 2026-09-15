@@ -21,8 +21,9 @@ Backdated from git, ADRs, PRs and CI on 2026-09-14. Each row follows `../change-
 
 ## Open items carried by this epic
 
-- **ADR 0007 is used twice.** One needs renumbering.
+- **ADR 0007 is used twice.** PR #15 (in review) renumbers storage to 0008.
 - **Baseline computation (LR-BE-005) is safety-relevant** even though it sits outside the engine.
   Every baseline-relative rule depends on its output. It needs its own fixtures in the same
   spirit as the golden set, and a risk-file review.
-- **The demo default (R20)** went in with LR-BE-001 and is pinned by a spec in LR-BE-004.
+- **The demo default (R20)** went in with LR-BE-001 and is pinned by a spec in LR-BE-004. So is a
+  fallback that served fixtures when the store was missing. PR #14 (in review) removes both.
