@@ -71,6 +71,7 @@
     state: calm
     fired: ["3.3"]
     trace_match: "unevaluable: wrist_temp_delta_c not available"
+    unevaluable_include: ["1.3"]
 
 - id: F5b
   description: "Candidate rule 1.4 (Cardiovascular Load) would fire on elevated RHR alone. Rule is disabled pending sign-off."
@@ -209,6 +210,65 @@
     min_protein_g: 30
     min_fiber_g: 10
     blocked_tags_include: [high_glycemic]
+
+- id: F16
+  description: >
+    L2 VS L3 ON THE SAME TAG. A Vata subject (3.1 blocks raw) on cycle day 14, Ovulatory (2.2
+    mandates raw). L2 outranks L3, but the food chain runs L3 first and a mandate for an
+    already-blocked tag is suppressed whatever layer it comes from, so the LOWER layer wins.
+    Pinned as current behaviour. Whether a lower block may withdraw a higher mandate is an open
+    spec question; the same thing happens on Follicular (2.1 fermented) vs Pitta (3.2).
+    tests/test_precedence.py shows it holds for every pair of layers, not only this one.
+  base: vata-cycling
+  overrides:
+    cycle: { cycle_day: 14 }
+  expect:
+    state: intervention
+    fired: ["2.2", "3.1"]
+    blocked_tags_include: [raw]
+    mandated_tags_exclude: [raw]
+    mandated_tags_include: [cooling]
+    trace_match: "mandate 'raw' suppressed — blocked by 3.1"
+
+- id: F16b
+  description: "The precedence reading of F16: L2's raw mandate survives L3's block. Open spec question."
+  base: vata-cycling
+  overrides:
+    cycle: { cycle_day: 14 }
+  xfail: "a lower layer's block withdrawing a higher layer's mandate is undecided — see F16"
+  expect:
+    mandated_tags_include: [raw]
+
+- id: F17
+  description: >
+    A missing signal makes a rule UNEVALUABLE, not false. F10's stressed day with no wrist
+    temperature: 1.3 needs temperature AND RHR, has RHR elevated and temperature unknown, so it
+    cannot be evaluated and does not fire. 1.2 is unevaluable too (no deep/REM stage data, only
+    a composite score). Without 1.3 the rest day becomes 1.1's substitute.
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 66, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: null, steps: 4200 }
+  expect:
+    state: intervention
+    fired: ["1.1", "3.2", "4.2"]
+    unevaluable_include: ["1.2", "1.3"]
+    activity_verdict: substitute
+    activity_decided_by: "1.1"
+    activity_location: indoor
+
+- id: F18
+  description: >
+    ...but a FALSE condition still decides. Same missing temperature, RHR back at baseline:
+    1.3 is all(UNKNOWN, FALSE), which is FALSE, because no temperature reading could make it
+    fire. It is not reported as unevaluable. UNKNOWN only surfaces where it could change the
+    answer.
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 60, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: null, steps: 4200 }
+  expect:
+    fired: ["1.1", "3.2", "4.2"]
+    unevaluable_include: ["1.2"]
+    unevaluable_exclude: ["1.3"]
 
 - id: F19
   description: >

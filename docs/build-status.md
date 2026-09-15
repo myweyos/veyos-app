@@ -70,14 +70,14 @@ half-done story imported as Done is worse than one imported as To Do.
 | Status | Story | Evidence / what's missing |
 |---|---|---|
 | ✅ | Rulebook loader hardening and versioning | Fatal on duplicate ids, duplicate priorities, unknown layers, unknown food tags. Rulebook version travels with every decision. |
-| ✅ | Three-valued evaluation and precedence | TRUE/FALSE/UNKNOWN preserved end to end; a missing signal is unevaluable, not false. Precedence covered by fixtures. |
+| 🟡 | Three-valued evaluation and precedence | TRUE/FALSE/UNKNOWN preserved end to end, engine → sidecar `presentation.unevaluable_rule_ids` (`test_three_valued.py`, F14/F17/F18, sidecar tests). Precedence covered for every layer pair (`test_precedence.py`) **except one dimension that does not follow it**: a lower layer's block suppresses a higher layer's mandate (F16, reachable in v1 on L2 vs L3). Open spec question. "Not applicable" is also indistinguishable from "unevaluable". SCRUM-79. |
 | ✅ | Food resolution chain and collision warnings | Strict reverse precedence L4→L3→L2→L5→L1. F9 and F10 both pass. |
 | 🟡 | Decision trace object and schema | Applied, suppressed and unevaluable are representable ✅; trace is in the published schema ✅. **"Not-applied" is NOT representable** — a rule evaluating FALSE produces no trace row at all (`engine.py:61-65`), so absence is inferred rather than recorded. The AC asks for all four. |
 | 🚫 | Rule 1.4 — elevated RHR alone | Correctly not built. See the James note below. |
 | 🚫 | Rule 4.4 — pollen / air quality | Correctly not built; `enabled: false`, reported as disabled with null rates. |
 | 🟡 | Layer 2 — cycle logic | Exactly one rule fires per cycle day ✅; menstrual overrides follicular via priority 29 ✅. **The "in balance is unreachable with cycle data" question is raised, not resolved** — and the AC says resolve before shipping. |
 | ✅ | Layer 5 — lab overrides | Fires only present-and-abnormal, outranks cycle/constitution/environment, F9 passes. |
-| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. **Fixtures do not cover every precedence pair**, and the backtest runs on synthetic sweeps, not recorded signal history. |
+| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. Every precedence pair is now covered, on a test-only arbitration rulebook (`test_precedence.py`, SCRUM-79). **The backtest runs on synthetic sweeps, not recorded signal history.** |
 | 🟡 | Engine invocation from the API | Sidecar ✅, engine stays pure ✅. **Decision is not persisted** before dispatch — no storage exists. |
 
 ## Baseline Phenotype & Onboarding

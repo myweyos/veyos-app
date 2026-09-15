@@ -239,6 +239,77 @@ def test_warning_classification() -> None:
     assert classify_warning("something new") == "uncategorised"
 
 
+# --------------------------------------------------------------------- UNKNOWN end to end
+
+
+def _served(client: TestClient, raw: dict[str, Any], elemental: bool = True) -> dict[str, Any]:
+    response = client.post("/decide", json={"snapshot": raw, "elemental_layer": elemental})
+    assert response.status_code == 200, response.text
+    body: dict[str, Any] = response.json()
+    return body
+
+
+def test_a_missing_signal_reaches_the_client_as_unevaluable(client: TestClient) -> None:
+    """Engine UNKNOWN → sidecar presentation.unevaluable_rule_ids, over HTTP.
+
+    The stressed pitta-heat day already has no deep/REM stage data, so 1.2 is unevaluable. Removing
+    wrist temperature makes 1.3 unevaluable too, even though RHR is elevated. Neither rule
+    fires, and the client can tell "couldn't evaluate" apart from "evaluated and didn't apply".
+    Golden F17 pins the same case at the engine.
+    """
+    before = _served(client, snapshot_for("pitta-heat", "stressed"))["presentation"]["unevaluable_rule_ids"]
+    assert "1.2" in before and "1.3" not in before
+
+    raw = merge(snapshot_for("pitta-heat", "stressed"), {"biometrics": {"wrist_temp_delta_c": None}})
+    body = _served(client, raw)
+    fired = {r["rule_id"] for r in body["decision"]["fired_rules"]}
+    assert {"1.2", "1.3"} <= set(body["presentation"]["unevaluable_rule_ids"])
+    assert fired.isdisjoint({"1.2", "1.3"})
+
+
+def test_a_false_condition_is_not_reported_as_unevaluable(client: TestClient) -> None:
+    """all(UNKNOWN, FALSE) is FALSE. Golden F18."""
+    raw = merge(snapshot_for("pitta-heat", "stressed"),
+                {"biometrics": {"wrist_temp_delta_c": None, "rhr_bpm": 60}})
+    assert "1.3" not in _served(client, raw)["presentation"]["unevaluable_rule_ids"]
+
+
+def test_unevaluable_and_suppressed_stay_separate(client: TestClient) -> None:
+    """Validated-only mode switches layers off. That is 'suppressed', never 'unevaluable'.
+
+    Merging the two lists would let a layer the user turned off read as a signal gap, or a
+    real signal gap hide among layers that were never meant to run.
+    """
+    body = _served(client, snapshot_for("pitta-heat", "stressed"), elemental=False)
+    presentation = body["presentation"]
+    assert "1.2" in presentation["unevaluable_rule_ids"]
+    assert {"3.1", "3.2", "3.3", "4.1", "4.2", "4.3"} <= set(presentation["suppressed_rule_ids"])
+    assert set(presentation["unevaluable_rule_ids"]).isdisjoint(presentation["suppressed_rule_ids"])
+
+
+def test_not_applicable_is_currently_reported_as_unevaluable(client: TestClient) -> None:
+    """CURRENT BEHAVIOUR, pinned. Open question: 'not applicable' vs 'unevaluable'.
+
+    The pitta-heat subject tracks no cycle and has no labs. The design pack shows Layer 2 as "Not
+    applicable to you" and Layer 5 as "no values" (screens C3/G3). Those are different from 1.2's
+    missing sleep-stage data, which really is a gap today. The engine can't tell them apart: a
+    missing cycle day and a lab never drawn are both a missing signal, so every 2.x and 5.x rule
+    lands in unevaluable_rule_ids beside 1.2.
+
+    Why it matters: if Partial meant "anything unevaluable", every user without labs and every
+    subject without a cycle would be in Partial for good. The demo mapping works around that by
+    counting Layer 1 only. That's the open question `partial-is-narrowed-to-layer-1` in
+    packages/app-state/app-states.json, and this test is its evidence at the HTTP boundary.
+    Not resolved here: the engine has no idea of applicability, and adding one means deciding
+    what counts as not applicable.
+    """
+    body = _served(client, snapshot_for("pitta-heat", "stressed"))
+    unevaluable = set(body["presentation"]["unevaluable_rule_ids"])
+    assert {"2.1", "2.2", "2.3", "2.4"} <= unevaluable   # no cycle: not applicable
+    assert {"5.1", "5.2", "5.3"} <= unevaluable          # no labs drawn: nothing to evaluate
+    assert "1.2" in unevaluable                          # a real gap: no stage data today
+
+
 def test_presentation_carries_facts_not_a_ui_state(client: TestClient) -> None:
     """No ui_state field. Its absence is the statement — see presentation.py."""
     body = client.post("/decide", json={"snapshot": snapshot_for("kapha-no-cycle", "stressed")}).json()
