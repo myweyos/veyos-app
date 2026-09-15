@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { Injectable, NotFoundException, Optional } from "@nestjs/common";
+import { Injectable, NotFoundException, Optional, ServiceUnavailableException } from "@nestjs/common";
 import type { SignalSnapshot } from "@weyos/shared-schema";
 
 import { DEMO_FIXTURES_DIR } from "../paths";
@@ -65,13 +65,15 @@ function deepMerge(
  * auth resolves a subject, the subject has a latest snapshot. When `TODO(VEY-INGEST-2)` is
  * done, only this class changes — `DecisionService` and every controller stay put.
  *
- * The demo shortcut (`?persona=`) is gated behind `WEYOS_DEMO_FIXTURES`. Hard constraint 12:
- * no fake interventions in a production build.
+ * Fixture data is served ONLY when `WEYOS_DEMO_FIXTURES=true` is set explicitly, for a local dev
+ * harness. Unset, empty or any other value means off. CLAUDE.md non-negotiable 9: no demo mode in
+ * any build, and plan v2 §3: fixtures are never a runtime data source. With demo off there is no
+ * fallback to fixtures either. A missing store is an error, never a persona served as a subject.
  */
 @Injectable()
 export class PersonaSource {
   private readonly personas: Record<string, { calm: unknown; crash: unknown }>;
-  readonly demoEnabled = (process.env.WEYOS_DEMO_FIXTURES ?? "true") !== "false";
+  readonly demoEnabled = process.env.WEYOS_DEMO_FIXTURES === "true";
 
   constructor(
     // Optional: only present when StoreModule is loaded. When absent (e.g. before SCRUM-72
@@ -87,23 +89,24 @@ export class PersonaSource {
   /**
    * Resolve a selector to a snapshot.
    *
-   * Live path (SCRUM-72): when demo is disabled and a real subjectRef is provided, reads from
-   * the signal_snapshots store. The fixture path is preserved for demo mode and test harnesses.
+   * Live path (SCRUM-72), the default: reads the subject's latest snapshot from the
+   * signal_snapshots store. With no store injected it refuses with 503 rather than degrading.
+   * Fixture path: only with `WEYOS_DEMO_FIXTURES=true`.
    * Auth context (which subjectRef maps to the authenticated user) is SCRUM-76.
    */
   async resolve(selector: Selector): Promise<{ persona: PersonaId; snapshot: SignalSnapshot }> {
-    if (
-      !this.demoEnabled &&
-      selector.subjectRef !== undefined &&
-      this.snapshotRepo !== undefined
-    ) {
+    if (!this.demoEnabled) {
+      if (selector.subjectRef === undefined) throw new NotFoundException({ error: "unknown_subject" });
+      if (this.snapshotRepo === undefined) {
+        throw new ServiceUnavailableException({ error: "store_unavailable" });
+      }
       const snapshot = await this.snapshotRepo.latestForSubject(selector.subjectRef);
       if (snapshot === null) throw new NotFoundException({ error: "unknown_subject" });
       // persona is meaningful only in demo mode; return subjectRef slice as a stand-in for logs
       return { persona: selector.subjectRef.slice(4, 12) as PersonaId, snapshot };
     }
 
-    // Fixture path — demo mode or unit tests without a store.
+    // Fixture path: explicit local dev harness only.
     const persona = this.identify(selector);
     const entry = this.personas[persona];
     if (entry === undefined) throw new NotFoundException({ error: "unknown_subject" });

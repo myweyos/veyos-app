@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import type { SignalSnapshot } from "@weyos/shared-schema";
 
 import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
@@ -57,10 +57,28 @@ describe("PersonaSource.resolve()", () => {
     });
   });
 
-  describe("fixture path — demo enabled (default)", () => {
-    beforeEach(() => {
-      // Default: WEYOS_DEMO_FIXTURES is either unset ("true" by default) or explicitly "true"
+  describe("default — demo is OFF unless explicitly enabled (CLAUDE.md non-negotiable 9)", () => {
+    it.each([undefined, "", "1", "yes", "TRUE", "false"])(
+      "WEYOS_DEMO_FIXTURES=%p does not enable fixtures",
+      (value) => {
+        if (value === undefined) delete process.env["WEYOS_DEMO_FIXTURES"];
+        else process.env["WEYOS_DEMO_FIXTURES"] = value;
+        expect(new PersonaSource().demoEnabled).toBe(false);
+      },
+    );
+
+    it("never serves a persona for a persona selector when unset", async () => {
       delete process.env["WEYOS_DEMO_FIXTURES"];
+      const source = new PersonaSource();
+      await expect(source.resolve({ persona: "james", state: "crash" })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe("fixture path — demo explicitly enabled (local dev harness only)", () => {
+    beforeEach(() => {
+      process.env["WEYOS_DEMO_FIXTURES"] = "true";
     });
 
     it("uses fixture data even when a repo is present and a subjectRef is given", async () => {
@@ -84,18 +102,19 @@ describe("PersonaSource.resolve()", () => {
     });
   });
 
-  describe("fixture path — demo disabled but no repo", () => {
+  describe("demo disabled but no repo", () => {
     beforeEach(() => {
-      process.env["WEYOS_DEMO_FIXTURES"] = "false";
+      delete process.env["WEYOS_DEMO_FIXTURES"];
     });
 
-    it("falls back to fixture when the repo is absent (graceful degradation)", async () => {
+    it("refuses with 503 rather than serving fixture data as a real subject", async () => {
       const source = new PersonaSource(); // no repo
 
-      // With no repo the live-path condition is false; falls through to fixture path.
-      // sub_persona02 maps to "james" in the demo fixture mapping.
-      const result = await source.resolve({ subjectRef: "sub_persona02" });
-      expect(result.persona).toBe("james");
+      // sub_persona02 is James's fixture id. Before this change the call fell through to the
+      // fixture path and returned his persona as if it were a subject's real snapshot.
+      await expect(source.resolve({ subjectRef: "sub_persona02" })).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
   });
 });
