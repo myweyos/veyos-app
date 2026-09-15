@@ -7,9 +7,9 @@
 -- TimescaleDB partitions on as_of (DATE, monthly chunks). The PRIMARY KEY (subject_ref, as_of)
 -- satisfies the TimescaleDB constraint that the partition column must appear in every UNIQUE
 -- index. One snapshot per subject per calendar day; an upsert on conflict overwrites — see
--- ADR 0007 for the open question on same-day multi-source snapshots.
+-- ADR 0008 for the open question on same-day multi-source snapshots.
 --
--- No region column: region is an account attribute, not a signal field. See ADR 0007.
+-- No region column: region is an account attribute, not a signal field. See ADR 0008.
 -- TODO(SCRUM-77): per-region connection routing replaces the single database URL.
 
 CREATE TABLE IF NOT EXISTS signal_snapshots (

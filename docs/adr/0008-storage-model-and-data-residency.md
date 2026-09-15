@@ -1,8 +1,11 @@
-# ADR 0007 — Storage model and data residency
+# ADR 0008 — Storage model and data residency
 
 Date: 2026-09-11
 Status: Proposed
 Implements: SCRUM-72
+Renumbered: merged as ADR 0007 in PR #4. Number 0007 was already taken by
+`0007-schema-versioning-and-ts-generation.md` (PR #3, merged first), so this became 0008.
+Content unchanged.
 
 ## Context
 
