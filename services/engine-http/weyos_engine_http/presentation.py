@@ -3,15 +3,15 @@
 The engine emits three states; the product design needs six. This module deliberately does
 NOT derive the six, because every plausible mapping silently resolves an open spec question:
 
-* ``calm -> "in balance"`` renders the James gap as reassurance, which is the product defect
+* ``calm -> "in balance"`` renders the RHR-alone gap (F19) as reassurance, which is the product defect
   fixture F5 pins. Routing it anywhere else approves candidate rule 1.4 by the back door.
 * Splitting ``intervention`` into advisory-vs-intervention needs a severity rule that exists
   nowhere in ``config/rules/`` — a new arbitration rule outside the rulebook.
 * ``partial`` versus ``calibrating`` is an undesigned boundary.
 
 So the API returns the engine's own state plus the raw facts a client needs, and the absence
-of a ``ui_state`` field is the statement. The demo mapping lives in
-``packages/demo-fixtures/app-states.json``, where it is reviewable data with its open
+of a ``ui_state`` field is the statement. The client-side mapping lives in
+``packages/app-state/app-states.json``, where it is reviewable data with its open
 questions attached.
 
 Warning classification happens HERE, in Python, next to the engine — not by prefix-matching

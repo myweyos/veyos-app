@@ -188,7 +188,7 @@ GRIDS: dict[str, Axes] = {
         # trivially 100% and says nothing.
         lab_profile=("none", "all_normal", "cortisol_high", "crp_high", "hba1c_high"),
     ),
-    # Adds interior points and a null sleep reading (the Alex case: composite score present,
+    # Adds interior points and a null sleep reading (the composite-only case: composite score present,
     # deep/REM stage percentage absent, so rule 1.2 is unevaluable rather than false).
     "fine": Axes(
         dosha=DOSHAS,
@@ -298,7 +298,7 @@ def build_snapshot(
     generated snapshots against it so this generator cannot drift from the contract.
     """
     # cycle_day None models a subject with no cycle tracking at all, which is how the
-    # personas fixture represents it. Note what this does to Layer 2 — see questions.py.
+    # base test snapshot represents it. Note what this does to Layer 2 — see questions.py.
     cycle: dict[str, Any] | None = (
         None if cycle_day is None else {"cycle_day": cycle_day, "cycle_length": 28, "tracked": True}
     )

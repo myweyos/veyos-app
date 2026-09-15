@@ -1,7 +1,7 @@
 """Routes.
 
 Two endpoints, and deliberately no more. The sidecar is a pure function over HTTP: it knows
-nothing about personas, demos, persistence or who is asking. Everything product-shaped lives
+nothing about subjects, persistence or who is asking. Everything product-shaped lives
 in the API in front of it.
 
 ``/decide`` returns an ENVELOPE, not a bare decision:

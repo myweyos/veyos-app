@@ -71,18 +71,15 @@ def run_grid(name: str = "quick", **overrides: str):
 def test_trace_prefixes_still_match_the_engine() -> None:
     """The three prefixes the harness parses must still be what engine.py emits.
 
-    Uses Alex's crash state with the elemental layer off, which is the one scenario that
+    Uses golden F11's state (HRV down, temperature and RHR up, elemental layer off), which
     produces all three in a single decision: L1 rules fire, L5 is unevaluable with no labs,
     and L3/L4 are suppressed.
     """
-    raw = json.loads(
-        (
-            Path(__file__).resolve().parents[3] / "packages" / "demo-fixtures" / "personas.json"
-        ).read_text(encoding="utf-8")
-    )
-    base = {k: v for k, v in raw["alex"]["calm"].items() if not k.startswith("$")}
-    crash = {k: v for k, v in raw["alex"]["crash"].items() if not k.startswith("$")}
-    base["biometrics"] = {**base["biometrics"], **crash["biometrics"]}
+    snapshots = Path(__file__).resolve().parents[3] / "packages" / "test-fixtures" / "snapshots"
+    raw = json.loads((snapshots / "pitta-heat.json").read_text(encoding="utf-8"))
+    base = {k: v for k, v in raw.items() if not k.startswith("$")}
+    base["biometrics"] = {**base["biometrics"], "hrv_ms": 50.4, "rhr_bpm": 66,
+                          "sleep_deep_rem_pct": None, "wrist_temp_delta_c": 0.8}
 
     decision = decide(Snapshot.from_dict(base), BOOK, elemental_layer=False)
     prefixes = {

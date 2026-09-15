@@ -101,7 +101,7 @@ def raise_questions(book: Rulebook, result: RunResult) -> list[Question]:
     s12 = stats.get("1.2")
     q = Question(
         id="rule-1.2-sleep-measurement",
-        title="Rule 1.2 reads deep/REM stage % — the personas supply a composite sleep score",
+        title="Rule 1.2 reads deep/REM stage % — vendors often supply only a composite sleep score",
         source="CLAUDE.md; config/rules/rules.v1.yaml (rule 1.2)",
         detail=(
             "Different measurements with different platform availability. The schema carries "
@@ -122,16 +122,17 @@ def raise_questions(book: Rulebook, result: RunResult) -> list[Question]:
             q.evidence.append(
                 "This grid supplies a stage percentage on every snapshot, so the unevaluable rate "
                 "for 1.2 is 0 by construction. Use --grid fine (which includes a null sleep axis "
-                "point) to measure the Alex case, where the composite exists and the stage % does not."
+                "point) to measure the composite-only case, where the composite exists and the "
+                "stage % does not."
             )
     questions.append(q)
 
-    # ---------------------------------------------------------------- the James gap / rule 1.4
+    # ---------------------------------------------------------------- the RHR-alone gap / rule 1.4
     s14 = stats.get("1.4")
     calm = result.states.get("calm", 0)
     q = Question(
         id="rule-1.4-cardiovascular-load",
-        title="No rule fires on elevated RHR alone (the James gap)",
+        title="No rule fires on elevated RHR alone (the RHR-alone gap, F19)",
         source="CLAUDE.md; docs/engine.md fixtures F5 / F5b",
         detail=(
             "1.3 is dual-gated on temperature AND RHR, so a large isolated RHR rise produces no L1 "

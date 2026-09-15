@@ -1,0 +1,13 @@
+{
+  "name": "@weyos/app-state",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Derives the six product states (calibrating, partial, in balance, advisory, intervention, declined) from a Decision. The mapping is data: app-states.json.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": ["src", "app-states.json"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/"
+  }
+}
