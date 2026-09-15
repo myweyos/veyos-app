@@ -111,6 +111,11 @@ jobs:
           python-version: "3.11"
       - name: Boundary checker self-tests
         run: python3 -m unittest discover -s tools/tests
+      - name: Jira tooling self-tests
+        # Pure functions only — ADF conversion and credential redaction. No network, no token.
+        # The file is named explicitly: a directory argument makes newer Node versions execute
+        # the CLIs alongside the tests.
+        run: node --test tools/jira/adf.test.mjs
       - name: No cross-service imports except via shared packages
         run: python3 tools/check_service_boundaries.py
 
