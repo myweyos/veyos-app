@@ -29,8 +29,8 @@ from weyos_engine.engine import decide
 from weyos_engine.models import Snapshot
 
 BOOK = load_rulebook()
-PERSONAS = json.loads(
-    (Path(__file__).resolve().parents[3] / "packages" / "demo-fixtures" / "personas.json")
+BASE = json.loads(
+    (Path(__file__).resolve().parents[3] / "packages" / "test-fixtures" / "snapshots" / "vata-cycling.json")
     .read_text(encoding="utf-8")
 )
 MODEL_DAYS = range(1, 29)
@@ -45,9 +45,9 @@ EXPECTED_PHASE = {
 }
 
 
-def _sarah_on(day: int | None, book: Rulebook = BOOK) -> dict[str, Any]:
-    """Sarah's ordinary day with only the cycle day changed. No Layer 1 or 5 rule fires."""
-    raw = {k: v for k, v in copy.deepcopy(PERSONAS["sarah"]["calm"]).items() if not k.startswith("$")}
+def _on_day(day: int | None, book: Rulebook = BOOK) -> dict[str, Any]:
+    """The cycle-tracking base's ordinary day, cycle day changed. No Layer 1 or 5 rule fires."""
+    raw = {k: v for k, v in copy.deepcopy(BASE).items() if not k.startswith("$")}
     raw["cycle"] = {**raw["cycle"], "cycle_day": day}
     return decide(Snapshot.from_dict(raw), book)
 
@@ -72,14 +72,14 @@ def test_layer2_ranges_partition_the_28_day_model() -> None:
 
 @pytest.mark.parametrize("day", MODEL_DAYS)
 def test_exactly_one_layer2_rule_fires(day: int) -> None:
-    decision = _sarah_on(day)
+    decision = _on_day(day)
     assert _layer2_fired(decision) == [EXPECTED_PHASE[day]]
     assert not any("more than one Layer 2 rule fired" in w for w in decision["warnings"])
 
 
 @pytest.mark.parametrize("day", range(1, 6))
 def test_menstrual_not_follicular_on_days_1_to_5(day: int) -> None:
-    decision = _sarah_on(day)
+    decision = _on_day(day)
     assert _layer2_fired(decision) == ["2.4"]
     assert decision["activity"]["decided_by"] == "2.4"
     assert {"warming", "iron_rich"} <= set(decision["food"]["mandated_tags"])
@@ -98,7 +98,7 @@ def test_an_overlap_is_warned_about_not_silently_arbitrated() -> None:
         for r in BOOK.rules
     )
     book = replace(BOOK, rules=widened)
-    decision = _sarah_on(3, book)
+    decision = _on_day(3, book)
     assert sorted(_layer2_fired(decision)) == ["2.1", "2.4"]
     assert any("more than one Layer 2 rule fired" in w for w in decision["warnings"])
     # Follicular's mandates leak onto a menstrual day. Priority 29 does not stop that.
@@ -108,7 +108,7 @@ def test_an_overlap_is_warned_about_not_silently_arbitrated() -> None:
 @pytest.mark.parametrize("day", [29, 30, 31, 35, 45])
 def test_days_past_28_fire_no_phase_and_say_so(day: int) -> None:
     """Cycle day > 28 is an OPEN SPEC QUESTION (CLAUDE.md). The engine refuses to guess. F13."""
-    decision = _sarah_on(day)
+    decision = _on_day(day)
     assert _layer2_fired(decision) == []
     assert any("UNDEFINED" in w for w in decision["warnings"])
 
@@ -124,6 +124,6 @@ def test_in_balance_is_unreachable_with_cycle_data_CURRENT_BEHAVIOUR(day: int) -
     Whoever answers §9.7 changes this test deliberately. Some candidate answers, none chosen:
     make L2 always-on like L3; exclude L2 from the calm test only when its verdict is `allow`;
     or keep it and design "in balance" as male/no-cycle only. Each one changes which screen
-    Sarah sees on an ordinary day.
+    a cycle-tracking subject sees on an ordinary day.
     """
-    assert _sarah_on(day)["state"] == "intervention"
+    assert _on_day(day)["state"] == "intervention"
