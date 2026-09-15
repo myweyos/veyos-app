@@ -24,7 +24,7 @@ Expo client ──(1)──> Ingestion API ──(2)──> normalisation ──
 
 ## Why the engine is pure
 
-It is the only way to test 16 interacting rules across 3 personas × N signal combinations
+It is the only way to test 16 interacting rules across synthetic snapshots × N signal combinations
 without a phone, a wearable, a backend or a human. It also means a decision can be
 reproduced exactly from a stored snapshot plus a rulebook version — which is what
 "explainable" has to mean when a regulator asks.

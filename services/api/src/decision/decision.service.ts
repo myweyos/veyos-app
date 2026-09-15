@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException, Optional } from "@nestjs
 import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 import type Redis from "ioredis";
 
+import { BaselineComputationService } from "../baseline/baseline-computation.service";
 import { REDIS_CLIENT } from "../redis/redis.tokens";
 import { DecisionRepository } from "../store/decision.repository";
 import { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
@@ -27,6 +28,7 @@ export class DecisionService {
   constructor(
     private readonly decisions: DecisionRepository,
     private readonly snapshots: SignalSnapshotRepository,
+    private readonly baselines: BaselineComputationService,
     @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis,
   ) {}
 
@@ -53,6 +55,11 @@ export class DecisionService {
   /** The snapshot a decision was computed from. `/v1/signals` needs it; a Decision has no readings. */
   async snapshotFor(subjectRef: string, asOf: string): Promise<SignalSnapshot | null> {
     return this.snapshots.latestForSubject(subjectRef, asOf);
+  }
+
+  /** The baselines ingestion computed for that day: same history, same function, same result. */
+  async baselinesFor(subjectRef: string, asOf: string): Promise<SignalSnapshot["baselines"]> {
+    return this.baselines.computeFor(subjectRef, asOf);
   }
 
   /** Cache a freshly computed or retrieved envelope — fire-and-forget, never throws. */

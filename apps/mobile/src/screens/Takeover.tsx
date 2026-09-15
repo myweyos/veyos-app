@@ -15,7 +15,7 @@
 
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import type { DemoDay } from "@weyos/demo-fixtures";
+import type { TodayModel } from "../lib/todayModel";
 
 import { Button, Chip, Disclaimer, Link, WarnBox } from "../components/primitives";
 import {
@@ -31,15 +31,17 @@ import {
 import { color, space } from "../theme/tokens";
 
 export function Takeover({
-  day,
+  model,
   onWhyThis,
   onDismiss,
+  onDecline,
 }: {
-  day: DemoDay;
+  model: TodayModel;
   onWhyThis: () => void;
   onDismiss: () => void;
+  onDecline: () => void;
 }) {
-  const decision = day.decision;
+  const decision = model.decision;
   const activity = decision.activity;
   const evidence = decision.fired_rules.flatMap((r) => r.because ?? []);
   const messages = decision.messages ?? [];
@@ -88,7 +90,7 @@ export function Takeover({
             <Button label="Later" kind="quiet" onPress={onDismiss} />
           </View>
           <View style={s.half}>
-            <Button label="Not for me" kind="quiet" onPress={onDismiss} />
+            <Button label="Not for me" kind="quiet" onPress={onDecline} />
           </View>
         </ButtonRow>
       </View>

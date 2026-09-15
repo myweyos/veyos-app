@@ -55,13 +55,13 @@ Google Play Console account. No amount of code moves those dates.
 than merely fast. It encodes the non-negotiables (engine is pure, rules are config, every
 rule change ships a fixture) and — more importantly — the list of **open spec questions that
 must not be silently resolved in code**. That list is the difference between an agent that
-surfaces the James gap and one that quietly invents a threshold to make a test pass.
+surfaces the RHR-alone gap (F19) and one that quietly invents a threshold to make a test pass.
 
 Three habits worth keeping:
 
 1. **Work in one vertical slice per session.** "Add the HealthKit module" not "build the
    mobile app". Long sessions on this codebase drift toward inventing rules.
-2. **Ask for the trace, not the diff.** After any engine change: `make decision PERSONA=alex
+2. **Ask for the trace, not the diff.** After any engine change: `make decision SNAPSHOT=packages/test-fixtures/snapshots/pitta-heat.json
    STATE=crash`. Reading what it decided is far faster than reading the arbitration code.
 3. **When Claude proposes resolving an open question, stop it.** The right output is a
    `[SPEC]` issue, not a code change. There's an issue template for exactly this.
@@ -137,7 +137,7 @@ picks up on day 1 has a contract and a test suite waiting for it.
 
 **D2. Decision screen against real engine output**
 > Build the daily decision screen against a real `Decision` produced by
-> `python -m weyos_engine.cli --persona sarah --state crash --json`. Show the prescribed
+> `python -m weyos_engine.cli --snapshot packages/test-fixtures/snapshots/vata-cycling.json --json`. Show the prescribed
 > activity, the meal changes with the reason for each removal, and the `because` lines.
 > Showing why is the product. Do not invent data shapes — use `@weyos/shared-schema`.
 
@@ -164,8 +164,8 @@ check). Add these three things and they can be productive without blocking on yo
 
 | Decision | Blocks | Where it's tracked |
 |---|---|---|
-| Rule 1.4 (elevated RHR alone) — approve or reject | The James gap; the app currently says "in balance today" to a man with RHR 26% over baseline | Fixture F5b, `config/rules/rules.v1.yaml` |
-| Rule 4.4 (pollen/air quality) — is it a signal at all? | James's persona story doesn't work without it | Rulebook, disabled |
+| Rule 1.4 (elevated RHR alone) — approve or reject | The RHR-alone gap; the app says "in balance today" with RHR 26% over baseline and a normal temperature | Fixtures F19, F5b, `config/rules/rules.v1.yaml` |
+| Rule 4.4 (pollen/air quality) — is it a signal at all? | The pitch materials describe it; the engine has no such signal | Rulebook, disabled |
 | Does 1.2 read sleep *stages* or a vendor composite score? | Cross-platform availability of the signal | `docs/engine.md`, schema comment |
 | Heat-wave (4.2) in validated-only mode — suppress or promote to L1? | What the clinical demo actually shows | `config/rules/rules.v1.yaml` features block |
 | DevOps/QA/PM resourcing | The 3.5-month calendar; those hours are excluded from the 691h estimate | MVP scope doc |

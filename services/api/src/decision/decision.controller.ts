@@ -54,14 +54,20 @@ export class DecisionController {
    * Deliberately does NOT compute "HRV is 22% below baseline". That is a baseline comparison,
    * i.e. rule logic outside the engine, and it is exactly what the CI guardrail grep exists to
    * catch. The delta the engine actually used is already prose in `fired_rules[].because`.
+   *
+   * `baselines` are the trailing means the decision was computed against, so the app can show
+   * "your usual" beside each reading. They are recomputed from stored history (deterministic,
+   * and cached), because the stored snapshot deliberately doesn't persist them.
    */
   @Get("signals")
   @Header("cache-control", "no-store")
   async signals(@CurrentSubject() subject: AuthedSubject) {
     const envelope = await this.decisions.today(subject.subjectRef);
+    const asOf = envelope.decision.as_of;
     return {
       decision_id: envelope.decision_id,
-      snapshot: await this.decisions.snapshotFor(subject.subjectRef, envelope.decision.as_of),
+      snapshot: await this.decisions.snapshotFor(subject.subjectRef, asOf),
+      baselines: (await this.decisions.baselinesFor(subject.subjectRef, asOf)) ?? null,
       coverage: {
         unevaluable_rule_ids: envelope.presentation.unevaluable_rule_ids,
         warning_kinds: envelope.presentation.warning_kinds,

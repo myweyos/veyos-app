@@ -27,22 +27,31 @@
     "android": {
       "package": "app.weyos.client",
       "permissions": [
-        "android.permission.BLUETOOTH_SCAN",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_HEART_RATE_VARIABILITY",
         "android.permission.health.READ_RESTING_HEART_RATE",
         "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_SKIN_TEMPERATURE",
-        "android.permission.health.READ_STEPS"
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_MENSTRUATION"
       ]
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store",
+      "expo-health-connect",
+      "./plugins/withHealthConnectPermissionDelegate",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 26
+          }
+        }
+      ]
     ],
     "extra": {
-      "$comment": "eas.projectId is added by `eas init`. Do not hand-write it.",
-      "apiBaseUrl": "http://localhost:3000",
+      "$comment": "Runtime config comes from EXPO_PUBLIC_* variables set per build profile in eas.json: EXPO_PUBLIC_API_BASE_URL, EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY. The anon key is public by design; the service-role key must never be here.",
       "router": {
         "origin": false
       },

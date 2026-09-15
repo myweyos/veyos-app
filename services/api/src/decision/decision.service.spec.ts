@@ -1,6 +1,7 @@
 import { NotFoundException } from "@nestjs/common";
 import type { DecisionEnvelope } from "@weyos/shared-schema";
 
+import type { BaselineComputationService } from "../baseline/baseline-computation.service";
 import type { DecisionRepository } from "../store/decision.repository";
 import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 import { DecisionService } from "./decision.service";
@@ -36,9 +37,11 @@ function service(
   redis?: { get: jest.Mock; set: jest.Mock },
   snapshots = makeSnapshots(),
 ): DecisionService {
+  const baselines = { computeFor: jest.fn().mockResolvedValue(undefined) };
   return new DecisionService(
     repo as unknown as DecisionRepository,
     snapshots as unknown as SignalSnapshotRepository,
+    baselines as unknown as BaselineComputationService,
     redis as never,
   );
 }

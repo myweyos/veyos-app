@@ -11,12 +11,14 @@ were all replaced with the real brand kit v3 values. What follows is what genuin
 
 | Screen | Status |
 |---|---|
-| B1–B6 Today | Ported. Verdict block, pillar-coded signal tiles, unknown-tile treatment. |
-| C2 Takeover | Ported. Evidence first, strikethrough on the user's own plan, "Not for me" at a fixed distance. |
-| C3 Why this? | Ported. Layer-ordered rows in pillar colours, "couldn't be checked" kept distinct from "did not apply". |
+| A1 Welcome, A2 Sign in (email code), A3 Region, A4 Consent, A6 Cycle, A7 Food profile, A10 Connect (Health Connect), A11 Learning | Ported, on the real API. Deviations from the pack, each deliberate: A4's optional consents start **off** (pre-ticked consent isn't valid); the "stored in your region" and "encrypted" lines are held back until they're true (SCRUM-77, hosting); A7 asks the one question the pack specifies (it says "1 of 3"); A10 omits the chest strap until BLE exists; A11 names no day count (the pack says 21, the rulebook needs 28). |
+| B1–B6 Today | Ported, on the subject's stored decision. Verdict block, pillar-coded signal tiles, unknown-tile treatment. |
+| C2 Takeover | Ported. Evidence first, strikethrough on the user's own plan, "Not for me" at a fixed distance and recorded as a decline (on the device, until the decline event exists server-side). |
+| C3 Why this? | Ported. Layer-ordered rows in pillar colours; "couldn't be checked" (Layer 1) kept distinct from "not applicable" (no cycle, no labs); decision id shown. |
+| Settings | Consents, Health Connect permissions, sign out, delete account. Not the pack's H-section layout yet. |
 
-Everything else — A1–A11, B7, B8, C1/C4/C5, D, E, F, G, H1–H10, W1–W9 — exists in the pack
-and is **not** ported. Open the HTML to see them.
+Not ported: A5, A8, A9, B7, B8, C1/C4/C5, D, E, F, G, H1–H10, W1–W9. Sign in with Apple and
+Google wait on store enrolment and OAuth configuration.
 
 ## Still not supplied
 
@@ -31,45 +33,26 @@ and is **not** ported. Open the HTML to see them.
 
 ## Gaps that are not design's to close
 
-- **No `decision_id`.** C3 is specified to show `decision 8f2a…c91`, but `decision.schema.json`
-  carries no id field. Phase 3 resolves this as a content hash. Until then the trace shows
-  rulebook version and date only.
 - **Deltas exist only as prose.** `fired_rules[].because` carries
   `"hrv_ms 22.0% below baseline (threshold 20.0%)"` as a string. There is no structured
   `{signal, delta_pct, threshold}`, so the pack's sparkline (`spark()`) and its
   "22% below your usual (55ms)" tile captions have no machine-readable source. Computing one
   in the client would be rule logic outside the engine. Needs a contract change.
-- **The app-state mapping is still PROPOSED.** `packages/demo-fixtures/app-states.json` carries
-  its open questions. One of them is now answerable — see below.
+- **The app-state mapping is still PROPOSED.** `packages/app-state/app-states.json` carries
+  its open questions.
 
-## The James discrepancy — needs a decision
+## The RHR-alone gap (formerly "the James discrepancy") — settled for the fixtures
 
-The pack and the engine fixtures disagree about James, and the disagreement is the whole
-James gap.
+The pack's James had no wrist temperature, so rule 1.3 was unevaluable and he sat in B2
+Partial. The old fixture gave him a present, normal temperature, which put him in "In balance
+today". Plan v2 §3 ruled the difference a test-data bug. The personas are gone now, and the
+golden fixtures carry both cases on synthetic snapshots:
 
-**The pack** gives him `Wrist temp: "—", unknown: true, "No reading since Monday"`, sets
-`defaultState: 'partial'`, and writes the copy to match:
+- **F5**: RHR up, temperature missing, so 1.3 is unevaluable and the day is Partial, as the
+  pack draws it.
+- **F19**: RHR up, temperature present and normal, so 1.3 is cleanly FALSE and the day reads
+  "In balance today". This is still a product defect, and it's what candidate rule 1.4 would
+  address (plan v2 §9.3, undecided).
 
-> "With no wrist temperature, I can't check your immune and inflammatory rule either way — so
-> I'm not telling you you're fine."
-
-It also states outright that In balance is *unreachable* for him today: *"his wrist temperature
-is missing, so he sits in B2 Partial instead."*
-
-**The engine fixtures** give him `wrist_temp_delta_c: 0.1` — present and normal. Rule 1.3's
-dual gate therefore resolves cleanly to FALSE rather than UNKNOWN, no warning is raised, and he
-lands in `calm` → "In balance today". That is fixture F5, pinned as current behaviour.
-
-So the false reassurance in F5 is partly an artefact of the fixture supplying a
-present-but-normal temperature. Under the pack's data, three-valued evaluation already does
-the right thing without candidate rule 1.4: the reading is absent, 1.3 is unevaluable, and the
-app says so.
-
-This is exactly the question CLAUDE.md flags as *"the sources disagree on whether F5 lands in
-B2 or B3"*. **Do not resolve it by editing `personas.json`** — that would change a pinned
-golden fixture and silently answer an open spec question. It needs a `[SPEC]` issue and a
-ruling on which James is canonical.
-
-Worth noting: the app-state mapping in `app-states.json` narrows `partial` to Layer 1, and
-under the pack's data that narrowing produces exactly the pack's intended state. The mapping
-appears correct; it is the fixture data that diverges.
+On Android specifically, Health Connect supplies no wrist temperature, so every Android
+subject gets F5's behaviour: 1.3 is never evaluable, and Today says so on the temperature tile.
