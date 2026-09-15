@@ -1,0 +1,74 @@
+# Arbitration test rulebook. NOT the product rulebook — nothing outside tests/ loads this.
+#
+# Rulebook v1 only lets some layers touch each other: L5 meets L2 on complex_carbs (F9), L2 meets
+# L3 on raw and fermented (F16), and L1 meets L3 through the ginger item (F10). L1 and L5 share
+# nothing, and neither do L3 and L4. So precedence between every pair of layers can't be proved
+# from the product rulebook. It has to be proved on the MECHANISM, and that's what this file is
+# for: every layer carries the same five kinds of effect, so any two layers can be made to collide
+# on purpose.
+#
+# Each rule fires when its own switch is "on". Switches are lab statuses because `lab_*` is the
+# only signal family whose names are open-ended; there is no lab meaning here. A test sets every
+# switch to "off" and then turns on exactly the rules it needs. Off, not absent: an absent
+# switch is a missing signal, which is UNKNOWN and would clutter the trace with unevaluable rows.
+#
+# "on" is QUOTED on purpose. YAML 1.1 reads a bare `on` as boolean true, which would never
+# equal the string status the snapshot carries.
+#
+# Priority bands follow the product convention (1.x=10s, 5.x=20s, 2.x=30s, 3.x=40s, 4.x=50s) so
+# that activity tie-breaks, which go by priority, reflect layer precedence exactly as they do in
+# config/rules/rules.v1.yaml. test_precedence.py asserts both files keep that convention.
+#
+# Every collision is on the tag `raw`. The tag has no meaning here either; it is in the controlled
+# vocabulary, and the loader rejects tags that aren't.
+
+version: 1
+features:
+  elemental_layer: true
+  validated_only_layers: [1, 2, 5]
+baseline:
+  comparison_mode: percent
+  min_days_for_baseline: 28
+
+layers:
+  1: { name: "L1", always_on: false }
+  2: { name: "L2", always_on: false }
+  3: { name: "L3", always_on: false }
+  4: { name: "L4", always_on: false }
+  5: { name: "L5", always_on: false }
+
+rules:
+  # ------------------------------------------------------------------ Layer 1 (priority 10s)
+  - { id: L1.block,   layer: 1, priority: 10, when: { all: [{ signal: lab_l1_block,   op: lab_status_eq, value: "on" }] }, effects: { food: { block_tags: [raw] } } }
+  - { id: L1.mandate, layer: 1, priority: 11, when: { all: [{ signal: lab_l1_mandate, op: lab_status_eq, value: "on" }] }, effects: { food: { mandate_tags: [raw] } } }
+  - { id: L1.act,     layer: 1, priority: 12, when: { all: [{ signal: lab_l1_act,     op: lab_status_eq, value: "on" }] }, effects: { activity: { verdict: downgrade, downgrade_to: ["L1 session"] } } }
+  - { id: L1.mod,     layer: 1, priority: 13, when: { all: [{ signal: lab_l1_mod,     op: lab_status_eq, value: "on" }] }, effects: { food: { sodium_pct_delta: -1 }, constraints: { bedtime: "L1" } } }
+  - { id: L1.add,     layer: 1, priority: 14, when: { all: [{ signal: lab_l1_add,     op: lab_status_eq, value: "on" }] }, effects: { food: { add_items: [{ name: "L1 item", tags: [raw] }] } } }
+
+  # ------------------------------------------------------------------ Layer 5 (priority 20s)
+  - { id: L5.block,   layer: 5, priority: 20, when: { all: [{ signal: lab_l5_block,   op: lab_status_eq, value: "on" }] }, effects: { food: { block_tags: [raw] } } }
+  - { id: L5.mandate, layer: 5, priority: 21, when: { all: [{ signal: lab_l5_mandate, op: lab_status_eq, value: "on" }] }, effects: { food: { mandate_tags: [raw] } } }
+  - { id: L5.act,     layer: 5, priority: 22, when: { all: [{ signal: lab_l5_act,     op: lab_status_eq, value: "on" }] }, effects: { activity: { verdict: downgrade, downgrade_to: ["L5 session"] } } }
+  - { id: L5.mod,     layer: 5, priority: 23, when: { all: [{ signal: lab_l5_mod,     op: lab_status_eq, value: "on" }] }, effects: { food: { sodium_pct_delta: -5 }, constraints: { bedtime: "L5" } } }
+  - { id: L5.add,     layer: 5, priority: 24, when: { all: [{ signal: lab_l5_add,     op: lab_status_eq, value: "on" }] }, effects: { food: { add_items: [{ name: "L5 item", tags: [raw] }] } } }
+
+  # ------------------------------------------------------------------ Layer 2 (priority 30s)
+  - { id: L2.block,   layer: 2, priority: 30, when: { all: [{ signal: lab_l2_block,   op: lab_status_eq, value: "on" }] }, effects: { food: { block_tags: [raw] } } }
+  - { id: L2.mandate, layer: 2, priority: 31, when: { all: [{ signal: lab_l2_mandate, op: lab_status_eq, value: "on" }] }, effects: { food: { mandate_tags: [raw] } } }
+  - { id: L2.act,     layer: 2, priority: 32, when: { all: [{ signal: lab_l2_act,     op: lab_status_eq, value: "on" }] }, effects: { activity: { verdict: downgrade, downgrade_to: ["L2 session"] } } }
+  - { id: L2.mod,     layer: 2, priority: 33, when: { all: [{ signal: lab_l2_mod,     op: lab_status_eq, value: "on" }] }, effects: { food: { sodium_pct_delta: -2 }, constraints: { bedtime: "L2" } } }
+  - { id: L2.add,     layer: 2, priority: 34, when: { all: [{ signal: lab_l2_add,     op: lab_status_eq, value: "on" }] }, effects: { food: { add_items: [{ name: "L2 item", tags: [raw] }] } } }
+
+  # ------------------------------------------------------------------ Layer 3 (priority 40s)
+  - { id: L3.block,   layer: 3, priority: 40, when: { all: [{ signal: lab_l3_block,   op: lab_status_eq, value: "on" }] }, effects: { food: { block_tags: [raw] } } }
+  - { id: L3.mandate, layer: 3, priority: 41, when: { all: [{ signal: lab_l3_mandate, op: lab_status_eq, value: "on" }] }, effects: { food: { mandate_tags: [raw] } } }
+  - { id: L3.act,     layer: 3, priority: 42, when: { all: [{ signal: lab_l3_act,     op: lab_status_eq, value: "on" }] }, effects: { activity: { verdict: downgrade, downgrade_to: ["L3 session"] } } }
+  - { id: L3.mod,     layer: 3, priority: 43, when: { all: [{ signal: lab_l3_mod,     op: lab_status_eq, value: "on" }] }, effects: { food: { sodium_pct_delta: -3 }, constraints: { bedtime: "L3" } } }
+  - { id: L3.add,     layer: 3, priority: 44, when: { all: [{ signal: lab_l3_add,     op: lab_status_eq, value: "on" }] }, effects: { food: { add_items: [{ name: "L3 item", tags: [raw] }] } } }
+
+  # ------------------------------------------------------------------ Layer 4 (priority 50s)
+  - { id: L4.block,   layer: 4, priority: 50, when: { all: [{ signal: lab_l4_block,   op: lab_status_eq, value: "on" }] }, effects: { food: { block_tags: [raw] } } }
+  - { id: L4.mandate, layer: 4, priority: 51, when: { all: [{ signal: lab_l4_mandate, op: lab_status_eq, value: "on" }] }, effects: { food: { mandate_tags: [raw] } } }
+  - { id: L4.act,     layer: 4, priority: 52, when: { all: [{ signal: lab_l4_act,     op: lab_status_eq, value: "on" }] }, effects: { activity: { verdict: downgrade, downgrade_to: ["L4 session"] } } }
+  - { id: L4.mod,     layer: 4, priority: 53, when: { all: [{ signal: lab_l4_mod,     op: lab_status_eq, value: "on" }] }, effects: { food: { sodium_pct_delta: -4 }, constraints: { bedtime: "L4" } } }
+  - { id: L4.add,     layer: 4, priority: 54, when: { all: [{ signal: lab_l4_add,     op: lab_status_eq, value: "on" }] }, effects: { food: { add_items: [{ name: "L4 item", tags: [raw] }] } } }

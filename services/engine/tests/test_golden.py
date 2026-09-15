@@ -143,6 +143,17 @@ def test_golden(fixture: dict[str, Any]) -> None:
         assert any(expect["trace_match"] in t["detail"] for t in decision["trace"]), \
             f"{where}: no trace entry matching {expect['trace_match']!r}"
 
+    # UNKNOWN is not FALSE: an unevaluable rule gets an "unevaluable" evaluate row; a FALSE one
+    # gets none. This is the set the sidecar projects as presentation.unevaluable_rule_ids.
+    unevaluable = {
+        t["rule_id"] for t in decision["trace"]
+        if t["step"] == "evaluate" and t["detail"].startswith("unevaluable")
+    }
+    for rid in expect.get("unevaluable_include", []):
+        assert rid in unevaluable, f"{where}: expected {rid} to be unevaluable"
+    for rid in expect.get("unevaluable_exclude", []):
+        assert rid not in unevaluable, f"{where}: {rid} should have evaluated"
+
 
 def test_every_fired_output_is_traceable() -> None:
     """No value may appear in a decision without a rule id behind it."""
