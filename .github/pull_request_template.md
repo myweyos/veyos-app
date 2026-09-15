@@ -21,6 +21,7 @@
 - [ ] No raw biometric values in logs, error messages or trace strings
 - [ ] No rule logic added outside `services/engine`
 - [ ] Open spec questions in CLAUDE.md were not silently resolved in code
+- [ ] Lifecycle: software items touched and risk-file rows affected are named above (or "none") — `docs/regulatory/lifecycle/`
 
 ## Notes for review
 
