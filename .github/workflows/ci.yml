@@ -148,6 +148,23 @@ jobs:
             exit 1
           fi
 
+  copy:
+    name: Copy lint (banned vocabulary and tone)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci || npm install
+      - name: Copy lint self-tests
+        run: node --test tools/copy-lint/lint.test.mjs
+      - name: No banned vocabulary or tone in user-facing copy
+        # SCRUM-123. What counts as copy, and the reviewed exception list, are in
+        # tools/copy-lint/README.md. Reword first; add an exception only for a legitimate use.
+        run: node tools/copy-lint/check.mjs
+
   mobile_build:
     name: Mobile dev build (compiles)
     runs-on: ubuntu-latest
