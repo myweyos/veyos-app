@@ -5,6 +5,13 @@ honestly to humans too.
 
 ## Current plan — read this before picking up any ticket
 
+> **2026-09-14, from John: no demo mode and no MVP. We build the full working version only.**
+> Don't build anything whose purpose is to look like it works: no demo paths, no fixture-backed
+> screens, no simulated data a user could reach. Don't treat "MVP" as a reason to build a thinner
+> version of something. Where older docs (including the rest of this file and the plan) say
+> "MVP", read it as "the product". Scope still comes from the plan and its §9 decisions. If
+> something is marked out of scope or post-MVP, ask; don't assume it's in or out.
+
 **As of 2026-09-10 the plan is `docs/build-plan-v2-direct-to-product.md`. It supersedes
 `docs/build-plan-stage1-wrapper.md`, which is retained for history only.**
 
