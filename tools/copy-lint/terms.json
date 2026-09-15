@@ -1,0 +1,25 @@
+{
+  "$comment": "Banned vocabulary and banned tone for user-facing copy (SCRUM-123). The lists come from the ticket and match the header of apps/mobile/src/screens/copy.ts. Each head word maps to the inflections that carry the same meaning. Matching is on whole words, case-insensitive. A reviewer approving this file is approving these inflections too: note that 'missing' is deliberately NOT a form of 'missed', and 'conditional'/'conditioning' are deliberately NOT forms of 'condition'. Adding a form here can turn CI red on existing copy, which is intended.",
+  "vocabulary": {
+    "detect": ["detect", "detects", "detected", "detecting", "detection", "detections", "detector", "detectors", "detectable"],
+    "diagnose": ["diagnose", "diagnoses", "diagnosed", "diagnosing", "diagnosis", "diagnostic", "diagnostics"],
+    "risk": ["risk", "risks", "risky", "riskier", "riskiest", "risked", "risking"],
+    "prevent": ["prevent", "prevents", "prevented", "preventing", "prevention", "preventive", "preventative"],
+    "treat": ["treat", "treats", "treated", "treating", "treatment", "treatments"],
+    "symptom": ["symptom", "symptoms", "symptomatic"],
+    "condition": ["condition", "conditions"],
+    "disorder": ["disorder", "disorders", "disordered"],
+    "abnormal": ["abnormal", "abnormally", "abnormality", "abnormalities"],
+    "medical": ["medical", "medically"],
+    "cardiac": ["cardiac"],
+    "patient": ["patient", "patients"],
+    "prescribe": ["prescribe", "prescribes", "prescribed", "prescribing", "prescription", "prescriptions", "prescriptive"]
+  },
+  "tone": {
+    "should": ["should", "shouldn't", "shouldnt"],
+    "must": ["must", "mustn't", "mustnt"],
+    "failed": ["failed", "fail", "fails", "failing", "failure", "failures"],
+    "missed": ["missed"],
+    "streak": ["streak", "streaks"]
+  }
+}

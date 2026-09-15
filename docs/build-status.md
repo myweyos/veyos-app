@@ -108,7 +108,7 @@ every persona value.
 
 | Status | Item | Note |
 |---|---|---|
-| ⬜ | Copy lint in CI | **Not built.** CI has guardrail greps for biometrics-in-logs and rule-logic-outside-the-engine, but **no banned-vocabulary lint**. I checked the app copy by hand; that is not the same as enforcing it. |
+| 🟡 | Copy lint in CI | `tools/copy-lint/` plus the CI `copy` job ✅. It parses `apps/mobile` with the TypeScript compiler (comments and field names are never scanned) and reads the user-visible rulebook fields. The reviewed exception list is `exceptions.json`, with one entry: the disclaimer. **In review**: the list and its inflections need a human sign-off, and the `copy` job isn't a required check until branch protection names it. SCRUM-123. |
 | 🚫 | All eight DECISION tasks | Still pending. Three are now answerable with evidence — see below. |
 | ⬜ | Everything else (intended-purpose statement, claims audit, DPIA, IEC 62304, ISO 14971, consultant) | Non-engineering, not started. |
 
