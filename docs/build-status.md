@@ -77,7 +77,7 @@ half-done story imported as Done is worse than one imported as To Do.
 | 🚫 | Rule 4.4 — pollen / air quality | Correctly not built; `enabled: false`, reported as disabled with null rates. |
 | 🟡 | Layer 2 — cycle logic | Exactly one rule fires per cycle day ✅; menstrual overrides follicular via priority 29 ✅. **The "in balance is unreachable with cycle data" question is raised, not resolved** — and the AC says resolve before shipping. |
 | ✅ | Layer 5 — lab overrides | Fires only present-and-abnormal, outranks cycle/constitution/environment, F9 passes. |
-| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. **Fixtures do not cover every precedence pair**, and the backtest runs on synthetic sweeps, not recorded signal history. |
+| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. Every precedence pair is now covered, on a test-only arbitration rulebook (`test_precedence.py`, SCRUM-79). **The backtest runs on synthetic sweeps, not recorded signal history.** |
 | 🟡 | Engine invocation from the API | Sidecar ✅, engine stays pure ✅. **Decision is not persisted** before dispatch — no storage exists. |
 
 ## Baseline Phenotype & Onboarding
