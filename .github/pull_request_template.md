@@ -9,6 +9,7 @@
   - [ ] Backtest run and result linked below
   - [ ] Golden fixture added or updated
   - [ ] Rulebook version bumped if any existing fixture's expected output changed
+  - [ ] Risk file (`docs/regulatory/risk-file.md`) reviewed for the rules touched
 
 ## Contract impact
 
