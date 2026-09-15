@@ -60,7 +60,7 @@
     {
       "id": "partial-is-narrowed-to-layer-1",
       "question": "Should 'partial' count unevaluable rules on every layer, or only Layer 1?",
-      "why_it_bites": "The engine maps an ABSENT signal to UNKNOWN, identically to a signal that failed to sync. A subject with no menstrual cycle makes rules 2.1–2.4 unevaluable every single day. A subject with no labs makes 5.1–5.3 unevaluable every single day. Counting those, every non-cycling subject is permanently 'partial' and the in-balance state becomes unreachable for them — which would erase fixtures F2 and F5 from the demo entirely.",
+      "why_it_bites": "The engine maps an ABSENT signal to UNKNOWN, identically to a signal that failed to sync. A subject with no menstrual cycle makes rules 2.1–2.4 unevaluable every single day. A subject with no labs makes 5.1–5.3 unevaluable every single day. Counting those, every non-cycling subject is permanently 'partial' and the in-balance state becomes unreachable for them — which would erase fixtures F2 and F19 from the demo entirely.",
       "what_this_file_does": "Narrows the predicate to Layer 1 so 'partial' means 'a biometric I normally read is missing today'. That makes the demo correct but does NOT solve the modelling gap.",
       "needs": "A contract decision: should the model carry an explicit not-applicable state, distinct from unknown?"
     },
@@ -81,9 +81,9 @@
     {
       "id": "f5-james-gap-is-undecidable",
       "question": "Should the James gap render as 'in balance' or 'partial'?",
-      "why_it_bites": "James's crash yields state 'calm' with NO warnings and NO unevaluable rows — rule 1.3's dual gate (temperature AND RHR) evaluates cleanly to FALSE. So the decision is indistinguishable from a genuinely calm day by any field the Decision currently carries. It cannot be routed anywhere else without either approving candidate rule 1.4 or adding a field to decision.schema.json.",
+      "why_it_bites": "With RHR 26% above baseline and a wrist temperature that IS present and normal, rule 1.3's dual gate (temperature AND RHR) evaluates cleanly to FALSE: state 'calm', no warnings, no unevaluable Layer 1 row. The decision is indistinguishable from a genuinely calm day by any field it carries, so it cannot be routed anywhere else without approving candidate rule 1.4 or adding a field to decision.schema.json. (When the temperature is MISSING, as in the design pack's James, 1.3 is unevaluable and the day is already 'partial'. Plan v2 §3 aligned the persona with the pack, so that case is scenario day 1 and F5; the gap is now day 7 and F19.)",
       "what_this_file_does": "Renders it as 'in balance', which is the current, wrong-but-pinned behaviour. The scenario labels that day THE JAMES GAP so it is visible in the demo rather than only in a Python test.",
-      "needs": "The rule 1.4 decision. Fixture F5b flips from xfail the day it is approved."
+      "needs": "The rule 1.4 decision (plan v2 §9.3). Fixture F5b flips from xfail the day it is approved."
     },
     {
       "id": "f13-second-james-gap",

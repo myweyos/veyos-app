@@ -14,14 +14,14 @@
 
   "app_states": {
     "calibrating":  { "reachable": true,  "via": "day 4, days_of_history patched to 10" },
-    "partial":      { "reachable": true,  "via": "day 6, hrv_ms null so rule 1.1 is unevaluable" },
-    "in_balance":   { "reachable": true,  "via": "day 0 (a true calm day, F2) and day 1 (THE JAMES GAP, F5)" },
+    "partial":      { "reachable": true,  "via": "day 1, no wrist temperature so rule 1.3 is unevaluable (F5, the design pack's James); day 6, hrv_ms null so rule 1.1 is unevaluable" },
+    "in_balance":   { "reachable": true,  "via": "day 0 (a true calm day, F2) and day 7 (THE JAMES GAP, F19)" },
     "advisory":     { "reachable": true,  "via": "day 2, full moon adjusts sodium and touches nothing else (F7)" },
     "intervention": { "reachable": true,  "via": "day 3, HRV patched down so 1.1 fires and substitutes the run" },
     "declined":     { "reachable": true,  "via": "day 5, user response captured client-side" }
   },
 
-  "$james_gap_note": "Day 1 is the whole point of this persona. His RHR sits 26% above baseline, his steps have collapsed, and the app still says 'in balance today' — because rule 1.3 is dual-gated on temperature AND RHR, and with no temperature rise it evaluates cleanly to FALSE. There are no warnings and no unevaluable rows, so nothing in the Decision distinguishes that day from a genuinely calm one. Pinned by F5, and by F5b as a strict xfail that flips the day candidate rule 1.4 is approved. The scenario labels the day so a reviewer sees the defect in the demo rather than only in a Python test.",
+  "$james_gap_note": "Two days carry this persona's point. Day 1 is the design pack's James: RHR 26% above baseline, no wrist temperature since Monday, so rule 1.3 (temperature AND RHR) is UNEVALUABLE and he is Partial, not falsely reassured (F5). Day 7 is the defect that survives: the same RHR with a temperature reading that IS present and normal, where 1.3 evaluates cleanly to FALSE. That leaves no warnings and no unevaluable Layer 1 row, and the app says 'in balance today' (F19). Candidate rule 1.4 would close it; F5b is a strict xfail that flips the day it is approved. Until plan v2 §3 the persona carried the present temperature on its crash state, which put the defect on day 1.",
 
-  "$no_cycle_note": "James has no cycle data, which makes rules 2.1-2.4 UNEVALUABLE every single day — identically to a subject whose cycle data merely failed to sync. That is why app-states.json narrows the 'partial' predicate to Layer 1: counting all layers would make James permanently 'partial' and erase in_balance, taking F2 and F5 out of the demo."
+  "$no_cycle_note": "James has no cycle data, which makes rules 2.1-2.4 UNEVALUABLE every single day — identically to a subject whose cycle data merely failed to sync. That is why app-states.json narrows the 'partial' predicate to Layer 1: counting all layers would make James permanently 'partial' and erase in_balance, taking F2 and F19 out of the demo."
 }

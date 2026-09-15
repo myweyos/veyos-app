@@ -292,14 +292,27 @@ def test_region_agrees_with_the_snapshot_timezone() -> None:
 # --------------------------------------------------------------------- pinned defects
 
 
-def test_f5_is_still_the_james_gap() -> None:
-    """WRONG BUT CURRENT. Pinned so it cannot change silently.
+def test_the_packs_james_is_partial_not_reassured() -> None:
+    """F5 as the design pack has it: no wrist temperature, so 1.3 is unevaluable, not FALSE.
 
-    James's crash day has RHR 26% above baseline and still derives 'in balance', because rule
-    1.3's dual gate evaluates cleanly to FALSE — no warnings, no unevaluable rows, nothing in
-    the Decision to key on. See F5 / F5b and the rule 1.4 decision.
+    Plan v2 §3 aligned the persona with the pack. This day used to read 'in balance' only
+    because the fixture carried a present, normal temperature.
     """
     day = next(r for r in _results("james") if r.day_index == 1)
+    assert day.decision["state"] == "calm"
+    assert "1.3" in day.unevaluable
+    assert day.app_state == "partial"
+
+
+def test_f19_is_still_the_james_gap() -> None:
+    """WRONG BUT CURRENT. Pinned so it cannot change silently.
+
+    With his temperature present and normal, James's RHR sits 26% above baseline and the day
+    still derives 'in balance', because rule 1.3's dual gate evaluates cleanly to FALSE: no
+    warnings, no unevaluable Layer 1 row, nothing in the Decision to key on. See F19 / F5b and
+    the rule 1.4 decision (plan v2 §9.3).
+    """
+    day = next(r for r in _results("james") if r.day_index == 7)
     assert day.app_state == "in_balance"
     assert day.decision["state"] == "calm"
     assert day.decision["warnings"] == []
@@ -311,9 +324,11 @@ def test_f5_is_still_the_james_gap() -> None:
     "day it is approved, exactly as fixture F5b does",
     strict=True,
 )
-def test_james_gap_would_not_read_as_in_balance_once_rule_1_4_lands() -> None:
-    day = next(r for r in _results("james") if r.day_index == 1)
-    assert day.app_state != "in_balance"
+@pytest.mark.parametrize("day_index", [1, 7])
+def test_james_rhr_days_become_interventions_once_rule_1_4_lands(day_index: int) -> None:
+    """Both of James's elevated-RHR days, with temperature missing and with it normal."""
+    day = next(r for r in _results("james") if r.day_index == day_index)
+    assert day.app_state == "intervention"
 
 
 def test_layer_2_is_unevaluable_for_a_subject_with_no_cycle() -> None:

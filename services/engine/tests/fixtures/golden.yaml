@@ -58,16 +58,17 @@
 
 - id: F5
   description: >
-    THE JAMES GAP. RHR 26% above baseline, steps collapsed, but only L3 fires because 1.3
-    needs temperature AND RHR. The engine therefore reports 'in balance today' to a man
-    whose cardiovascular signal is clearly off. This fixture asserts the CURRENT behaviour
-    so it cannot change silently — it is a known product defect awaiting a rule decision,
-    not a passing test to feel good about.
+    James's crash as the design pack has it. RHR 26% above baseline, steps collapsed, and NO
+    wrist temperature since Monday. Rule 1.3 needs temperature AND RHR, so with temperature
+    missing it is UNEVALUABLE, not FALSE. Only L3 fires, but the decision now carries the gap,
+    and the app shows Partial rather than 'in balance'. The persona used to carry a present,
+    normal 0.1 °C; plan v2 §3 made that a test-data bug. The defect that survives the fix is F19.
   persona: james
   state: crash
   expect:
     state: calm
     fired: ["3.3"]
+    trace_match: "unevaluable: wrist_temp_delta_c not available"
 
 - id: F5b
   description: "Candidate rule 1.4 (Cardiovascular Load) would close the James gap. Rule is disabled pending sign-off."
@@ -209,3 +210,19 @@
     min_protein_g: 30
     min_fiber_g: 10
     blocked_tags_include: [high_glycemic]
+
+- id: F19
+  description: >
+    THE JAMES GAP, which survives the fixture fix. James's crash with his wrist temperature
+    PRESENT and normal (+0.1 °C): RHR 26% above baseline, steps collapsed, and 1.3's dual
+    gate evaluates cleanly to FALSE. Only L3 fires, with no warnings and no unevaluable Layer 1
+    row, so the app says 'in balance today' to someone whose cardiovascular signal is clearly
+    off. This was F5 until plan v2 §3 aligned the persona with the pack. It is a known product
+    defect awaiting the rule 1.4 decision (§9.3), pinned so it cannot change silently.
+  persona: james
+  state: crash
+  overrides:
+    biometrics: { wrist_temp_delta_c: 0.1 }
+  expect:
+    state: calm
+    fired: ["3.3"]

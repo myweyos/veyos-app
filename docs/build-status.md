@@ -146,9 +146,10 @@ Four things exist in the repo with nowhere to log them:
   percent and the two modes are indistinguishable by any backtest. Someone must author z-score
   thresholds before the decision can be made at all.
 - **Rule 1.4 / the James gap.** The design pack gives James a *missing* wrist temperature, which
-  makes 1.3 unevaluable and puts him in Partial. `personas.json` gives him `0.1` — present and
-  normal — so 1.3 resolves FALSE and he lands in "in balance today". **The false reassurance is
-  partly a fixture artefact**, and under the pack's data three-valued evaluation already does the
-  right thing without rule 1.4.
+  makes 1.3 unevaluable and puts him in Partial. `personas.json` gave him `0.1` (present and
+  normal), so 1.3 resolved FALSE and he landed in "in balance today". **Fixed per plan v2 §3:**
+  the persona now matches the pack (F5, scenario day 1 → Partial). The defect itself remains for
+  anyone whose temperature *is* present and normal: RHR 26% up still reads "in balance". That is
+  now pinned as F19 and scenario day 7, and it is what rule 1.4 would be for (§9.3).
 - **"In balance" unreachable with cycle data.** Confirmed programmatically: L2 covers days 1–28
   with no gaps and `calm` means only-always-on-L3-fired, so a cycle-tracking subject is never calm.

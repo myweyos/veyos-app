@@ -57,7 +57,8 @@
       ]
     },
     "crash": {
-      "biometrics": { "hrv_ms": 53, "rhr_bpm": 78, "wrist_temp_delta_c": 0.1, "steps": 2100 },
+      "$comment": "wrist_temp_delta_c is null to match the design pack, where James has had no wrist temperature since Monday. It was 0.1 (present and normal). Plan v2 §3 calls that disagreement a test-data bug, not a product question. With temperature missing, rule 1.3 is UNEVALUABLE rather than FALSE, so this day is Partial, as the pack designs it. The underlying defect (elevated RHR with a NORMAL temperature reading fires nothing) is still real, and is pinned separately by golden F19 and scenario day 7.",
+      "biometrics": { "hrv_ms": 53, "rhr_bpm": 78, "wrist_temp_delta_c": null, "steps": 2100 },
       "environment": { "pollen_index": 8 }
     }
   },

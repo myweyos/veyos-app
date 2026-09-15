@@ -1,12 +1,12 @@
 {
   "activity_verdict": "allow",
-  "app_state": "in_balance",
+  "app_state": "partial",
   "day_index": 1,
   "engine_state": "calm",
   "fired": [
     "3.3"
   ],
-  "label": "THE JAMES GAP \u2014 RHR 26% above baseline, steps collapsed, app says 'in balance today'",
+  "label": "No wrist temperature since Monday \u2014 RHR 26% up, rule 1.3 can't be checked, Partial",
   "persona": "james",
   "scenario_id": "james",
   "snapshot": {
@@ -26,7 +26,7 @@
       "sleep_deep_rem_pct": 66,
       "source": "simulated",
       "steps": 2100,
-      "wrist_temp_delta_c": 0.1
+      "wrist_temp_delta_c": null
     },
     "constitution": {
       "dosha": "kapha"
@@ -88,6 +88,7 @@
     "timezone": "Europe/London"
   },
   "unevaluable": [
+    "1.3",
     "2.1",
     "2.2",
     "2.3",
