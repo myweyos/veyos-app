@@ -65,7 +65,7 @@ where the decision is tracked.
 
 | ID | Hazard → sequence → hazardous situation | Harm | Sev. | Controls in place | Residual / open |
 |---|---|---|---|---|---|
-| **R1** | **False reassurance: the James gap.** RHR +26% above baseline, no temperature rise → rule 1.3's dual gate is FALSE → state `calm`, "in balance today" | User trains hard or ignores a developing illness | S3 | C3 (F5 pins it, F5b xfail), signal tiles always visible, so the RHR reading is on screen | **Open.** Candidate rule 1.4 unapproved (plan v2 §9.3; §3 says fix the fixture first) |
+| **R1** | **False reassurance: the James gap.** RHR +26% above baseline with a temperature that is present and normal → rule 1.3's dual gate is FALSE → state `calm`, "in balance today". (With temperature *missing*, 1.3 is unevaluable and the day is Partial; see R2) | User trains hard or ignores a developing illness | S3 | C3 (F19 pins it, F5b xfail), signal tiles always visible, so the RHR reading is on screen | **Open.** Candidate rule 1.4 unapproved (plan v2 §9.3). The fixture fix §3 asked for first is PR #17 |
 | **R2** | **Missing data read as "fine".** A signal fails to sync → a rule that needed it is skipped → the user is told they're in balance | As R1 | S3 | **C1**, Partial state in the design, sidecar `unevaluable_rule_ids` | "Not applicable" (no cycle, no labs) is indistinguishable from "unevaluable"; the demo mapping narrows Partial to Layer 1 (`app-states.json`). **Open** |
 | **R3** | **Cycle day > 28.** Long cycle → no Layer 2 rule fires → `calm` while the hormonal layer silently didn't apply | Advice ignores cycle phase | S2 | C7 (UNDEFINED warning), C3 (F13, `test_cycle_layer.py`) | **Open** spec question (CLAUDE.md) |
 | **R4** | **Cold start.** Under 28 days of history → baseline-relative rules untrustworthy | Advice from a meaningless baseline | S2 | `insufficient_baseline` state, F12 | Cold start "under-designed" (CLAUDE.md); backfill (plan v2 P3) not built |
@@ -84,17 +84,17 @@ where the decision is tracked.
 | **R17** | **Calorie increase or macro floors for someone with an eating disorder** (2.3 `kcal_delta`, 5.3 minimums) | Harm to a vulnerable user | S3 | — | **No population exclusions written** (intended-purpose §4.6) |
 | **R18** | **User relies on Weyos in an emergency** | Delayed emergency care | S4 | C11 emergency copy (A1, H7) | A1/H7 not built |
 | **R19** | **Agent narrates, overrides or re-weights a health judgement** | Unexplainable advice; an L1 decision softened | S3 | CLAUDE.md non-negotiables 7–8 | Guardrails and evals (plan v2 §6.3, §6.6) not built |
-| **R20** | **Fixture data reaches a real user** | Advice for someone else's body | S3 | CLAUDE.md non-negotiable 9 | **Gap.** `services/api/src/decision/personas.source.ts:74` defaults `WEYOS_DEMO_FIXTURES` to **on**, and `personas.source.spec.ts` pins that default |
+| **R20** | **Fixture data reaches a real user** | Advice for someone else's body | S3 | CLAUDE.md non-negotiable 9 | **Gap, fix in review (PR #14).** `services/api/src/decision/personas.source.ts:74` defaults `WEYOS_DEMO_FIXTURES` to **on**, and with demo off and no store it fell back to fixtures. `personas.source.spec.ts` pinned both |
 | **R21** | **Raw biometric leaks** into logs, errors or analytics | Privacy harm (special-category data) | S2 | **C10** | — |
-| **R22** | **A decision can't be reconstructed** after a complaint | Cannot investigate harm | S2 | **C4**, trace (C9) | Decisions are persisted only once the API store lands (ADR 0007 storage) |
+| **R22** | **A decision can't be reconstructed** after a complaint | Cannot investigate harm | S2 | **C4**, trace (C9) | Decisions are persisted only once the API store lands (storage ADR, being renumbered 0007 → 0008 in PR #15) |
 | **R23** | **False alarm.** 1.3 fires on temperature + RHR for a benign cause → rest day | Lost training | S1 | Transparent reasoning (C9); user can decline ("Not for me" on design screen C2) | Acceptable in principle; to confirm |
 
 ## 4. Actions arising (not done here)
 
 Actions only. Each needs an owner, and none has been changed in code:
 
-1. **R20:** flip the demo default off and update the spec that pins it. This violates
-   non-negotiable 9 as written.
+1. **R20:** flip the demo default off, remove the fixture fallback, and update the spec that pins
+   both. This violates non-negotiable 9 as written. **In review: PR #14.**
 2. **R6:** decide a maximum lab age, then add it as rulebook config with a fixture.
 3. **R17 / R16:** write population exclusions into the intended purpose.
 4. **R11:** make a missing `food-tags.json` fatal, and consider enforcing priority bands at load.
