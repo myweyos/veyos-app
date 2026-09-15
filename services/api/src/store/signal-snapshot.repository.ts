@@ -19,7 +19,7 @@ export class SignalSnapshotRepository {
   /**
    * Upsert a snapshot for (subject_ref, as_of).
    *
-   * On conflict (same subject, same day) the row is overwritten. See ADR 0007 for the open
+   * On conflict (same subject, same day) the row is overwritten. See ADR 0009 for the open
    * question on same-day multi-source snapshots — this behaviour may need revision once Phase 3
    * (Native Signals) connects real wearables.
    *
