@@ -32,25 +32,15 @@ function makeRepo(): jest.Mocked<Pick<DecisionRepository, "findById" | "save">> 
   };
 }
 
-describe("DecisionService.byDecisionId()", () => {
-  it("returns the envelope directly from the in-memory cache (no DB call)", async () => {
-    const envelope = makeEnvelope("cached-id");
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-    );
-    // Seed the private cache by writing to it through the public map interface
-    (service as unknown as { byId: Map<string, DecisionEnvelope> }).byId.set(
-      "cached-id",
-      envelope,
-    );
+function makeRedis(value: string | null = null): jest.Mocked<{ get: jest.Mock; set: jest.Mock }> {
+  return {
+    get: jest.fn().mockResolvedValue(value),
+    set: jest.fn().mockResolvedValue("OK"),
+  };
+}
 
-    const result = await service.byDecisionId("cached-id");
-
-    expect(result).toBe(envelope);
-  });
-
-  it("falls through to the DecisionRepository on a cache miss", async () => {
+describe("DecisionService.byDecisionId() — without Redis", () => {
+  it("falls through to DecisionRepository when no Redis is injected", async () => {
     const envelope = makeEnvelope("db-id");
     const repo = makeRepo();
     repo.findById.mockResolvedValue(envelope);
@@ -62,12 +52,11 @@ describe("DecisionService.byDecisionId()", () => {
     );
 
     const result = await service.byDecisionId("db-id");
-
     expect(repo.findById).toHaveBeenCalledWith("db-id");
     expect(result).toBe(envelope);
   });
 
-  it("throws NotFoundException when neither cache nor DB has the id", async () => {
+  it("throws NotFoundException when neither Redis nor DB has the id", async () => {
     const repo = makeRepo();
     repo.findById.mockResolvedValue(null);
 
@@ -80,33 +69,107 @@ describe("DecisionService.byDecisionId()", () => {
     await expect(service.byDecisionId("ghost-id")).rejects.toThrow(NotFoundException);
   });
 
-  it("throws NotFoundException when no repo is injected and cache misses", async () => {
-    // Without a DB (e.g. unit-test environment), a cache miss must still 404 cleanly.
+  it("throws NotFoundException when no repo and no Redis are injected", async () => {
     const service = new DecisionService(
       makeEngine() as unknown as EngineClient,
       makePersonaSource() as unknown as PersonaSource,
-      // no repo
     );
 
     await expect(service.byDecisionId("any-id")).rejects.toThrow(NotFoundException);
   });
+});
 
-  it("does not call the repo when the id is found in cache", async () => {
-    const envelope = makeEnvelope("cached-only");
+describe("DecisionService.byDecisionId() — with Redis", () => {
+  it("returns the envelope from Redis on a cache hit (no DB call)", async () => {
+    const envelope = makeEnvelope("redis-hit-id");
+    const redis = makeRedis(JSON.stringify(envelope));
     const repo = makeRepo();
 
     const service = new DecisionService(
       makeEngine() as unknown as EngineClient,
       makePersonaSource() as unknown as PersonaSource,
       repo as unknown as DecisionRepository,
-    );
-    (service as unknown as { byId: Map<string, DecisionEnvelope> }).byId.set(
-      "cached-only",
-      envelope,
+      redis as never,
     );
 
-    await service.byDecisionId("cached-only");
+    const result = await service.byDecisionId("redis-hit-id");
 
+    expect(redis.get).toHaveBeenCalledWith("decision:redis-hit-id");
     expect(repo.findById).not.toHaveBeenCalled();
+    expect(result).toEqual(envelope);
+  });
+
+  it("falls through to DB on a Redis miss and writes result back to Redis", async () => {
+    const envelope = makeEnvelope("db-miss-id");
+    const redis = makeRedis(null); // cache miss
+    const repo = makeRepo();
+    repo.findById.mockResolvedValue(envelope);
+
+    const service = new DecisionService(
+      makeEngine() as unknown as EngineClient,
+      makePersonaSource() as unknown as PersonaSource,
+      repo as unknown as DecisionRepository,
+      redis as never,
+    );
+
+    const result = await service.byDecisionId("db-miss-id");
+
+    expect(redis.get).toHaveBeenCalledWith("decision:db-miss-id");
+    expect(repo.findById).toHaveBeenCalledWith("db-miss-id");
+    expect(redis.set).toHaveBeenCalledWith(
+      "decision:db-miss-id",
+      JSON.stringify(envelope),
+      "EX",
+      86_400,
+    );
+    expect(result).toBe(envelope);
+  });
+
+  it("throws NotFoundException when Redis misses and DB also misses", async () => {
+    const redis = makeRedis(null);
+    const repo = makeRepo();
+    repo.findById.mockResolvedValue(null);
+
+    const service = new DecisionService(
+      makeEngine() as unknown as EngineClient,
+      makePersonaSource() as unknown as PersonaSource,
+      repo as unknown as DecisionRepository,
+      redis as never,
+    );
+
+    await expect(service.byDecisionId("nowhere-id")).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe("DecisionService.cacheDecision()", () => {
+  it("writes the envelope to Redis with the correct key and 24 h TTL", async () => {
+    const envelope = makeEnvelope("cache-write-id");
+    const redis = makeRedis();
+
+    const service = new DecisionService(
+      makeEngine() as unknown as EngineClient,
+      makePersonaSource() as unknown as PersonaSource,
+      undefined,
+      redis as never,
+    );
+
+    await service.cacheDecision(envelope);
+
+    expect(redis.set).toHaveBeenCalledWith(
+      "decision:cache-write-id",
+      JSON.stringify(envelope),
+      "EX",
+      86_400,
+    );
+  });
+
+  it("does nothing when Redis is not injected", async () => {
+    const envelope = makeEnvelope("no-redis-id");
+    const service = new DecisionService(
+      makeEngine() as unknown as EngineClient,
+      makePersonaSource() as unknown as PersonaSource,
+    );
+    // Must not throw
+    await expect(service.cacheDecision(envelope)).resolves.toBeUndefined();
   });
 });
