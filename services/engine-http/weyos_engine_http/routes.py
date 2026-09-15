@@ -1,7 +1,7 @@
 """Routes.
 
-Two endpoints, and deliberately no more. The sidecar is a pure function over HTTP: it knows
-nothing about personas, demos, persistence or who is asking. Everything product-shaped lives
+Decide, the rulebook listing, and health. The sidecar is a pure function over HTTP: it knows
+nothing about subjects, persistence or who is asking. Everything product-shaped lives
 in the API in front of it.
 
 ``/decide`` returns an ENVELOPE, not a bare decision:
@@ -76,6 +76,24 @@ def post_decide_batch(request: Request, body: BatchRequest) -> dict[str, Any]:
     N. The engine is sub-millisecond, so the HTTP overhead dominates.
     """
     return {"results": [_decide_one(request, item) for item in body.items]}
+
+
+@router.get("/rulebook")
+def rulebook(request: Request) -> dict[str, Any]:
+    """Every rule's id, name, layer and whether it is enabled. No thresholds, no conditions.
+
+    The app needs the layer of each rule to derive its app state (an unevaluable Layer 1 rule
+    means Partial) and to show the rulebook in plain English. Thresholds stay in the engine:
+    shipping them to a client would invite rule logic outside the engine.
+    """
+    book = request.app.state.engine.book
+    return {
+        "version": book.version,
+        "rules": [
+            {"id": r.id, "name": r.name, "layer": r.layer, "enabled": r.enabled}
+            for r in sorted(book.rules, key=lambda r: r.priority)
+        ],
+    }
 
 
 @router.get("/healthz")

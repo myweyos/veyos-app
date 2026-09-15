@@ -67,16 +67,21 @@ export class BaselineComputationService {
       return nonNull.length > 0 ? nonNull.reduce((a, b) => a + b, 0) / nonNull.length : null;
     };
 
+    // days_of_history is ALL prior days, not the rows in the averaging window. The window caps
+    // at WINDOW_DAYS (14), while the engine's cold-start threshold is min_days_for_baseline
+    // (28), so counting the window would leave every subject in insufficient_baseline forever.
+    const historyDays = await this.snapshots.historyDayCount(subjectRef, asOf);
+
     const baselines: SignalSnapshot["baselines"] = {
       hrv_ms: mean(rows.map((r) => r.hrv_ms)),
       rhr_bpm: mean(rows.map((r) => r.rhr_bpm)),
       sleep_deep_rem_pct: mean(rows.map((r) => r.sleep_deep_rem_pct)),
-      days_of_history: rows.length,
+      days_of_history: historyDays,
       window_days: WINDOW_DAYS,
     };
 
     this.log.log(
-      `baseline computed (Option B): subject=${subjectRef.slice(0, 8)} as_of=${asOf} days=${rows.length}`,
+      `baseline computed (Option B): subject=${subjectRef.slice(0, 8)} as_of=${asOf} window=${rows.length} history=${historyDays}`,
     );
 
     await this.writeCache(subjectRef, asOf, baselines);

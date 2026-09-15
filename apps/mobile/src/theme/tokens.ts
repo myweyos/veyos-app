@@ -94,7 +94,7 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 17, xl: 24 } as const;
  *
  * Glyphs, words and colours are exactly the pack's STATE map. The pack keys two of them
  * `balance` and `intervene`; the ids here stay `in_balance` and `intervention` to match
- * packages/demo-fixtures/app-states.json, which is committed data with tests against it. The
+ * packages/app-state/app-states.json, which is committed data with tests against it. The
  * words a user sees are identical either way.
  */
 export type AppStateId =
@@ -124,3 +124,11 @@ export const STATE_PRESENTATION: Record<AppStateId, StatePresentation> = {
 
 /** Present on every recommendation surface. Verbatim from the pack's `disclaim()`. */
 export const WELLNESS_DISCLAIMER = "Wellness guidance, not medical advice.";
+
+/**
+ * A1's statement of what Weyos is not. Verbatim from the design pack. It names the claims it
+ * denies, so it is a reviewed copy-lint exception (tools/copy-lint/exceptions.json), and it
+ * should be re-derived from the approved intended-purpose statement (SCRUM-121).
+ */
+export const WHAT_WEYOS_IS_NOT =
+  "It isn’t a medical device and doesn’t diagnose, treat or monitor illness. It’s wellness guidance. In an emergency call your local emergency number — 999 in the UK, 911 in the US.";

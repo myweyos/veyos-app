@@ -1,28 +1,23 @@
-"""Human-readable decision trace.
+"""Human-readable decision trace for one snapshot.
 
-    python -m weyos_engine.cli --persona alex --state crash
-    python -m weyos_engine.cli --persona alex --state crash --no-elemental
+    python -m weyos_engine.cli --snapshot path/to/snapshot.json
+    python -m weyos_engine.cli --snapshot path/to/snapshot.json --no-elemental
     python -m weyos_engine.cli --snapshot path/to/snapshot.json --json
 
 Exists so a non-engineer can see, in one screen, exactly why the engine said what it said.
-That is worth more in an investor or clinical conversation than any dashboard.
+Synthetic snapshots to try it on are in packages/test-fixtures/snapshots/.
 """
 
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 from pathlib import Path
 from typing import Any
 
-from .config import REPO_ROOT, load_rulebook
+from .config import load_rulebook
 from .engine import decide
 from .models import Snapshot
-
-# Demo personas are shared data, not engine test fixtures — the API and the mobile app build
-# screens against the same three subjects. Read the same way config.py reads food-tags.json.
-PERSONAS_PATH = REPO_ROOT / "packages" / "demo-fixtures" / "personas.json"
 
 
 def _strip(value: Any) -> Any:
@@ -31,22 +26,6 @@ def _strip(value: Any) -> Any:
     if isinstance(value, list):
         return [_strip(v) for v in value]
     return value
-
-
-def _merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-    out = copy.deepcopy(base)
-    for key, value in patch.items():
-        nested = isinstance(value, dict) and isinstance(out.get(key), dict)
-        out[key] = _merge(out[key], value) if nested else value
-    return out
-
-
-def load_persona(name: str, state: str) -> dict[str, Any]:
-    personas = json.loads(PERSONAS_PATH.read_text(encoding="utf-8"))
-    raw: dict[str, Any] = _strip(personas[name]["calm"])
-    if state == "crash":
-        raw = _merge(raw, _strip(personas[name]["crash"]))
-    return raw
 
 
 def render(decision: dict[str, Any]) -> str:
@@ -96,20 +75,14 @@ def render(decision: dict[str, Any]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Weyos arbitration engine")
-    parser.add_argument("--persona", choices=["sarah", "james", "alex"])
-    parser.add_argument("--state", choices=["calm", "crash"], default="calm")
-    parser.add_argument("--snapshot", type=Path, help="path to a SignalSnapshot JSON file")
+    parser.add_argument("--snapshot", type=Path, required=True,
+                        help="path to a SignalSnapshot JSON file")
     parser.add_argument("--no-elemental", action="store_true",
                         help="validated-biometrics-only mode (L1/L2/L5)")
     parser.add_argument("--json", action="store_true", help="emit the raw Decision")
     args = parser.parse_args()
 
-    if args.snapshot:
-        raw = _strip(json.loads(args.snapshot.read_text(encoding="utf-8")))
-    elif args.persona:
-        raw = load_persona(args.persona, args.state)
-    else:
-        parser.error("give --persona or --snapshot")
+    raw = _strip(json.loads(args.snapshot.read_text(encoding="utf-8")))
 
     decision = decide(
         Snapshot.from_dict(raw),

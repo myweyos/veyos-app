@@ -14,9 +14,10 @@
  * checked — it is the state three-valued evaluation exists for.
  */
 
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import type { ReactElement, ReactNode } from "react";
+import { ScrollView, StyleSheet, Text, View, type RefreshControlProps } from "react-native";
 
-import type { DemoDay } from "@weyos/demo-fixtures";
+import type { TodayModel } from "../lib/todayModel";
 
 import {
   Button,
@@ -44,27 +45,37 @@ import { color, space } from "../theme/tokens";
 import { headlineFor, longDate, signalTilesFor, subFor, unevaluableSentence } from "./copy";
 
 export function Today({
-  day,
+  model,
   onWhyThis,
   onTakeover,
+  header,
+  refreshControl,
 }: {
-  day: DemoDay;
+  model: TodayModel;
   onWhyThis: () => void;
   onTakeover: () => void;
+  header?: ReactNode;
+  refreshControl?: ReactElement<RefreshControlProps>;
 }) {
-  const decision = day.decision;
+  const decision = model.decision;
   const activity = decision.activity;
-  const state = day.app_state;
-  const tiles = signalTilesFor(day);
+  const state = model.appState;
+  const tiles = signalTilesFor(model);
   const warnings = decision.warnings ?? [];
 
   const planChanged = activity.verdict !== "allow" && activity.prescribed !== activity.planned;
-  const history = day.snapshot.baselines?.days_of_history ?? 0;
+  const history = model.snapshot?.baselines?.days_of_history ?? 0;
 
   return (
-    <ScrollView style={s.page} contentContainerStyle={s.content} testID="screen-today">
+    <ScrollView
+      style={s.page}
+      contentContainerStyle={s.content}
+      testID="screen-today"
+      refreshControl={refreshControl}
+    >
+      {header}
       <DateLine text={longDate(decision.as_of)} />
-      <Verdict state={state} headline={headlineFor(day)} sub={subFor(day)} />
+      <Verdict state={state} headline={headlineFor(state)} sub={subFor(model)} />
 
       {/* B1 — no deviations shown, because there is nothing yet to deviate from. */}
       {state === "calibrating" && (
@@ -79,7 +90,7 @@ export function Today({
       )}
 
       {/* B2 — the state three-valued evaluation exists for. Tappable through to the trace. */}
-      {state === "partial" && <WarnBox text={unevaluableSentence(day)} onPress={onWhyThis} />}
+      {state === "partial" && <WarnBox text={unevaluableSentence(model)} onPress={onWhyThis} />}
 
       <Tiles>
         {tiles.map((t) => (
@@ -155,14 +166,14 @@ export function Today({
   );
 }
 
-function mealLine(decision: DemoDay["decision"]): string {
+function mealLine(decision: TodayModel["decision"]): string {
   const meals = decision.food.meals;
   const dinner = meals.find((m) => m.slot === "dinner") ?? meals[0];
   const first = dinner?.items[0];
   return first?.name ?? "Tonight's plate";
 }
 
-function foodDetail(decision: DemoDay["decision"], calibrating: boolean): string {
+function foodDetail(decision: TodayModel["decision"], calibrating: boolean): string {
   if (calibrating) return "From your food profile only, while the biometrics calibrate";
   const added = decision.food.meals.reduce((n, m) => n + (m.slot === "additions" ? m.items.length : 0), 0);
   const removed = decision.food.meals.reduce((n, m) => n + m.removed.length, 0);

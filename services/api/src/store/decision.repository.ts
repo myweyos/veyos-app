@@ -63,4 +63,21 @@ export class DecisionRepository {
     `;
     return rows[0]?.envelope ?? null;
   }
+
+  /**
+   * The subject's most recent decision: latest `as_of`, then latest computed.
+   *
+   * This is what ingestion produced, with server-computed baselines, so every read agrees with
+   * what the subject was told. Null when the subject has never ingested.
+   */
+  async latestForSubject(subjectRef: string): Promise<DecisionEnvelope | null> {
+    const rows = await this.sql<{ envelope: DecisionEnvelope }[]>`
+      SELECT envelope
+      FROM decisions
+      WHERE subject_ref = ${subjectRef}
+      ORDER BY as_of DESC, created_at DESC
+      LIMIT 1
+    `;
+    return rows[0]?.envelope ?? null;
+  }
 }

@@ -84,7 +84,7 @@ identifier derived from Art.9-adjacent content. It belongs in the same retention
 mapping silently resolves an open spec question: `calm → "in balance"` renders the James gap as
 reassurance, which fixture F5 pins as a known defect, and any advisory-versus-intervention split
 is a severity rule that exists nowhere in `config/rules/`. So the envelope returns facts and the
-mapping stays in `packages/demo-fixtures/app-states.json`, where it is reviewable data with its
+mapping stays in `packages/app-state/app-states.json` (moved from `packages/demo-fixtures/`), where it is reviewable data with its
 open questions attached.
 
 **Warning classification is fragile and known to be.** The kinds are derived by substring-matching

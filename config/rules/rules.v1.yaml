@@ -34,8 +34,8 @@ baseline:
 
 layers:
   1: { name: "Biometric Override",    always_on: false, description: "Live telemetry beats calendar and baseline." }
-  2: { name: "Hormonal Master-Clock", always_on: false, description: "Female personas, 28-day cycle. Exactly one fires." }
-  3: { name: "Ayurvedic Baseline",    always_on: true,  description: "Persistent dietary filter. The persona's dosha always fires." }
+  2: { name: "Hormonal Master-Clock", always_on: false, description: "Subjects with cycle tracking, 28-day cycle. Exactly one fires." }
+  3: { name: "Ayurvedic Baseline",    always_on: true,  description: "Persistent dietary filter. The subject's dosha always fires." }
   4: { name: "Macro-Environmental",   always_on: false, description: "Independent modifiers. Gated by features.elemental_layer for astro rules." }
   5: { name: "Functional Lab",        always_on: false, description: "Only fires when a lab value is present AND abnormal." }
 
@@ -60,7 +60,7 @@ rules:
     priority: 11
     when:
       all:
-        # OPEN SPEC QUESTION: written against deep/REM stage %, but personas supply a
+        # OPEN SPEC QUESTION: written against deep/REM stage %, but vendors often supply a
         # composite sleep score. `signal` is deliberately explicit so the ambiguity is visible.
         - { signal: sleep_deep_rem_pct, op: pct_of_baseline_lt, value: 60 }
     effects:
@@ -74,7 +74,7 @@ rules:
     priority: 12
     when:
       all:
-        # DUAL GATE. This is the James gap: elevated RHR alone fires nothing.
+        # DUAL GATE. This is the RHR-alone gap (F19): elevated RHR alone fires nothing.
         # Candidate rule 1.4 (Cardiovascular Load) is proposed and UNAPPROVED — see below.
         - { signal: wrist_temp_delta_c, op: gte, value: 0.5 }
         - { signal: rhr_bpm, op: pct_above_baseline_gte, value: 5 }

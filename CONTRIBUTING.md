@@ -26,7 +26,7 @@ If `make engine-test` is not green on a fresh clone, stop and fix that before an
 ## Working with the engine
 
 ```bash
-make decision PERSONA=alex STATE=crash        # human-readable trace
+make decision SNAPSHOT=packages/test-fixtures/snapshots/pitta-heat.json   # human-readable trace
 make decision-validated                        # elemental layer off
 cd services/engine && pytest -k "F9 or F11"    # the two load-bearing fixtures
 ```
@@ -61,5 +61,5 @@ Adding a rule:
 ## Code review
 
 Review the trace, not just the diff. For any engine change, paste the before/after output of
-`make decision` for at least one affected persona into the PR. Reviewing arbitration by
+`make decision` for at least one affected snapshot into the PR. Reviewing arbitration by
 reading Python is much harder than reading what it decided.

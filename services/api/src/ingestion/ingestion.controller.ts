@@ -1,6 +1,16 @@
-import { BadRequestException, Body, Controller, HttpCode, Optional, Post } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  HttpCode,
+  Optional,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import type { SignalSnapshot } from "@weyos/shared-schema";
 
+import { AuthGuard, CurrentSubject, type AuthedSubject } from "../auth/auth.guard";
 import { BaselineComputationService } from "../baseline/baseline-computation.service";
 import { DecisionsQueue } from "../decisions-queue/decisions.queue";
 import { EngineClient } from "../engine/engine.client";
@@ -8,7 +18,16 @@ import { NormalisationService } from "../normalisation/normalisation.service";
 import type { IngestPayload } from "../normalisation/vendor-types";
 import { DecisionRepository } from "../store/decision.repository";
 import { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
+import { ConsentRepository } from "../subjects/consent.repository";
+import { SubjectRepository } from "../subjects/subject.repository";
 import { SnapshotValidator } from "./snapshot.validator";
+
+/** Snapshot sections that exist only with the matching A4 consent. */
+const CONSENT_GATED = [
+  ["cycle", "cycle_data"],
+  ["labs", "lab_results"],
+  ["environment", "location_environment"],
+] as const;
 
 /**
  * Ingestion boundary.
@@ -37,8 +56,20 @@ import { SnapshotValidator } from "./snapshot.validator";
  * the engine fails the payload is not lost and can be retried. If the decision persist
  * fails after the engine call, a retry will produce the same decision_id (content-addressed,
  * ADR 0006) — ON CONFLICT DO NOTHING makes the re-insert safe.
+ *
+ * Identity (SCRUM-76): the route is authenticated, and the subject_ref and constitution come
+ * from the server, never from the payload. subject_ref is the token's subject, so a client
+ * cannot write into anyone else's history. The constitution is the subject's A7 answer, so the
+ * app doesn't resend it and can't vary it per day. A subject who hasn't finished onboarding
+ * gets 409 profile_incomplete rather than a decision computed on a guessed constitution.
+ *
+ * Consent (design pack A4, UK GDPR Art.9): without explicit health-data consent nothing is
+ * stored or decided (409 consent_required). Cycle, lab and environment sections are dropped
+ * before storage unless their own consent is granted, so a declined purpose is never processed.
+ * The engine then treats the absent section as it treats any absent signal.
  */
 @Controller("v1/ingest")
+@UseGuards(AuthGuard)
 export class IngestionController {
   constructor(
     private readonly normaliser: NormalisationService,
@@ -47,14 +78,37 @@ export class IngestionController {
     private readonly snapshots: SignalSnapshotRepository,
     private readonly decisions: DecisionRepository,
     private readonly baselines: BaselineComputationService,
+    private readonly subjects: SubjectRepository,
+    private readonly consents: ConsentRepository,
     @Optional() private readonly decisionsQueue?: DecisionsQueue,
   ) {}
 
   @Post("snapshot")
   @HttpCode(202)
-  async ingest(@Body() body: unknown): Promise<{ accepted: true; decision_id: string }> {
+  async ingest(
+    @CurrentSubject() subject: AuthedSubject,
+    @Body() body: unknown,
+  ): Promise<{ accepted: true; decision_id: string }> {
+    // Step 0: consent, identity and constitution are the server's, whatever the payload says.
+    const [profile, consent] = await Promise.all([
+      this.subjects.profile(subject.subjectRef),
+      this.consents.current(subject.subjectRef),
+    ]);
+    if (!consent.health_data) throw new ConflictException({ error: "consent_required" });
+    if (profile.constitution === null) {
+      throw new ConflictException({ error: "profile_incomplete", missing: ["constitution"] });
+    }
+    const owned: Record<string, unknown> = {
+      ...(body !== null && typeof body === "object" ? body : {}),
+      subject_ref: subject.subjectRef,
+      constitution: profile.constitution,
+    };
+    for (const [section, purpose] of CONSENT_GATED) {
+      if (!consent[purpose]) delete owned[section];
+    }
+
     // Step 1: normalise vendor payload → canonical SignalSnapshot (or pass-through)
-    const normalised = await this.normaliser.normalise(body as IngestPayload);
+    const normalised = await this.normaliser.normalise(owned as unknown as IngestPayload);
 
     // Step 2: validate canonical shape before touching storage
     const result = this.validator.validate(normalised);

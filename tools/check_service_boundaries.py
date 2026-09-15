@@ -41,7 +41,6 @@ ALLOWED_PYTHON_CROSS_IMPORTS = {
 PYTHON_PACKAGE_OWNER = {
     "weyos_engine": "services/engine",
     "backtest": "services/engine",
-    "demo_driver": "services/engine",
     "weyos_engine_http": "services/engine-http",
 }
 

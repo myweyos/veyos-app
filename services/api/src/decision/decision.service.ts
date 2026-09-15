@@ -1,95 +1,65 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-  OnModuleInit,
-  Optional,
-} from "@nestjs/common";
-import type { DecisionEnvelope } from "@weyos/shared-schema";
+import { Inject, Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
+import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 import type Redis from "ioredis";
 
-import { EngineClient } from "../engine/engine.client";
+import { BaselineComputationService } from "../baseline/baseline-computation.service";
 import { REDIS_CLIENT } from "../redis/redis.tokens";
 import { DecisionRepository } from "../store/decision.repository";
-import { PersonaSource, type Selector } from "./personas.source";
+import { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 
 const DECISION_TTL_S = 86_400; // 24 h
 
 /**
- * One decision per request, projected five ways.
+ * The read side: a subject's decisions, as ingestion stored them.
  *
- * Every endpoint below `/v1/decision`, `/v1/signals`, `/v1/plan` and `/v1/meal` is a view of
- * the SAME envelope. Computing it once here is what guarantees `/plan` and `/meal` can never
- * disagree about what tonight looks like — a class of bug that would be invisible in testing
- * and obvious to a user.
+ * Nothing here calls the engine. A decision is computed exactly once, at ingest, with the
+ * server-computed baselines, and persisted. Every read serves that stored envelope, so
+ * `/decision/today`, `/plan`, `/meal` and the trace can never disagree with each other or with
+ * what the subject was told. Recomputing on read without the same baselines would give a
+ * different answer, which is the bug the previous persona-backed path had.
+ *
+ * Every method takes the authenticated subject_ref and returns only that subject's data. A
+ * decision id belonging to someone else is a 404, not a 403: it doesn't reveal that it exists.
  */
 @Injectable()
-export class DecisionService implements OnModuleInit {
+export class DecisionService {
   private readonly log = new Logger(DecisionService.name);
 
   constructor(
-    private readonly engine: EngineClient,
-    private readonly personas: PersonaSource,
-    @Optional() private readonly decisionRepo?: DecisionRepository,
+    private readonly decisions: DecisionRepository,
+    private readonly snapshots: SignalSnapshotRepository,
+    private readonly baselines: BaselineComputationService,
     @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis,
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    if (!this.personas.demoEnabled) return;
-    const health = await this.engine.health();
-    if (!health.reachable) {
-      // Not fatal. The API should start and report an unhealthy engine rather than
-      // crash-looping; `/health/ready` is where that surfaces.
-      this.log.warn("engine unreachable at boot; decision cache is empty");
-      return;
-    }
-    let warmed = 0;
-    for (const selector of this.personas.matrix()) {
-      try {
-        await this.forSelector(selector);
-        warmed++;
-      } catch {
-        // Ids only in logs, never payloads.
-        this.log.warn(`could not warm ${selector.persona}/${selector.state}`);
-      }
-    }
-    this.log.log(`decision cache warmed: ${warmed} entries, rulebook v${health.rulebookVersion}`);
-  }
-
-  async forSelector(selector: Selector): Promise<DecisionEnvelope> {
-    const { snapshot } = await this.personas.resolve(selector);
-    const envelope = await this.engine.decide(snapshot, selector.elemental);
-    await this.cacheDecision(envelope);
+  async today(subjectRef: string): Promise<DecisionEnvelope> {
+    const envelope = await this.decisions.latestForSubject(subjectRef);
+    if (envelope === null) throw new NotFoundException({ error: "no_decision_yet" });
     return envelope;
   }
 
   /**
-   * Look up a decision by id.
+   * Look up one of this subject's decisions by id.
    *
-   * Checks Redis first (avoids a DB round-trip for recently computed decisions and survives
-   * process restarts and horizontal scaling). Falls through to the decisions table on a cache
-   * miss. Throws NotFoundException for ids that exist in neither.
+   * Redis first (recent decisions, survives restarts and horizontal scaling), then Postgres.
    */
-  async byDecisionId(id: string): Promise<DecisionEnvelope> {
-    if (this.redis !== undefined) {
-      const raw = await this.redis.get(this.decisionKey(id));
-      if (raw !== null) {
-        this.log.debug(`decision cache hit: ${id}`);
-        return JSON.parse(raw) as DecisionEnvelope;
-      }
-      this.log.debug(`decision cache miss: ${id}`);
+  async byDecisionId(id: string, subjectRef: string): Promise<DecisionEnvelope> {
+    const envelope = (await this.fromCache(id)) ?? (await this.decisions.findById(id));
+    if (envelope === null || envelope.decision.subject_ref !== subjectRef) {
+      throw new NotFoundException({ error: "unknown_decision" });
     }
+    await this.cacheDecision(envelope);
+    return envelope;
+  }
 
-    if (this.decisionRepo !== undefined) {
-      const found = await this.decisionRepo.findById(id);
-      if (found !== null) {
-        await this.cacheDecision(found);
-        return found;
-      }
-    }
+  /** The snapshot a decision was computed from. `/v1/signals` needs it; a Decision has no readings. */
+  async snapshotFor(subjectRef: string, asOf: string): Promise<SignalSnapshot | null> {
+    return this.snapshots.latestForSubject(subjectRef, asOf);
+  }
 
-    throw new NotFoundException({ error: "unknown_decision" });
+  /** The baselines ingestion computed for that day: same history, same function, same result. */
+  async baselinesFor(subjectRef: string, asOf: string): Promise<SignalSnapshot["baselines"]> {
+    return this.baselines.computeFor(subjectRef, asOf);
   }
 
   /** Cache a freshly computed or retrieved envelope — fire-and-forget, never throws. */
@@ -108,9 +78,14 @@ export class DecisionService implements OnModuleInit {
     }
   }
 
-  /** The snapshot a decision was computed from. `/v1/signals` needs it; a Decision has no readings. */
-  async snapshotFor(selector: Selector) {
-    return (await this.personas.resolve(selector)).snapshot;
+  private async fromCache(id: string): Promise<DecisionEnvelope | null> {
+    if (this.redis === undefined) return null;
+    try {
+      const raw = await this.redis.get(this.decisionKey(id));
+      return raw === null ? null : (JSON.parse(raw) as DecisionEnvelope);
+    } catch {
+      return null; // A cache that can't answer is a miss, not an outage.
+    }
   }
 
   private decisionKey(id: string): string {

@@ -8,9 +8,10 @@ import { BaselineComputationService } from "./baseline-computation.service";
 
 type HistoryRow = { hrv_ms: number | null; rhr_bpm: number | null; sleep_deep_rem_pct: number | null };
 
-function makeRepo(rows: HistoryRow[] = []): jest.Mocked<SignalSnapshotRepository> {
+function makeRepo(rows: HistoryRow[] = [], historyDays = rows.length): jest.Mocked<SignalSnapshotRepository> {
   return {
     biometricHistoryForSubject: jest.fn().mockResolvedValue(rows),
+    historyDayCount: jest.fn().mockResolvedValue(historyDays),
     latestForSubject: jest.fn(),
     upsert: jest.fn(),
   } as unknown as jest.Mocked<SignalSnapshotRepository>;
@@ -24,8 +25,12 @@ function makeRedis(cachedValue: string | null = null): jest.Mocked<{ get: jest.M
   };
 }
 
-async function buildService(rows: HistoryRow[] = [], redis?: ReturnType<typeof makeRedis>) {
-  const repo = makeRepo(rows);
+async function buildService(
+  rows: HistoryRow[] = [],
+  redis?: ReturnType<typeof makeRedis>,
+  historyDays = rows.length,
+) {
+  const repo = makeRepo(rows, historyDays);
   const providers: Provider[] = [
     BaselineComputationService,
     { provide: SignalSnapshotRepository, useValue: repo },
@@ -58,6 +63,19 @@ describe("BaselineComputationService — Option B (server-side)", () => {
     expect(result?.sleep_deep_rem_pct).toBeCloseTo(36.5);
     expect(result?.days_of_history).toBe(14);
     expect(result?.window_days).toBe(14);
+  });
+
+  it("reports ALL prior days as days_of_history, not the 14-day averaging window", async () => {
+    // Regression: days_of_history used to be the window row count, which caps at 14. The
+    // engine needs 28 (min_days_for_baseline), so every subject stayed in cold start forever.
+    const window: HistoryRow[] = Array.from({ length: 14 }, () => ({
+      hrv_ms: 55, rhr_bpm: 60, sleep_deep_rem_pct: 30,
+    }));
+    const { service, repo } = await buildService(window, undefined, 40);
+    const result = await service.computeFor(SUBJECT, AS_OF);
+    expect(result?.days_of_history).toBe(40);
+    expect(result?.window_days).toBe(14);
+    expect(repo.historyDayCount).toHaveBeenCalledWith(SUBJECT, AS_OF);
   });
 
   it("excludes null values from mean (e.g. days without sleep data)", async () => {
