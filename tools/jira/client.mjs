@@ -135,4 +135,59 @@ export class JiraClient {
       transition: { id: transitionId },
     });
   }
+
+  /**
+   * Move an issue to a status by NAME, not by transition id.
+   *
+   * Transition ids differ between workflows and projects; hardcoding them is how tooling
+   * silently starts moving issues to the wrong column after someone edits a workflow. Resolving
+   * by the destination status name fails loudly instead, listing what was available.
+   */
+  async moveTo(issueKey, statusName) {
+    const available = (await this.transitions(issueKey)).transitions ?? [];
+    const wanted = statusName.toLowerCase();
+    const match = available.find((t) => (t.to?.name ?? "").toLowerCase() === wanted);
+    if (match === undefined) {
+      const names = available.map((t) => t.to?.name).join(", ");
+      throw new Error(`${issueKey}: no transition to "${statusName}". Available: ${names}`);
+    }
+    await this.transition(issueKey, match.id);
+    return match.to.name;
+  }
+
+  /** Add a plain-text comment. Blank lines become paragraphs; URLs become links. */
+  comment(issueKey, text) {
+    return this.request("POST", `/issue/${issueKey}/comment`, { body: toAdf(text) });
+  }
+}
+
+/**
+ * Jira Cloud's v3 API only accepts comments as Atlassian Document Format. This covers what the
+ * tooling needs — paragraphs, line breaks and bare URLs as links — and nothing more.
+ */
+export function toAdf(text) {
+  const url = /(https?:\/\/[^\s)]+)/g;
+  const inline = (line) => {
+    const out = [];
+    let last = 0;
+    for (const m of line.matchAll(url)) {
+      if (m.index > last) out.push({ type: "text", text: line.slice(last, m.index) });
+      out.push({ type: "text", text: m[0], marks: [{ type: "link", attrs: { href: m[0] } }] });
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) out.push({ type: "text", text: line.slice(last) });
+    return out;
+  };
+  const paragraphs = text
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const content = [];
+      block.split("\n").forEach((line, i) => {
+        if (i > 0) content.push({ type: "hardBreak" });
+        content.push(...inline(line));
+      });
+      return { type: "paragraph", content };
+    });
+  return { type: "doc", version: 1, content: paragraphs };
 }
