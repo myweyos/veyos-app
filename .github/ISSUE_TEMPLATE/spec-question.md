@@ -11,8 +11,8 @@ labels: ["spec-question", "needs-decision"]
 
 ## Where it bites
 
-<!-- Which persona / signal combination exposes it? Paste the decision trace:
-     cd services/engine && python -m weyos_engine.cli --persona X --state crash -->
+<!-- Which snapshot / signal combination exposes it? Paste the decision trace:
+     python -m weyos_engine.cli --snapshot path/to/snapshot.json -->
 
 ## Current behaviour
 

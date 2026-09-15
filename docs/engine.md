@@ -59,7 +59,8 @@ intervention. See the caveat in the next section before trusting that.
 
 | Fixture | What it pins |
 |---|---|
-| **F5** | **The James gap.** RHR 26% above baseline with no temperature rise fires nothing but L3, so the app says "in balance today". Known product defect, awaiting a rule decision. |
+| F5 | RHR 26% up with **no** wrist temperature: 1.3 is unevaluable, not false, so the day is Partial rather than "in balance". |
+| **F19** | **The RHR-alone gap.** RHR 26% above baseline with a temperature that is present and normal fires nothing but L3, so the app says "in balance today". Known product defect, awaiting the rule 1.4 decision. |
 | F5b | Candidate rule 1.4 (Cardiovascular Load) would close it. `enabled: false`, xfail. |
 | **F9** | **Cross-layer precedence is real.** L5 block beats L2 mandate. |
 | **F11** | **Layer separation is real.** Elemental layer off → only L1/L2/L5 fire. |

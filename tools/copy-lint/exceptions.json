@@ -7,6 +7,13 @@
       "terms": ["medical"],
       "reason": "This is the wellness-not-medical disclaimer itself. The word is there to deny the claim, which is the one legitimate use the ticket names.",
       "approved_in": "SCRUM-123"
+    },
+    {
+      "file": "apps/mobile/src/theme/tokens.ts",
+      "text": "It isn’t a medical device and doesn’t diagnose, treat or monitor illness. It’s wellness guidance. In an emergency call your local emergency number — 999 in the UK, 911 in the US.",
+      "terms": ["medical", "diagnose", "treat"],
+      "reason": "A1's statement of what Weyos is not, verbatim from the design pack. It names the claims in order to deny them. To be re-derived from the approved intended-purpose statement (SCRUM-121).",
+      "approved_in": "PR #19 (A1 welcome screen)"
     }
   ]
 }

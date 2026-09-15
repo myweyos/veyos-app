@@ -14,7 +14,7 @@ Backdated from git, ADRs and CI on 2026-09-14. Each row follows `../change-recor
 | **LR-ENG-007** | `caf1d9a` 2026-09-01, engine sidecar at `services/engine-http` | SI-5 | **ADR 0004** (accepted); engine must stay pure | R21, R22 | 35 sidecar tests: schema validity, byte-identical pass-through, no leakage; AST purity test | None (direct push, no CI) |
 | **LR-ENG-008** | PR **#8**, SCRUM-79: precedence for every layer pair, three-valued truth table, UNKNOWN end to end | SI-3, SI-5 tests | SCRUM-79 AC | R2, R7, R8 | Engine suite + sidecar 39/39 on the branch | **Open**, awaiting review |
 | **LR-ENG-009** | PR **#9**, SCRUM-84: exactly one cycle phase per day, days 1–28 | SI-3 | SCRUM-84 AC1; AC2 = plan v2 §9.7, open | R3, R10 | 68 tests on the branch | **Open**, awaiting review |
-| **LR-ENG-010** | PR **#17**, SCRUM-82: James's wrist temperature set to missing, as in the design pack; the James gap kept pinned as F19 and scenario day 7 | SI-3, test fixtures | Plan v2 §3 ("a test-data bug") | R1, R2 | Engine 138 passed / 3 xfail; sidecar, API and typecheck green on the branch | **Open**, awaiting review |
+| **LR-ENG-010** | PR **#19**: personas removed; golden fixtures rebuilt on synthetic snapshots (behaviour-preserving, verified decision-by-decision); F5 carries the pack's missing temperature, F19 pins the RHR-alone gap (this replaced PR #17) | SI-3, test fixtures | John, 2026-09-14; plan v2 §3 | R1, R2 | Engine suite green; integration branch verified | **Open**, awaiting review |
 
 ## Open items carried by this epic
 

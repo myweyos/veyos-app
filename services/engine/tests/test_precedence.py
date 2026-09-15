@@ -7,7 +7,7 @@ so any two layers can be forced to meet on each dimension of the decision.
 
 One dimension does NOT follow precedence today: a lower layer's block suppresses a higher layer's
 mandate on the same tag. That is pinned as current behaviour, with a strict xfail beside it, the
-same way F5/F5b pin the James gap. It is a spec question and is not resolved here. See F16.
+same way F19/F5b pin the RHR-alone gap. It is a spec question and is not resolved here. See F16.
 """
 
 from __future__ import annotations

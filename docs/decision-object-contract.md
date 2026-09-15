@@ -136,7 +136,7 @@ client. That mapping is new work, and it is where several open questions live:
 - `partial` vs `calibrating` — the boundary is undesigned. `insufficient_baseline` is cold start;
   "partial" most likely means partial permissions or a signal absent today, which the engine expresses
   as `unevaluable` trace rows.
-- **F5, the James gap.** James's crash yields `state: calm` with **no warnings and no unevaluable
+- **F19, the RHR-alone gap.** RHR 26% up with a normal temperature yields `state: calm` with **no warnings and no unevaluable
   Layer 1 rows** — 1.3's dual gate (temp ≥ 0.5 °C *and* elevated RHR) evaluates cleanly to FALSE.
   (He does have unevaluable 2.x and 5.x rows, as every subject without a cycle or labs does — see
   "not applicable" below.) So F5 is
@@ -148,12 +148,12 @@ client. That mapping is new work, and it is where several open questions live:
 - **"Not applicable" is indistinguishable from "unevaluable".** A subject with no cycle makes 2.1–2.4
   unevaluable every day, and a subject with no labs does the same to 5.1–5.3, exactly like a signal
   that failed to sync. The design pack shows these as "Not applicable to you" and "no values". Every
-  persona carries unevaluable rows in every state today. The demo mapping narrows `partial` to Layer 1
+  test snapshot carries unevaluable rows in every state today. The demo mapping narrows `partial` to Layer 1
   to cope (`partial-is-narrowed-to-layer-1` in `app-states.json`); the engine has no notion of
   applicability. Pinned in `services/engine-http/tests/test_sidecar.py`.
 - **`in balance` is structurally unreachable for any cycle-tracking subject.** L2 covers days 1–5, 6–13,
   14–15 and 16–28 with no gaps, and `calm` requires *every* fired rule to be on an always-on layer.
-  Sarah with `tracked: true` fires an L2 rule every single day, so she is never `calm`. Confirmed
+  A subject with `tracked: true` fires an L2 rule every single day, so is never `calm`. Confirmed
   programmatically by the backtest harness.
 
 ---
@@ -193,7 +193,7 @@ Listed because Phase 0's gate is a reviewer agreeing, and these are what to disa
 
 | Fixture | What it pins |
 |---|---|
-| **F5** | The James gap. RHR 26% over baseline fires nothing but L3 → "in balance today". Known defect, awaiting the rule 1.4 decision. |
+| **F19** | The RHR-alone gap. RHR 26% over baseline with a normal temperature fires nothing but L3 → "in balance today". Known defect, awaiting the rule 1.4 decision. F5 is the same day with temperature missing: Partial. |
 | F5b | Candidate 1.4 would close it. `enabled: false`, strict xfail — it flips the day 1.4 is approved. |
 | **F9** | Cross-layer precedence is real: an L5 block beats an L2 mandate. |
 | **F11** | Layer separation is real, not a UI filter. Elemental off → only L1/L2/L5 fire. |
