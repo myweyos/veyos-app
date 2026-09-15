@@ -25,8 +25,10 @@ describe("Generated TS is in sync with schemas", () => {
   });
 
   test("npm run generate produces no diff (file is up-to-date)", () => {
-    // Run the generator
-    const gen = spawnSync("npm", ["run", "generate"], {
+    // Run the generator with this Node binary, i.e. what `npm run generate` runs. Spawning "npm"
+    // directly fails on Windows: it is npm.cmd there, and Node refuses to spawn a .cmd without a
+    // shell (CVE-2024-27980). This way needs no shell on any OS.
+    const gen = spawnSync(process.execPath, [path.join("scripts", "generate.js")], {
       cwd: PKG_ROOT,
       encoding: "utf8",
       timeout: 30_000,

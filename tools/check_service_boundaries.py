@@ -86,7 +86,7 @@ def discover_shared_packages(root: Path) -> set[str]:
         manifest = child / "package.json"
         if manifest.is_file():
             try:
-                name = json.loads(manifest.read_text()).get("name")
+                name = json.loads(manifest.read_text(encoding="utf-8")).get("name")
             except (OSError, json.JSONDecodeError):
                 name = None
             if name:
@@ -129,7 +129,7 @@ def _strip_ts_comment(line: str) -> str:
 def check_ts(root: Path, unit: str, path: Path, shared_packages: set[str]) -> list[str]:
     violations: list[str] = []
     unit_root = (root / unit).resolve()
-    for lineno, raw_line in enumerate(path.read_text().splitlines(), 1):
+    for lineno, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = _strip_ts_comment(raw_line)
         m = TS_IMPORT_RE.search(line)
         if not m:
@@ -180,7 +180,7 @@ def check_py(root: Path, unit: str, path: Path) -> list[str]:
     violations: list[str] = []
     allowed = ALLOWED_PYTHON_CROSS_IMPORTS.get(unit, set())
     is_engine = unit == "services/engine"
-    for lineno, line in enumerate(path.read_text().splitlines(), 1):
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         for top in _py_imported_tops(line):
             if is_engine and top in ENGINE_FORBIDDEN_PYTHON:
                 violations.append(
