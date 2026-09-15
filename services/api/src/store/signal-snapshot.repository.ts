@@ -180,4 +180,19 @@ export class SignalSnapshotRepository {
       ORDER BY as_of DESC
     `;
   }
+
+  /**
+   * How many days of history the subject has before beforeDate (exclusive): every distinct
+   * as_of with a stored snapshot, however far back. This is `days_of_history`, which the engine
+   * compares to `min_days_for_baseline` to decide cold start. It is NOT the averaging window.
+   */
+  async historyDayCount(subjectRef: string, beforeDate: string): Promise<number> {
+    const rows = await this.sql<{ days: number }[]>`
+      SELECT COUNT(DISTINCT as_of)::int AS days
+      FROM signal_snapshots
+      WHERE subject_ref = ${subjectRef}
+        AND as_of < ${beforeDate}::date
+    `;
+    return rows[0]?.days ?? 0;
+  }
 }
