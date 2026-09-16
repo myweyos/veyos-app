@@ -37,9 +37,11 @@ export class DecisionsQueue implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     if (this.redis === undefined) return;
 
-    // BullMQ requires an ioredis-compatible connection; pass the existing client options.
-    // BullMQ manages its own internal connections from the connection config.
-    const connection = this.redis;
+    // BullMQ's blocking commands need `maxRetriesPerRequest: null`, which the shared client
+    // deliberately does not set (a cache read should fail fast, not block). BullMQ duplicates
+    // the client with that option; the Worker's blocking BRPOPLPUSH never touches the cache
+    // connection. Passing the shared client directly threw at boot.
+    const connection = this.redis.duplicate({ maxRetriesPerRequest: null });
 
     this.queue = new Queue<DecisionJobData>(DECISIONS_QUEUE_NAME, { connection });
 

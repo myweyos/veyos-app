@@ -1,0 +1,39 @@
+# Weyos API — preview from the development branch, one region.
+# Deploy: fly deploy --config deploy/fly/api-preview.toml   (from the repo root)
+#
+# Region is deploy-time configuration (SCRUM-25): this file pins the region and points at the
+# region's engine and stores. Secrets are set with `fly secrets set -a weyos-api-preview` and never
+# live in the repo: DATABASE_URL (Timescale Cloud, same region), REDIS_URL (Upstash via Fly,
+# same region), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_JWT_SECRET on legacy
+# projects. See docs/deploy.md.
+
+app = "weyos-api-preview"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "../../services/api/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  WEYOS_REGION = "UK"
+  ENGINE_URL = "http://weyos-engine-preview.internal:8000"
+  ENGINE_TIMEOUT_MS = "1500"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
