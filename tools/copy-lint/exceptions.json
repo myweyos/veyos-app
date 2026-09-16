@@ -14,6 +14,27 @@
       "terms": ["medical", "diagnose", "treat"],
       "reason": "A1's statement of what Weyos is not, verbatim from the design pack. It names the claims in order to deny them. To be re-derived from the approved intended-purpose statement (SCRUM-121).",
       "approved_in": "PR #19 (A1 welcome screen)"
+    },
+    {
+      "file": "config/rules/rules.v1.yaml",
+      "text": "Vata",
+      "terms": ["vata"],
+      "reason": "Rule 3.1's name, shown on the trace screen. A type label, banned by SCRUM-91. Allowed only until SCRUM-92 rewrites Layer 3 as axis thresholds and renames the rule; delete this entry in that PR.",
+      "approved_in": "SCRUM-91 (temporary)"
+    },
+    {
+      "file": "config/rules/rules.v1.yaml",
+      "text": "Pitta",
+      "terms": ["pitta"],
+      "reason": "Rule 3.2's name. As above: removed by SCRUM-92.",
+      "approved_in": "SCRUM-91 (temporary)"
+    },
+    {
+      "file": "config/rules/rules.v1.yaml",
+      "text": "Kapha",
+      "terms": ["kapha"],
+      "reason": "Rule 3.3's name. As above: removed by SCRUM-92.",
+      "approved_in": "SCRUM-91 (temporary)"
     }
   ]
 }

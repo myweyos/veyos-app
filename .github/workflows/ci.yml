@@ -90,6 +90,8 @@ jobs:
         run: npm test -w @weyos/shared-schema
       - name: App-state mapping tests
         run: npm test -w @weyos/app-state
+      - name: Phenotype scoring tests (Module J worked example)
+        run: npm test -w @weyos/phenotype
       - name: Generated TS types are in sync with schemas
         # Regenerates src/generated.ts and fails if git detects a diff.
         # Enforces that generated.ts is always committed and matches the schemas in the PR.

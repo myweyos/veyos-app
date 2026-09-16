@@ -3,8 +3,45 @@ import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 import { config } from "./config";
 import { supabase } from "./supabase";
 
-export type Dosha = "vata" | "pitta" | "kapha";
+
 export type Region = "UK" | "US";
+
+/** Module J instrument items, as served by /v1/me/baseline/instrument. */
+export interface InstrumentItem {
+  id: string;
+  type: "options" | "scale" | "time_or_none";
+  question: string;
+  options?: string[];
+  low?: string;
+  high?: string;
+  none_label?: string;
+}
+
+export interface Instrument {
+  instrument: string;
+  instrument_version: string;
+  items: InstrumentItem[];
+}
+
+/** The description a person reads back. Fragment keys are internal ids, never shown. */
+export interface BaselineView {
+  instrument_version: string;
+  submitted_at: string;
+  fragments: Array<{ key: string; text: string }>;
+  personalising: boolean;
+  energy_dip_at: string | null;
+}
+
+export interface IdentityAnswers {
+  date_of_birth: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  waist_cm: number | null;
+  usual_wake_time: string | null;
+  usual_sleep_time: string | null;
+  fixed_start: "no" | "some" | "yes" | null;
+  work_pattern: "fixed" | "flexible" | "shift" | "self-directed" | null;
+}
 
 export const CONSENT_PURPOSES = [
   "health_data",
@@ -19,7 +56,8 @@ export type ConsentState = Record<Purpose, boolean>;
 
 export interface Me {
   region: Region | null;
-  constitution: { dosha: Dosha } | null;
+  /** Whether the food-profile answer has been given. The value itself stays server-side. */
+  constitution_set: boolean;
   consents: ConsentState;
   onboarded: boolean;
 }
@@ -79,12 +117,22 @@ const put = (body: unknown): RequestInit => ({ method: "PUT", body: JSON.stringi
 
 export const api = {
   me: () => call<Me>("/v1/me"),
-  updateProfile: (patch: { region?: Region; constitution?: { dosha: Dosha } }) =>
+  updateProfile: (patch: { region?: Region; constitution?: { answer: 1 | 2 | 3 } }) =>
     call<Me>("/v1/me/profile", put(patch)),
   recordConsents: (decisions: Partial<ConsentState>, copyVersion: string) =>
     call<ConsentState>("/v1/me/consents", put({ copy_version: copyVersion, decisions })),
   deleteAccount: () =>
     call<{ data_erased: true; auth_account_deleted: boolean }>("/v1/me", { method: "DELETE" }),
+
+  instrument: () => call<Instrument>("/v1/me/baseline/instrument"),
+  baseline: () => call<BaselineView | null>("/v1/me/baseline"),
+  submitBaseline: (body: {
+    answers: Record<string, number>;
+    energy_dip_at: string | null;
+    corrected_fragment?: string;
+  }) => call<BaselineView>("/v1/me/baseline", put(body)),
+  identity: () => call<IdentityAnswers>("/v1/me/baseline/identity"),
+  updateIdentity: (patch: Partial<IdentityAnswers>) => call<IdentityAnswers>("/v1/me/baseline/identity", put(patch)),
 
   ingest: (payload: Record<string, unknown>) =>
     call<{ accepted: true; decision_id: string }>("/v1/ingest/snapshot", {

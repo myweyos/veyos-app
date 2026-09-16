@@ -36,3 +36,4 @@ data/
 
 # app-state test build output
 packages/app-state/.test-dist/
+packages/phenotype/.test-dist/

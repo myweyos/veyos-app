@@ -36,6 +36,15 @@ test("inflections and case are caught, look-alikes are not", () => {
   assert.deepEqual(heads("Patience. Conditioning. Mustard. Treaty."), []);
 });
 
+test("type labels and trait names are banned in copy (SCRUM-91)", () => {
+  assert.deepEqual(heads("You're Kapha-Pitta"), ["kapha", "pitta"]);
+  assert.deepEqual(heads("Your dosha"), ["dosha"]);
+  assert.deepEqual(heads("Regularity: 30"), ["regularity"]);
+  assert.deepEqual(heads("Your body keeps a regular rhythm."), []);
+  // Field names stay fine: it's the rendered word that's banned.
+  assert.deepEqual(lintTs(`const d = profile.dosha; if (axis === "T5") {}`).violations, []);
+});
+
 // --------------------------------------------------------------------- what counts as copy
 
 test("JSX text, string literals and template text are copy", () => {

@@ -74,18 +74,26 @@ describe("MeController", () => {
     );
   });
 
-  it("stores region and dosha from the onboarding answers", async () => {
+  it("maps the A7 answer position to the constitution server-side (SCRUM-91)", async () => {
     const { controller, subjects } = make();
-    await controller.updateProfile(SUBJECT, { region: "US", constitution: { dosha: "kapha" } });
+    await controller.updateProfile(SUBJECT, { region: "US", constitution: { answer: 3 } });
     expect(subjects.updateProfile).toHaveBeenCalledWith("sub_authed00001", {
       region: "US",
       dosha: "kapha",
     });
   });
 
+  it("never returns a type label to the client", async () => {
+    const answered: Profile = { region: "UK", constitution: { dosha: "pitta" } };
+    const view = await make(answered).controller.me(SUBJECT);
+    expect(view).toEqual({ region: "UK", constitution_set: true, consents: NONE, onboarded: false });
+    expect(JSON.stringify(view)).not.toMatch(/vata|pitta|kapha|dosha/);
+  });
+
   it.each([
     [{ region: "FR" }],
-    [{ constitution: { dosha: "fire" } }],
+    [{ constitution: { answer: 4 } }],
+    [{ constitution: { answer: "kapha" } }],
   ])("rejects a value outside the allowed set: %j", async (body) => {
     await expect(make().controller.updateProfile(SUBJECT, body)).rejects.toThrow(
       BadRequestException,

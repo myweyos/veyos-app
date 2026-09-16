@@ -1,39 +1,39 @@
 /**
- * A7 — Food profile. Sets the constitution Layer 3 reads (dosha, by John's decision of
- * 2026-09-14, pending plan v2 §9.2).
+ * A7, part one — Food profile. The one question the design pack specifies.
  *
- * The design pack says "Question 1 of 3" but specifies only question 1. That is the question
- * asked here, answer-for-answer. Questions 2 and 3 are content for the content-library owner
- * (§9.14), and inventing them in code would mean deciding the constitution model's inputs.
+ * The client sends the answer's position (1–3); what the engine makes of it stays on the
+ * server, so no type label exists on the device (SCRUM-91). This question goes when Layer 3
+ * reads the six trait axes instead (SCRUM-92); the baseline questions that follow (A7 part two)
+ * are what replace it.
  */
 import { router } from "expo-router";
 import { useState } from "react";
 
 import { Back, Busy, Choice, ErrorLine, Screen, Sub, Title } from "../../src/components/form";
 import { Button, Note } from "../../src/components/primitives";
-import { api, type Dosha } from "../../src/lib/api";
+import { api } from "../../src/lib/api";
 import { useSession } from "../../src/state/session";
 
-const ANSWERS: Array<{ dosha: Dosha; text: string }> = [
-  { dosha: "vata", text: "You’re cold, dry or unsettled" },
-  { dosha: "pitta", text: "You’re overheated or wound up" },
-  { dosha: "kapha", text: "You’re heavy, sluggish or congested" },
-];
+const ANSWERS = [
+  "You’re cold, dry or unsettled",
+  "You’re overheated or wound up",
+  "You’re heavy, sluggish or congested",
+] as const;
 
 export default function FoodStep() {
-  const { me, refreshMe } = useSession();
-  const [dosha, setDosha] = useState<Dosha | null>(me?.constitution?.dosha ?? null);
+  const { refreshMe } = useSession();
+  const [answer, setAnswer] = useState<1 | 2 | 3 | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const next = async () => {
-    if (dosha === null) return;
+    if (answer === null) return;
     setBusy(true);
     setError(null);
     try {
-      await api.updateProfile({ constitution: { dosha } });
+      await api.updateProfile({ constitution: { answer } });
       await refreshMe();
-      router.push("/onboarding/connect");
+      router.push("/onboarding/baseline");
     } catch {
       setError("Couldn’t save that. Check your connection and try again.");
     } finally {
@@ -46,15 +46,20 @@ export default function FoodStep() {
       <Title text="Your food profile" />
       <Sub text="This sets a persistent food baseline that works from today, while Weyos learns your biometrics." />
       <Sub text="In general, you feel worse when…" />
-      {ANSWERS.map((a) => (
-        <Choice key={a.dosha} title={a.text} selected={dosha === a.dosha} onPress={() => setDosha(a.dosha)} />
+      {ANSWERS.map((text, i) => (
+        <Choice
+          key={text}
+          title={text}
+          selected={answer === i + 1}
+          onPress={() => setAnswer((i + 1) as 1 | 2 | 3)}
+        />
       ))}
       <Note text="A traditional constitutional model, used here for food preferences only. It sits below your live biometrics and your lab results — those always win." />
       <ErrorLine text={error} />
       {busy ? (
         <Busy />
       ) : (
-        <Button label="Continue" kind="primary" onPress={dosha === null ? undefined : () => void next()} />
+        <Button label="Continue" kind="primary" onPress={answer === null ? undefined : () => void next()} />
       )}
       <Back onPress={() => router.back()} />
     </Screen>

@@ -15,6 +15,7 @@ import { SnapshotValidator } from "./ingestion/snapshot.validator";
 import { NormalisationModule } from "./normalisation/normalisation.module";
 import { RedisModule } from "./redis/redis.module";
 import { StoreModule } from "./store/store.module";
+import { BaselineController } from "./subjects/baseline.controller";
 import { MeController } from "./subjects/me.controller";
 
 @Module({
@@ -32,6 +33,7 @@ import { MeController } from "./subjects/me.controller";
     DecisionController,
     RulebookController,
     MeController,
+    BaselineController,
   ],
   providers: [SchemaRegistry, SnapshotValidator, EngineClient, DecisionService, DecisionsQueue],
 })

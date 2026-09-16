@@ -11,7 +11,7 @@ import type { Me } from "./api";
 export function firstUnfinishedStep(me: Me): Href<string> | null {
   if (me.region === null) return "/onboarding/region";
   if (!me.consents.health_data) return "/onboarding/consent";
-  if (me.constitution === null) return "/onboarding/food";
+  if (!me.constitution_set) return "/onboarding/food";
   return null;
 }
 

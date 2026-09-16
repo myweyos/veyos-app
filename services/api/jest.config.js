@@ -10,5 +10,6 @@ module.exports = {
   moduleNameMapper: {
     "^@weyos/shared-schema$":
       "<rootDir>/../../packages/shared-schema/src/index.ts",
+    "^@weyos/phenotype$": "<rootDir>/../../packages/phenotype/src/index.ts",
   },
 };
