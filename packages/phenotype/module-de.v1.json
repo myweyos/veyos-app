@@ -1,0 +1,77 @@
+{
+  "$comment": "Modules D and E, the T2 question set (SCRUM-97): eating pattern, dietary approach, exclusions, alcohol, caffeine, training frequency, session length. Asked after week one, on the T2 re-entry surface (SCRUM-98). Every item names its downstream use; nothing the wearable can answer is asked (steps come from the device). Structured answers only. THE OPTION WORDING IS A DEVELOPER DRAFT from the ticket's field list, not from the advisory pack, and needs the content owner's review (plan v2 §9.14) before launch. Items are unscored: none feeds a trait axis.",
+  "instrument": "module-de",
+  "instrument_version": "1.0",
+  "items": [
+    {
+      "id": "D1",
+      "module": "D",
+      "type": "options",
+      "question": "How do your meals usually fall on an ordinary day?",
+      "options": [
+        "Three meals at fairly regular times",
+        "Two meals, one of them the main one",
+        "One main meal and small bits around it",
+        "Small and often",
+        "It varies a lot from day to day"
+      ],
+      "use": "Meal-timing anchor for the scheduler; regularity of the main meal is the lever T5 points at."
+    },
+    {
+      "id": "D2",
+      "module": "D",
+      "type": "time",
+      "question": "When do you usually first eat something?",
+      "use": "SAFETY SIGNAL, not personalisation: joined with the hypo-risk flag from Module B (SCRUM-96) to say when a late first meal matters. The join is not built until Module B exists."
+    },
+    {
+      "id": "D3",
+      "module": "D",
+      "type": "options",
+      "question": "Which is closest to how you eat?",
+      "options": ["I eat most things", "Pescatarian", "Vegetarian", "Vegan", "Something else"],
+      "use": "Filters the meal library so nothing suggested is something the subject does not eat."
+    },
+    {
+      "id": "D4",
+      "module": "D",
+      "type": "multi",
+      "question": "Anything you don't eat, or can't?",
+      "options": ["Gluten", "Dairy", "Nuts", "Shellfish", "Eggs", "Soy", "None of these"],
+      "exclusive_option": "None of these",
+      "use": "Exclusions for the meal library. Dairy is also a controlled food tag the engine can block; wiring exclusions into the food chain is a rulebook change and is not done here."
+    },
+    {
+      "id": "D5",
+      "module": "D",
+      "type": "options",
+      "question": "How much alcohol in a typical week?",
+      "options": ["None", "A few drinks", "Most days, one or two", "Most days, more than that"],
+      "use": "Context for the recovery layer; never a verdict. Bands rather than units so the answer is honest."
+    },
+    {
+      "id": "D6",
+      "module": "D",
+      "type": "options",
+      "question": "How much caffeine on a typical day?",
+      "options": ["None", "One or two", "Three or four", "Five or more"],
+      "use": "Rule 1.2's no-caffeine-after-midday constraint lands differently for a five-a-day subject; used for how the constraint is worded, never whether it applies."
+    },
+    {
+      "id": "E1",
+      "module": "E",
+      "type": "options",
+      "question": "How often do you train in a typical week?",
+      "options": ["Not at the moment", "Once or twice", "Three or four times", "Five or more"],
+      "use": "Load progression baseline (with T6)."
+    },
+    {
+      "id": "E2",
+      "module": "E",
+      "type": "options",
+      "question": "How long is a typical session?",
+      "options": ["Under 30 minutes", "30 to 45 minutes", "45 to 60 minutes", "Over an hour"],
+      "use": "Load progression baseline; sizes the substitute sessions the engine offers."
+    }
+  ]
+}

@@ -11,6 +11,7 @@
  * signup sits below it, so a fresh profile drives nothing until device data arrives.
  */
 
+import t2 from "../module-de.v1.json";
 import instrument from "../module-j.v1.json";
 
 export type AxisId = "T1" | "T2" | "T3" | "T4" | "T5" | "T6";
@@ -48,6 +49,50 @@ export interface Instrument {
 }
 
 export const MODULE_J = instrument as unknown as Instrument;
+
+/** A T2 item (Modules D and E). Unscored; answered after week one. */
+export interface T2Item {
+  id: string;
+  module: "D" | "E";
+  type: "options" | "multi" | "time";
+  question: string;
+  options?: string[];
+  exclusive_option?: string;
+  use: string;
+}
+
+export interface T2Instrument {
+  instrument: string;
+  instrument_version: string;
+  items: T2Item[];
+}
+
+export const MODULE_DE = t2 as unknown as T2Instrument;
+
+/** A T2 answer: an option index (1-based), a list of them for multi, or "HH:MM" for time. */
+export type T2Answer = number | number[] | string;
+
+/** Structural validation of one T2 answer against its item. Returns a problem, or null. */
+export function validateT2Answer(item: T2Item, value: unknown): string | null {
+  const count = item.options?.length ?? 0;
+  const inRange = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= count;
+  switch (item.type) {
+    case "options":
+      return inRange(value) ? null : `${item.id}: expected an option 1–${count}`;
+    case "multi": {
+      if (!Array.isArray(value) || value.length === 0 || !value.every(inRange)) {
+        return `${item.id}: expected a non-empty list of options 1–${count}`;
+      }
+      const exclusive = item.exclusive_option === undefined ? -1 : (item.options ?? []).indexOf(item.exclusive_option) + 1;
+      if (exclusive > 0 && value.includes(exclusive) && value.length > 1) {
+        return `${item.id}: "${item.exclusive_option}" cannot be combined with other options`;
+      }
+      return null;
+    }
+    case "time":
+      return typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? null : `${item.id}: expected HH:MM`;
+  }
+}
 
 /** Scored answers: item id → 1–5. J5b (the energy dip) is unscored and lives elsewhere. */
 export type Answers = Record<string, number>;

@@ -49,12 +49,15 @@ export function Today({
   onWhyThis,
   onTakeover,
   header,
+  footer,
   refreshControl,
 }: {
   model: TodayModel;
   onWhyThis: () => void;
   onTakeover: () => void;
   header?: ReactNode;
+  /** Quiet, skippable prompts (waist due, T2 open). Never a takeover, never above the verdict. */
+  footer?: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   const decision = model.decision;
@@ -161,6 +164,7 @@ export function Today({
         />
       )}
 
+      {footer}
       <Disclaimer />
     </ScrollView>
   );

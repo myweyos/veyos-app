@@ -4,6 +4,7 @@ import { BaselineRepository } from "../subjects/baseline.repository";
 import { ConsentRepository } from "../subjects/consent.repository";
 import { SubjectRepository } from "../subjects/subject.repository";
 import { SupabaseAdminClient } from "../subjects/supabase-admin.client";
+import { T2Repository } from "../subjects/t2.repository";
 import { AuthGuard } from "./auth.guard";
 import { JwtVerifier } from "./jwt.verifier";
 

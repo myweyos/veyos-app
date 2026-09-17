@@ -81,6 +81,20 @@ test("invalid answers are refused, never scored", () => {
   assert.throws(() => score(missing), /invalid answers/);
 });
 
+test("T2 answers are validated structurally against their item", async () => {
+  const { MODULE_DE, validateT2Answer } = await import("../src/index");
+  const by = Object.fromEntries(MODULE_DE.items.map((i) => [i.id, i]));
+  assert.equal(validateT2Answer(by.D1!, 3), null);
+  assert.match(validateT2Answer(by.D1!, 9) ?? "", /1–5/);
+  assert.equal(validateT2Answer(by.D4!, [1, 2]), null);
+  assert.match(validateT2Answer(by.D4!, [7, 1]) ?? "", /cannot be combined/);
+  assert.equal(validateT2Answer(by.D4!, [7]), null);
+  assert.equal(validateT2Answer(by.D2!, "08:30"), null);
+  assert.match(validateT2Answer(by.D2!, "8am") ?? "", /HH:MM/);
+  for (const item of MODULE_DE.items) assert.ok(item.use.length > 20, `${item.id} names its downstream use`);
+  assert.ok(!MODULE_DE.items.some((i) => /steps/i.test(i.question)), "steps are read from the device, never asked");
+});
+
 test("the instrument is internally consistent", () => {
   const ids = new Set(MODULE_J.items.map((i) => i.id));
   for (const axis of MODULE_J.axes) {

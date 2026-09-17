@@ -1,7 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
 
+import type { BaselineRepository } from "./baseline.repository";
 import type { ConsentRepository, ConsentState } from "./consent.repository";
-import { MeController } from "./me.controller";
+import { MeController, waistDue } from "./me.controller";
 import type { Profile, SubjectRepository } from "./subject.repository";
 import type { SupabaseAdminClient } from "./supabase-admin.client";
 
@@ -20,6 +21,7 @@ function make(
   profile: Profile = { region: null, constitution: null },
   authDeleted = true,
   consentState: ConsentState = NONE,
+  waist: Array<{ measured_on: string; waist_cm: number }> = [],
 ) {
   const subjects = {
     profile: jest.fn().mockResolvedValue(profile),
@@ -34,12 +36,14 @@ function make(
     current: jest.fn().mockResolvedValue(consentState),
     record: jest.fn().mockImplementation(async (_ref, d) => ({ ...consentState, ...d })),
   };
+  const baselines = { waistHistory: jest.fn().mockResolvedValue(waist) };
   const controller = new MeController(
     subjects as unknown as SubjectRepository,
     consents as unknown as ConsentRepository,
+    baselines as unknown as BaselineRepository,
     admin as unknown as SupabaseAdminClient,
   );
-  return { controller, subjects, admin, consents };
+  return { controller, subjects, admin, consents, baselines };
 }
 
 describe("MeController", () => {
@@ -86,7 +90,13 @@ describe("MeController", () => {
   it("never returns a type label to the client", async () => {
     const answered: Profile = { region: "UK", constitution: { dosha: "pitta" } };
     const view = await make(answered).controller.me(SUBJECT);
-    expect(view).toEqual({ region: "UK", constitution_set: true, consents: NONE, onboarded: false });
+    expect(view).toEqual({
+      region: "UK",
+      constitution_set: true,
+      consents: NONE,
+      onboarded: false,
+      waist: { due: true, last_measured_on: null },
+    });
     expect(JSON.stringify(view)).not.toMatch(/vata|pitta|kapha|dosha/);
   });
 
@@ -116,5 +126,22 @@ describe("MeController", () => {
       data_erased: true,
       auth_account_deleted: false,
     });
+  });
+});
+
+describe("monthly waist re-ask (SCRUM-99)", () => {
+  it("is due with no measurement, or one 30+ days old, and quiet otherwise", () => {
+    expect(waistDue(null, "2026-09-17")).toBe(true);
+    expect(waistDue("2026-08-18", "2026-09-17")).toBe(true);
+    expect(waistDue("2026-08-19", "2026-09-17")).toBe(false);
+    expect(waistDue("2026-09-17", "2026-09-17")).toBe(false);
+  });
+
+  it("reports the last measurement on /v1/me", async () => {
+    const view = await make(undefined, true, NONE, [
+      { measured_on: "2026-08-01", waist_cm: 94 },
+      { measured_on: "2026-09-16", waist_cm: 93.5 },
+    ]).controller.me(SUBJECT);
+    expect(view.waist).toEqual({ due: false, last_measured_on: "2026-09-16" });
   });
 });

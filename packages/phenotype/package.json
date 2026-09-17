@@ -5,9 +5,10 @@
   "description": "Module J baseline instrument: scoring to six trait axes and the description library. The instrument is data (module-j.v1.json).",
   "main": "src/index.ts",
   "types": "src/index.ts",
-  "files": ["src", "module-j.v1.json"],
+  "files": ["src", "module-j.v1.json", "module-de.v1.json"],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/phenotype/tests/phenotype.test.js"
   }
 }
+

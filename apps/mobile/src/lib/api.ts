@@ -60,6 +60,26 @@ export interface Me {
   constitution_set: boolean;
   consents: ConsentState;
   onboarded: boolean;
+  waist: { due: boolean; last_measured_on: string | null };
+}
+
+export interface T2Item {
+  id: string;
+  module: "D" | "E";
+  type: "options" | "multi" | "time";
+  question: string;
+  options?: string[];
+  exclusive_option?: string;
+}
+
+export type T2Answer = number | number[] | string;
+
+export interface T2View {
+  unlocked: boolean;
+  unlocks_on: string | null;
+  answered: number;
+  total: number;
+  answers: Record<string, T2Answer>;
 }
 
 export interface RulebookListing {
@@ -133,6 +153,11 @@ export const api = {
   }) => call<BaselineView>("/v1/me/baseline", put(body)),
   identity: () => call<IdentityAnswers>("/v1/me/baseline/identity"),
   updateIdentity: (patch: Partial<IdentityAnswers>) => call<IdentityAnswers>("/v1/me/baseline/identity", put(patch)),
+
+  waistHistory: () => call<Array<{ measured_on: string; waist_cm: number }>>("/v1/me/baseline/waist"),
+  t2Instrument: () => call<{ instrument: string; instrument_version: string; items: T2Item[] }>("/v1/me/t2/instrument"),
+  t2: () => call<T2View>("/v1/me/t2"),
+  saveT2: (answers: Record<string, T2Answer>) => call<T2View>("/v1/me/t2", put({ answers })),
 
   ingest: (payload: Record<string, unknown>) =>
     call<{ accepted: true; decision_id: string }>("/v1/ingest/snapshot", {

@@ -11,6 +11,7 @@ import { RefreshControl, SafeAreaView, StyleSheet, Text, View } from "react-nati
 
 import { Busy, Screen, Sub, Title } from "../src/components/form";
 import { Button, Link } from "../src/components/primitives";
+import { TodayPrompts } from "../src/components/prompts";
 import { firstUnfinishedStep } from "../src/lib/onboarding";
 import { Today } from "../src/screens/Today";
 import { useSession } from "../src/state/session";
@@ -81,6 +82,7 @@ export default function TodayRoute() {
       <Today
         model={model}
         header={header}
+        footer={<TodayPrompts me={me} />}
         refreshControl={
           <RefreshControl refreshing={false} onRefresh={() => void refresh()} tintColor={color.accent} />
         }
