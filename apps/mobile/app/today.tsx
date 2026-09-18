@@ -16,7 +16,7 @@ import { firstUnfinishedStep } from "../src/lib/onboarding";
 import { Today } from "../src/screens/Today";
 import { useSession } from "../src/state/session";
 import { useToday } from "../src/state/today";
-import { color } from "../src/theme/tokens";
+import { color, column } from "../src/theme/tokens";
 
 const FRIENDLY: Record<string, string> = {
   consent_required: "Weyos needs your consent to use health data before it can decide anything.",
@@ -100,6 +100,6 @@ export default function TodayRoute() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.cream },
-  header: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 20, paddingTop: 12 },
+  header: { ...column, flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 20, paddingTop: 12 },
   footer: { textAlign: "center", padding: 14, color: color.accent, fontWeight: "600", fontSize: 14.5 },
 });

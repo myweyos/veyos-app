@@ -5,14 +5,14 @@
  * and clears what this device holds (cycle settings, sync progress, declines).
  */
 import { router } from "expo-router";
-import { useState } from "react";
-import { Alert } from "react-native";
+import { useEffect, useState } from "react";
 
 import { Back, Busy, ErrorLine, Screen, Sub, Title, ToggleRow } from "../src/components/form";
 import { Button, Card } from "../src/components/primitives";
 import { api, type Purpose } from "../src/lib/api";
 import { clearCycle } from "../src/lib/cycle";
-import { openHealthConnectSettings } from "../src/lib/healthConnect";
+import { confirmDestructive, notify } from "../src/lib/dialog";
+import { availability, openHealthConnectSettings, type Availability } from "../src/lib/healthConnect";
 import { CONSENT_COPY_VERSION } from "../src/lib/onboarding";
 import { resetSync } from "../src/lib/sync";
 import { useSession } from "../src/state/session";
@@ -30,6 +30,11 @@ export default function Settings() {
   const { me, refreshMe, signOut } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signals, setSignals] = useState<Availability | "checking">("checking");
+
+  useEffect(() => {
+    void availability().then(setSignals, () => setSignals("unavailable"));
+  }, []);
 
   const setConsent = async (purpose: Purpose, granted: boolean) => {
     setError(null);
@@ -49,7 +54,7 @@ export default function Settings() {
       await Promise.all([clearCycle(), resetSync(), forgetDeclines()]);
       await signOut();
       if (!result.auth_account_deleted) {
-        Alert.alert(
+        await notify(
           "Your data is erased",
           "Everything Weyos held about your health is gone. Your sign-in could not be removed automatically; contact support to finish closing it.",
         );
@@ -62,15 +67,14 @@ export default function Settings() {
     }
   };
 
-  const confirmDelete = () =>
-    Alert.alert(
+  const confirmDelete = async () => {
+    const yes = await confirmDestructive(
       "Delete your account?",
       "This erases every reading, decision and consent Weyos holds for you. It can’t be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete everything", style: "destructive", onPress: () => void eraseEverything() },
-      ],
+      "Delete everything",
     );
+    if (yes) await eraseEverything();
+  };
 
   return (
     <Screen>
@@ -89,10 +93,17 @@ export default function Settings() {
           />
         ))}
       </Card>
-      <Button label="Health Connect permissions" kind="secondary" onPress={() => openHealthConnectSettings()} />
+      {signals === "web" && (
+        <Card>
+          <Sub text="Your signals come from the Weyos app on your phone. Health Connect permissions are managed there." />
+        </Card>
+      )}
+      {(signals === "available" || signals === "update_required" || signals === "unavailable") && (
+        <Button label="Health Connect permissions" kind="secondary" onPress={() => openHealthConnectSettings()} />
+      )}
       <ErrorLine text={error} />
       <Button label="Sign out" kind="quiet" onPress={() => void signOut().then(() => router.replace("/welcome"))} />
-      {busy ? <Busy /> : <Button label="Delete my account" kind="quiet" onPress={confirmDelete} />}
+      {busy ? <Busy /> : <Button label="Delete my account" kind="quiet" onPress={() => void confirmDelete()} />}
     </Screen>
   );
 }

@@ -1,9 +1,8 @@
-import * as SecureStore from "expo-secure-store";
-
 import { daysBetween, localDate } from "./dates";
+import { deviceStore } from "./deviceStore";
 
 /**
- * Cycle setup (design pack A6), kept on the device in encrypted storage.
+ * Cycle setup (design pack A6), kept on the device (deviceStore).
  *
  * The subject gives the first day of their last period and a typical length. Health Connect
  * menstruation records, when granted, update the start date. Nothing here guesses a phase.
@@ -18,7 +17,7 @@ const KEY = "weyos.cycle.v1";
 const OFF: CycleSettings = { tracking: false, lastPeriodStart: null, cycleLength: null };
 
 export async function loadCycle(): Promise<CycleSettings> {
-  const raw = await SecureStore.getItemAsync(KEY);
+  const raw = await deviceStore.getItem(KEY);
   if (raw === null) return OFF;
   try {
     return { ...OFF, ...(JSON.parse(raw) as Partial<CycleSettings>) };
@@ -28,11 +27,11 @@ export async function loadCycle(): Promise<CycleSettings> {
 }
 
 export async function saveCycle(settings: CycleSettings): Promise<void> {
-  await SecureStore.setItemAsync(KEY, JSON.stringify(settings));
+  await deviceStore.setItem(KEY, JSON.stringify(settings));
 }
 
 export async function clearCycle(): Promise<void> {
-  await SecureStore.deleteItemAsync(KEY);
+  await deviceStore.deleteItem(KEY);
 }
 
 /**

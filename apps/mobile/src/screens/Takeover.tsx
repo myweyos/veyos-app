@@ -28,7 +28,7 @@ import {
   SwapLabel,
   WhatChanged,
 } from "../components/layout";
-import { color, space } from "../theme/tokens";
+import { color, column, space } from "../theme/tokens";
 
 export function Takeover({
   model,
@@ -102,7 +102,7 @@ export function Takeover({
 
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: space.md },
+  content: { ...column, paddingHorizontal: 24, paddingBottom: 40, paddingTop: space.md },
   arrow: { color: color.accent, fontWeight: "700", paddingLeft: 78, fontSize: 15.5 },
   to: { fontSize: 15.5, fontWeight: "600", color: color.ink },
   food: { fontSize: 12.5, color: color.muted, marginTop: 8, paddingLeft: 78 },

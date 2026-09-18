@@ -22,6 +22,23 @@ Local dev stays as it is (`docker compose` for Postgres and Redis, `make sidecar
 - `.github/workflows/deploy.yml`: `development` → preview, `main` → UK and US. Engine first,
   then API, then a readiness check against `/health/ready`.
 
+## The web app
+
+The same Expo app builds for the browser: `npm run export:web -w @weyos/mobile` writes a
+static bundle to `apps/mobile/dist/` (`output: single`, so the host must serve `index.html`
+for every path). It needs the same three `EXPO_PUBLIC_*` variables as a phone build, set in
+the environment at export time. Any static host with a SPA fallback works; nothing in the
+bundle is a secret (the anon key is public by design).
+
+Two things differ from the phone:
+
+- **No signals are read in a browser.** The phone app reads Health Connect and sends each day;
+  the web app shows what the engine decided from those days. Its connect step and Settings say
+  so in plain words rather than offering a button that does nothing.
+- **CORS.** The API only answers browsers from the origins in `WEB_ORIGINS` (comma-separated).
+  Native apps aren't subject to CORS, so that list is exactly the web app's origins and nothing
+  else. Each Fly config sets it; unset means no browser may call the API.
+
 ## One-time setup (a person, with the accounts)
 
 Nothing below is in the repo. Secrets are set on the apps, never committed.

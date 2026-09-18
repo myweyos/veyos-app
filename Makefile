@@ -57,4 +57,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck boundaries decision decision-validated backtest backtest-validated web sidecar sidecar-test infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck boundaries decision decision-validated backtest backtest-validated android web sidecar sidecar-test infra-up infra-down dev

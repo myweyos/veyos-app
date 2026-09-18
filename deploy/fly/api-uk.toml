@@ -19,6 +19,8 @@ primary_region = "lhr"
   WEYOS_REGION = "UK"
   ENGINE_URL = "http://weyos-engine-uk.internal:8000"
   ENGINE_TIMEOUT_MS = "1500"
+  # Browser origins allowed to call the API: the web app only. Native apps need no entry.
+  WEB_ORIGINS = "https://app.weyos.app"
 
 [http_service]
   internal_port = 3000

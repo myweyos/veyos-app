@@ -41,7 +41,7 @@ import {
   RowLink,
   Struck,
 } from "../components/layout";
-import { color, space } from "../theme/tokens";
+import { color, column, space } from "../theme/tokens";
 import { headlineFor, longDate, signalTilesFor, subFor, unevaluableSentence } from "./copy";
 
 export function Today({
@@ -187,7 +187,7 @@ function foodDetail(decision: TodayModel["decision"], calibrating: boolean): str
 
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 20, paddingBottom: 60 },
+  content: { ...column, paddingHorizontal: 20, paddingBottom: 60 },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardLabel: { fontSize: 13.5, fontWeight: "600", color: color.ink },
   cardMuted: { fontSize: 13.5, color: color.muted },

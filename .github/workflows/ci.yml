@@ -190,3 +190,29 @@ jobs:
         run: cd apps/mobile && npx expo prebuild --platform android --no-install
       - name: Compile development client (Android debug)
         run: cd apps/mobile/android && ./gradlew :app:assembleDebug --no-daemon
+
+  web_build:
+    name: Web app (exports)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci || npm install
+      - name: Export the web bundle
+        # The same app, for the browser. Proves Metro resolves every *.web.ts seam and that no
+        # native module reaches the bundle. The EXPO_PUBLIC_* values are placeholders: they are
+        # inlined at export time, and a real export sets real ones.
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://api.invalid
+          EXPO_PUBLIC_SUPABASE_URL: https://ci.invalid
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+        run: cd apps/mobile && npx expo export --platform web
+      - name: No native module in the web bundle
+        run: |
+          if grep -l "react-native-health-connect\|expo-secure-store" apps/mobile/dist/_expo/static/js/web/*.js; then
+            echo "A native-only module reached the web bundle; add a *.web.ts seam for it."
+            exit 1
+          fi
