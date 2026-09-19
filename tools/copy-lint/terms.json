@@ -21,5 +21,20 @@
     "failed": ["failed", "fail", "fails", "failing", "failure", "failures"],
     "missed": ["missed"],
     "streak": ["streak", "streaks"]
+  },
+  "$type_label_comment": "SCRUM-91: no type label, score, axis name or trait name on a user-facing screen. The dosha names and the six trait axes are internal vocabulary. Axis names may appear only inside the collapsed Technical detail block, which gets a reviewed exception when it's built.",
+  "type_label": {
+    "dosha": ["dosha", "doshas", "doshic"],
+    "vata": ["vata"],
+    "pitta": ["pitta"],
+    "kapha": ["kapha"],
+    "trait": ["trait", "traits"],
+    "axis": ["axis", "axes"],
+    "phenotype": ["phenotype", "phenotypes", "phenotyping"],
+    "morning activation": ["activation"],
+    "energy curve": ["curve"],
+    "stress expression": ["expression"],
+    "regularity": ["regularity"],
+    "recovery capacity": ["capacity"]
   }
 }

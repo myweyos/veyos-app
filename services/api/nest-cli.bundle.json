@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "$comment": "The DEPLOYABLE build: one bundle at dist/main.js. The default nest-cli.json emits plain tsc output whose require('@weyos/shared-schema') and require('@weyos/phenotype') resolve, at runtime, to the workspace packages' TypeScript SOURCE (their package.json main is src/index.ts). Node 24 happens to type-strip that locally; a container will not. webpack resolves the tsconfig paths at build time and bundles the workspace source in, and externalises node_modules as usual. Migrations are copied next to the bundle because MigrationRunner reads __dirname/migrations. Use: nest build -c nest-cli.bundle.json",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "entryFile": "main",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "tsconfig.json",
+    "assets": [{ "include": "database/migrations/*.sql", "outDir": "dist" }],
+    "deleteOutDir": true
+  }
+}

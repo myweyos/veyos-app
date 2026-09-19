@@ -90,6 +90,14 @@ export const radius = { card: 20, button: 14, tile: 16, pill: 999, note: 10 } as
 export const space = { xs: 4, sm: 8, md: 12, lg: 17, xl: 24 } as const;
 
 /**
+ * The reading column. Every screen is one column of text and cards; on a phone it fills the
+ * width, and on a tablet or a browser it stays this wide and sits centred, so line lengths
+ * hold at the ~60–70 characters the pack's type sizes were set for. Nothing gets a second
+ * column: the decision reads top to bottom on every screen size.
+ */
+export const column = { width: "100%", maxWidth: 640, alignSelf: "center" } as const;
+
+/**
  * The six app states.
  *
  * Glyphs, words and colours are exactly the pack's STATE map. The pack keys two of them

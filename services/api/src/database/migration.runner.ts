@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
@@ -9,9 +9,11 @@ import { DB_POOL } from "./database.provider";
 /**
  * Applies pending SQL migration files at boot, in filename order, each in its own transaction.
  *
- * Migration files live in ./migrations/ as *.sql. Nest's asset copy (nest-cli.json) puts them
- * alongside the compiled JS at dist/database/migrations/, which is __dirname/migrations/ at
- * runtime. Applied filenames are recorded in _migrations — skipped on subsequent boots.
+ * Migration files live in ./migrations/ as *.sql. Nest's asset copy puts them next to the
+ * compiled JS: at __dirname/migrations/ for the tsc layout (nest-cli.json), and at
+ * __dirname/database/migrations/ for the single-file bundle (nest-cli.bundle.json), where
+ * __dirname is dist/. Both are checked. Applied filenames are recorded in _migrations —
+ * skipped on subsequent boots.
  *
  * Each file runs in a transaction: if a migration throws, the transaction rolls back, the
  * error propagates, and the app refuses to start. Fail-closed is correct for a health-data
@@ -20,7 +22,10 @@ import { DB_POOL } from "./database.provider";
 @Injectable()
 export class MigrationRunner implements OnApplicationBootstrap {
   private readonly log = new Logger(MigrationRunner.name);
-  private readonly migrationsDir = join(__dirname, "migrations");
+  private readonly migrationsDir = [
+    join(__dirname, "migrations"),
+    join(__dirname, "database", "migrations"),
+  ].find((dir) => existsSync(dir)) ?? join(__dirname, "migrations");
 
   constructor(@Inject(DB_POOL) private readonly sql: Sql) {}
 

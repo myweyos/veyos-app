@@ -1,0 +1,28 @@
+# Weyos engine sidecar — production, UK subjects.
+# Deploy: fly deploy --config deploy/fly/engine-uk.toml   (from the repo root)
+#
+# NO [http_service] section, on purpose. The sidecar has no auth; it is reachable only over the
+# organisation's private network as weyos-engine-uk.internal:8000 (ADR 0004).
+
+app = "weyos-engine-uk"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "../../services/engine-http/Dockerfile"
+
+[env]
+  WEYOS_ENGINE_HOST = "0.0.0.0"
+  WEYOS_ENGINE_PORT = "8000"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[checks]
+  [checks.healthz]
+    type = "http"
+    port = 8000
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"

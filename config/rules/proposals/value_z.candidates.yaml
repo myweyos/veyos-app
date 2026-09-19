@@ -1,0 +1,29 @@
+# PROPOSAL — NOT PART OF THE RULEBOOK. Nothing loads this file except the backtest's
+# `--value-z` overlay (SCRUM-74). Merging it into rules.v1.yaml is a rulebook change and needs
+# JB's sign-off, a fixture per rule, and a version bump.
+#
+# Candidate z-score thresholds for every baseline-relative condition, chosen so that each one
+# coincides with the existing percent threshold for a subject at the "stock" variability the
+# synthetic sweep and the test snapshots use (HRV SD = 10% of baseline, RHR SD = 5%):
+#
+#   1.1  hrv_ms  20% below baseline  ->  20% / 10%  = 2.0 SD below
+#   1.3  rhr_bpm  5% above baseline  ->   5% /  5%  = 1.0 SD above
+#   1.4  rhr_bpm 15% above baseline  ->  15% /  5%  = 3.0 SD above   (rule disabled)
+#
+# So for that subject the two comparison forms fire identically, and the backtest shows the
+# difference ONLY where a subject's variability departs from stock: a steady subject (small SD)
+# trips the z-score form on a smaller percent drop, a variable subject needs a larger one.
+# That is the whole question: is a 20% HRV drop the same event for everyone, or is it "two of
+# your own standard deviations", whatever those are? The patent recites the second.
+#
+# Rule 1.2 (sleep_deep_rem_pct) has NO SD in the baseline schema, so it cannot take a z-score
+# form at all without a contract change. It stays percent in both modes.
+
+version: 1
+conditions:
+  "1.1":
+    hrv_ms: 2.0
+  "1.3":
+    rhr_bpm: 1.0
+  "1.4":
+    rhr_bpm: 3.0

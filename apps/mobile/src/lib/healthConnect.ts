@@ -40,7 +40,7 @@ const BIOMETRIC_PERMISSIONS: Permission[] = (
 
 const CYCLE_PERMISSION: Permission = { accessType: "read", recordType: "MenstruationPeriod" };
 
-export type Availability = "available" | "update_required" | "unavailable" | "not_android";
+export type Availability = "available" | "update_required" | "unavailable" | "not_android" | "web";
 
 export async function availability(): Promise<Availability> {
   if (Platform.OS !== "android") return "not_android";

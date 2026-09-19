@@ -1,0 +1,59 @@
+name: Deploy
+
+# development → preview (one region, lhr). main → production, UK and US.
+# The engine deploys before the API in each region: the API's readiness check needs it.
+#
+# Needs one repository secret: FLY_API_TOKEN (a deploy token for the Fly organisation).
+# Everything else is a Fly app secret, set once per app — see docs/deploy.md.
+
+on:
+  push:
+    branches: [main, development]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  targets:
+    name: Pick targets
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.pick.outputs.names }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo 'names=["uk","us"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'names=["preview"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy ${{ matrix.name }}
+    needs: targets
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJSON(needs.targets.outputs.names) }}
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Engine (${{ matrix.name }})
+        run: flyctl deploy --config deploy/fly/engine-${{ matrix.name }}.toml --remote-only --wait-timeout 300
+      - name: API (${{ matrix.name }})
+        run: flyctl deploy --config deploy/fly/api-${{ matrix.name }}.toml --remote-only --wait-timeout 300
+      - name: Readiness
+        # /health/ready checks the engine over the private network and the database.
+        run: |
+          host="weyos-api-${{ matrix.name }}.fly.dev"
+          for i in $(seq 1 12); do
+            if curl -fsS "https://$host/health/ready"; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::$host never became ready"; exit 1

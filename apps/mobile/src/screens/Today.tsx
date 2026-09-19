@@ -41,7 +41,7 @@ import {
   RowLink,
   Struck,
 } from "../components/layout";
-import { color, space } from "../theme/tokens";
+import { color, column, space } from "../theme/tokens";
 import { headlineFor, longDate, signalTilesFor, subFor, unevaluableSentence } from "./copy";
 
 export function Today({
@@ -49,12 +49,15 @@ export function Today({
   onWhyThis,
   onTakeover,
   header,
+  footer,
   refreshControl,
 }: {
   model: TodayModel;
   onWhyThis: () => void;
   onTakeover: () => void;
   header?: ReactNode;
+  /** Quiet, skippable prompts (waist due, T2 open). Never a takeover, never above the verdict. */
+  footer?: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   const decision = model.decision;
@@ -161,6 +164,7 @@ export function Today({
         />
       )}
 
+      {footer}
       <Disclaimer />
     </ScrollView>
   );
@@ -183,7 +187,7 @@ function foodDetail(decision: TodayModel["decision"], calibrating: boolean): str
 
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 20, paddingBottom: 60 },
+  content: { ...column, paddingHorizontal: 20, paddingBottom: 60 },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardLabel: { fontSize: 13.5, fontWeight: "600", color: color.ink },
   cardMuted: { fontSize: 13.5, color: color.muted },

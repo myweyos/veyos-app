@@ -1,8 +1,7 @@
-import * as SecureStore from "expo-secure-store";
-
 import { api } from "./api";
 import { cycleFor, loadCycle, saveCycle, withPeriodStart } from "./cycle";
 import { deviceTimeZone, recentDays } from "./dates";
+import { deviceStore } from "./deviceStore";
 import { grantedTypes, latestPeriodStart, readDay, type DayReadings } from "./healthConnect";
 
 /**
@@ -33,7 +32,7 @@ function hasAnyReading(r: DayReadings): boolean {
 
 export async function sync(options: { cycleConsent: boolean }): Promise<SyncResult> {
   const granted = await grantedTypes();
-  const firstDone = (await SecureStore.getItemAsync(SYNCED_KEY)) === "1";
+  const firstDone = (await deviceStore.getItem(SYNCED_KEY)) === "1";
   const days = recentDays(firstDone ? RESYNC_DAYS : FIRST_SYNC_DAYS);
 
   let cycle = await loadCycle();
@@ -64,11 +63,11 @@ export async function sync(options: { cycleConsent: boolean }): Promise<SyncResu
     });
     sent++;
   }
-  if (!firstDone && sent > 0) await SecureStore.setItemAsync(SYNCED_KEY, "1");
+  if (!firstDone && sent > 0) await deviceStore.setItem(SYNCED_KEY, "1");
   return { sent, empty };
 }
 
 /** Forget sync progress, e.g. after the account is deleted. */
 export async function resetSync(): Promise<void> {
-  await SecureStore.deleteItemAsync(SYNCED_KEY);
+  await deviceStore.deleteItem(SYNCED_KEY);
 }

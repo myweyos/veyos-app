@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@weyos/shared-schema": ["../../packages/shared-schema/src/index.ts"]
+      "@weyos/shared-schema": ["../../packages/shared-schema/src/index.ts"],
+      "@weyos/phenotype": ["../../packages/phenotype/src/index.ts"]
     },
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
     "types": ["node"]

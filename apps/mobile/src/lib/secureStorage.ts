@@ -1,12 +1,12 @@
-import * as SecureStore from "expo-secure-store";
+import { deviceStore } from "./deviceStore";
 
 /**
- * Supabase session storage backed by the platform keystore (Android Keystore, iOS Keychain).
+ * Supabase session storage on top of deviceStore (keystore on a phone, localStorage on web).
  *
- * The session holds refresh and access tokens, so it goes in encrypted storage rather than
- * AsyncStorage. SecureStore warns above ~2 KB per value on iOS and a Supabase session can be
- * larger, so values are split into chunks under `<key>.<n>`, with the chunk count at
- * `<key>.n`.
+ * The session holds refresh and access tokens, so on a phone it goes in encrypted storage
+ * rather than AsyncStorage. SecureStore warns above ~2 KB per value on iOS and a Supabase
+ * session can be larger, so values are split into chunks under `<key>.<n>`, with the chunk
+ * count at `<key>.n`. The chunking is harmless on web.
  */
 const CHUNK = 1800;
 
@@ -14,19 +14,19 @@ const CHUNK = 1800;
 const safe = (key: string): string => key.replace(/[^A-Za-z0-9._-]/g, "_");
 
 async function removeChunks(key: string): Promise<void> {
-  const count = Number((await SecureStore.getItemAsync(`${key}.n`)) ?? "0");
-  for (let i = 0; i < count; i++) await SecureStore.deleteItemAsync(`${key}.${i}`);
-  await SecureStore.deleteItemAsync(`${key}.n`);
+  const count = Number((await deviceStore.getItem(`${key}.n`)) ?? "0");
+  for (let i = 0; i < count; i++) await deviceStore.deleteItem(`${key}.${i}`);
+  await deviceStore.deleteItem(`${key}.n`);
 }
 
 export const secureStorage = {
   async getItem(name: string): Promise<string | null> {
     const key = safe(name);
-    const count = await SecureStore.getItemAsync(`${key}.n`);
+    const count = await deviceStore.getItem(`${key}.n`);
     if (count === null) return null;
     const parts: string[] = [];
     for (let i = 0; i < Number(count); i++) {
-      const part = await SecureStore.getItemAsync(`${key}.${i}`);
+      const part = await deviceStore.getItem(`${key}.${i}`);
       if (part === null) return null; // A torn write reads as signed out, never as garbage.
       parts.push(part);
     }
@@ -38,9 +38,9 @@ export const secureStorage = {
     await removeChunks(key);
     const chunks = value.match(new RegExp(`[\\s\\S]{1,${CHUNK}}`, "g")) ?? [""];
     for (let i = 0; i < chunks.length; i++) {
-      await SecureStore.setItemAsync(`${key}.${i}`, chunks[i] as string);
+      await deviceStore.setItem(`${key}.${i}`, chunks[i] as string);
     }
-    await SecureStore.setItemAsync(`${key}.n`, String(chunks.length));
+    await deviceStore.setItem(`${key}.n`, String(chunks.length));
   },
 
   async removeItem(name: string): Promise<void> {

@@ -34,7 +34,7 @@ const EQUALITY = new Set([
 /** Build `form -> {head, kind}` from terms.json. Throws on a form listed twice. */
 export function indexTerms(terms) {
   const index = new Map();
-  for (const kind of ["vocabulary", "tone"]) {
+  for (const kind of Object.keys(terms).filter((k) => !k.startsWith("$"))) {
     for (const [head, forms] of Object.entries(terms[kind] ?? {})) {
       for (const form of forms) {
         const key = form.toLowerCase();

@@ -19,8 +19,10 @@ from typing import Any
 
 from weyos_engine.config import REPO_ROOT, Rulebook, load_rulebook
 
+from .compare import compare_modes, render_comparison
 from .generate import AXIS_PARSERS, DEFAULT_GRID, GRIDS, SYNTHETIC_AS_OF, apply_overrides, generate
 from .metrics import aggregate
+from .overlay import apply_value_z, load_value_z
 from .questions import raise_observations, raise_questions
 from .report import render_json, render_text
 from .runner import Corpus, LoadError, iter_outcomes, load_directory
@@ -43,6 +45,16 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
         choices=sorted(GRIDS),
         default=DEFAULT_GRID,
         help=f"synthetic sweep preset (default: {DEFAULT_GRID})",
+    )
+    parser.add_argument(
+        "--value-z",
+        type=Path,
+        default=None,
+        metavar="PROPOSAL.yaml",
+        help=(
+            "overlay proposed value_z thresholds onto the rulebook for this run only "
+            "(e.g. config/rules/proposals/value_z.candidates.yaml). Never edits the rulebook"
+        ),
     )
     parser.add_argument("--limit", type=int, default=None, help="stop after N snapshots")
     parser.add_argument("--as-of", default=SYNTHETIC_AS_OF, help="date stamped on synthetic snapshots")
@@ -95,6 +107,17 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--json", type=Path, default=None, help="also write the report as JSON")
     run.add_argument("--quiet", action="store_true", help="suppress the text report")
 
+    cmp = sub.add_parser(
+        "compare",
+        help="run the corpus in BOTH comparison modes and report where percent and z-score disagree",
+    )
+    _add_common(cmp)
+    cmp_source = cmp.add_mutually_exclusive_group(required=True)
+    cmp_source.add_argument("--snapshots", type=Path, help="directory of SignalSnapshot JSON files")
+    cmp_source.add_argument("--synthetic", action="store_true", help="sweep synthetic snapshots in memory")
+    cmp.add_argument("--no-elemental", action="store_true", help="validated-biometrics-only mode")
+    cmp.add_argument("--json", type=Path, default=None, help="also write the comparison as JSON")
+
     gen = sub.add_parser("generate", help="write the synthetic corpus to disk")
     _add_common(gen)
     gen.add_argument("--out", type=Path, required=True, help="output directory")
@@ -107,12 +130,48 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _load_book(path: Path | None, comparison_mode: str | None) -> Rulebook:
+def _load_book(
+    path: Path | None,
+    comparison_mode: str | None,
+    value_z: Path | None = None,
+    notes: list[str] | None = None,
+) -> Rulebook:
     book = load_rulebook(path) if path else load_rulebook()
     if comparison_mode is not None and comparison_mode != book.comparison_mode:
         # In-memory only. The rulebook file is never written by this tool.
         book = replace(book, baseline={**book.baseline, "comparison_mode": comparison_mode})
+    if value_z is not None:
+        book, overlay_notes = apply_value_z(book, load_value_z(value_z))
+        if notes is not None:
+            notes.extend(overlay_notes)
     return book
+
+
+def command_compare(args: argparse.Namespace) -> int:
+    notes: list[str] = []
+    book = _load_book(args.rulebook, None, args.value_z, notes)
+    elemental_enabled = False if args.no_elemental else book.elemental_layer_enabled
+    if args.value_z is None:
+        notes.append(
+            "no --value-z overlay: unless the rulebook defines value_z itself, z-score falls back "
+            "to percent on every condition and the two modes are identical by construction"
+        )
+
+    errors: list[LoadError] = []
+    if args.synthetic:
+        axes = apply_overrides(GRIDS[args.grid], args.axis)
+        label = f"synthetic sweep (grid '{args.grid}', {len(args.axis)} axis override(s))"
+        items = list(generate(axes, as_of=args.as_of, limit=args.limit))
+    else:
+        label = f"directory {args.snapshots}"
+        items = list(load_directory(args.snapshots, errors=errors))
+
+    comparison = compare_modes(book, items, elemental_layer=elemental_enabled, notes=notes)
+    print(render_comparison(comparison, label))
+    if args.json:
+        args.json.write_text(json.dumps(comparison.to_dict(), indent=2), encoding="utf-8")
+        print(f"\nJSON written to {args.json}")
+    return 2 if comparison.total == 0 else (1 if errors else 0)
 
 
 def command_generate(args: argparse.Namespace) -> int:
@@ -138,11 +197,16 @@ def command_generate(args: argparse.Namespace) -> int:
 
 
 def command_run(args: argparse.Namespace) -> int:
-    book = _load_book(args.rulebook, args.comparison_mode)
+    overlay_notes: list[str] = []
+    book = _load_book(args.rulebook, args.comparison_mode, args.value_z, overlay_notes)
     elemental_enabled = False if args.no_elemental else book.elemental_layer_enabled
 
     errors: list[LoadError] = []
     meta: dict[str, Any] = {}
+    if args.value_z is not None:
+        meta["value_z_overlay"] = str(args.value_z)
+    for note in overlay_notes:
+        print(f"NOTE: {note}", file=sys.stderr)
 
     if args.synthetic:
         axes = apply_overrides(GRIDS[args.grid], args.axis)
@@ -206,6 +270,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "generate":
             return command_generate(args)
+        if args.command == "compare":
+            return command_compare(args)
         return command_run(args)
     except ValueError as exc:
         # Bad --axis spec. Values here are sweep parameters the caller typed, not subject data.

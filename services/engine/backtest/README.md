@@ -100,8 +100,26 @@ python -m backtest run --synthetic --axis sleep_pct_of_baseline=none  # rule 1.2
 ```
 
 Axes: `dosha`, `hrv_pct_of_baseline`, `rhr_pct_of_baseline`, `sleep_pct_of_baseline`,
-`wrist_temp_delta_c`, `cycle_day`, `env_profile`, `lab_profile`. Percent axes are percent *of the
-subject's own baseline*, which is the form the rulebook is written in.
+`wrist_temp_delta_c`, `cycle_day`, `env_profile`, `lab_profile`, `variability`. Percent axes are
+percent *of the subject's own baseline*, which is the form the rulebook is written in.
+`variability` (`stock`, `steady`, `variable`) sets the subject's SD as a fraction of baseline;
+the presets use `stock` only.
+
+## Percent vs z-score (`compare`)
+
+Rulebook v1 writes thresholds as percent of baseline; the patent recites a z-score. The engine
+implements both, but a z-score comparison needs a `value_z` on the condition, and the rulebook
+has none. `compare` runs a corpus in **both** modes and reports, per baseline-relative rule, how
+often they agree and which way they disagree:
+
+```bash
+python -m backtest compare --synthetic --axis variability=stock,steady,variable \
+    --value-z ../../config/rules/proposals/value_z.candidates.yaml
+```
+
+`--value-z` overlays proposed thresholds in memory; the rulebook file is never written. Without
+it the two modes are identical by construction and the report says so. The candidates, the
+result and the open decision are in `docs/adr/0010-baseline-comparison-mode.md` (SCRUM-74).
 
 ## Coupling to the engine
 
