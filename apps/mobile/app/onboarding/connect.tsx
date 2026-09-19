@@ -57,6 +57,17 @@ export default function ConnectStep() {
     );
   }
 
+  if (status === "web") {
+    return (
+      <Screen>
+        <Title text="Your signals come from your phone" />
+        <Sub text="Weyos reads Health Connect on your Android phone and sends each day to Weyos. Sign in to the phone app with the same email and connect it there; every decision it makes shows up here too." />
+        <Note text="Nothing is read in the browser. This app shows what the engine decided from the days your phone has sent." />
+        <Button label="Continue" kind="primary" onPress={() => router.replace("/onboarding/learning")} />
+      </Screen>
+    );
+  }
+
   if (status === "not_android") {
     return (
       <Screen>

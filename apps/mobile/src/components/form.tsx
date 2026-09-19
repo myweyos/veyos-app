@@ -16,7 +16,7 @@ import {
   type TextInputProps,
 } from "react-native";
 
-import { color, radius, type } from "../theme/tokens";
+import { color, column, radius, type } from "../theme/tokens";
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
@@ -130,7 +130,7 @@ export function Busy() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.cream },
-  content: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 48 },
+  content: { ...column, paddingHorizontal: 22, paddingTop: 24, paddingBottom: 48 },
   title: {
     fontSize: type.title.size,
     lineHeight: type.title.size * type.title.line,

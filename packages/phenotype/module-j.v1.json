@@ -1,0 +1,169 @@
+{
+  "$comment": "Module J v1.0, the Weyos baseline instrument, from the Chris McPherson advisory pack (2026-09-01): weyos-baseline-questionnaire.html, weyos-chris-walkthrough.html and Weyos_Chris_Worked_Example.xlsx. This file IS the scoring model. Code interprets it; code contains no weights. Bump instrument_version when a question or a weight changes: stored answers are re-scorable, and the version says which model scored them. Trait scores are internal and never reach a user-facing screen (SCRUM-91). Two resolutions in this file need sign-off from the pack's author: J1 feeds both T3 and T5 (the source formulas reference J1a/J1b, which the instrument does not have), and J3 is inverted in T2 but not in T4.",
+  "instrument": "module-j",
+  "instrument_version": "1.0",
+  "schema_version": "1.0",
+
+  "items": [
+    {
+      "id": "J1",
+      "type": "options",
+      "question": "Which is closest to how your appetite usually works?",
+      "options": [
+        "I can easily skip meals without noticing. I feel heavy after eating.",
+        "Fairly relaxed about food. Rarely urgent.",
+        "Middle of the road.",
+        "I notice hunger clearly and prefer to eat on time.",
+        "Strong, sharp appetite. I get irritable if a meal is delayed."
+      ]
+    },
+    {
+      "id": "J2a",
+      "type": "options",
+      "question": "When you go to bed, what usually happens?",
+      "options": [
+        "My mind is active and it takes a while to switch off.",
+        "Sometimes takes a while.",
+        "Varies.",
+        "Usually asleep fairly quickly.",
+        "I fall asleep quickly and sleep deeply."
+      ]
+    },
+    {
+      "id": "J2b",
+      "type": "scale",
+      "question": "How do you feel in the first hour after waking?",
+      "low": "Groggy — I need a long runway",
+      "high": "Alert almost immediately"
+    },
+    {
+      "id": "J3",
+      "type": "options",
+      "question": "How would people describe the way you think and talk?",
+      "options": [
+        "Measured and deliberate. I take time.",
+        "Fairly steady.",
+        "Depends on the situation.",
+        "Fairly quick and direct.",
+        "Fast, direct, straight to the point."
+      ]
+    },
+    {
+      "id": "J4a",
+      "type": "scale",
+      "question": "Do you run warm or cool compared to people around you?",
+      "low": "Cool — cold hands and feet",
+      "high": "Warm — often too hot"
+    },
+    {
+      "id": "J4b",
+      "type": "scale",
+      "question": "How easily do you sweat?",
+      "low": "Rarely",
+      "high": "Very easily"
+    },
+    {
+      "id": "J5",
+      "type": "options",
+      "question": "Which best describes your energy through a typical day?",
+      "options": [
+        "Comes in bursts and drops off suddenly. Unpredictable.",
+        "Somewhat variable.",
+        "Middle.",
+        "Fairly steady once I get going.",
+        "Slow to start, then steady all day."
+      ]
+    },
+    {
+      "id": "J5b",
+      "type": "time_or_none",
+      "question": "Is there a time of day your energy reliably drops?",
+      "none_label": "No consistent dip",
+      "$comment": "Unscored. Goes to the scheduler as the hour never to put a demanding action in."
+    },
+    {
+      "id": "J6",
+      "type": "options",
+      "question": "When you're under real pressure, what's your first move?",
+      "options": [
+        "I go quiet and pull back.",
+        "I internalise it and work through it alone.",
+        "Depends who's involved.",
+        "I get direct and push for a resolution.",
+        "I confront it head-on, sometimes sharply."
+      ]
+    },
+    {
+      "id": "J7",
+      "type": "scale",
+      "question": "How predictable is your body's routine — sleep, appetite, digestion?",
+      "low": "Varies a lot day to day",
+      "high": "Very regular, like clockwork"
+    },
+    {
+      "id": "J8a",
+      "type": "scale",
+      "question": "After a hard day, how long do you need to feel yourself again?",
+      "low": "A couple of days",
+      "high": "I'm fine the next morning"
+    },
+    {
+      "id": "J8b",
+      "type": "scale",
+      "question": "How do your joints and movement feel most days?",
+      "low": "Stiff, click, worse in cold",
+      "high": "Loose, easy, stable",
+      "$comment": "Answered and stored, but carries no weight in v1.0: the pack marks it as a weak T6 term with no weight given. Weight it here when the author supplies one."
+    }
+  ],
+
+  "axes": [
+    { "id": "T1", "name": "Morning activation", "terms": [{ "item": "J2b", "weight": 1.0 }] },
+    { "id": "T2", "name": "Energy curve", "terms": [{ "item": "J5", "weight": 0.6 }, { "item": "J3", "weight": 0.4, "inverted": true }] },
+    { "id": "T3", "name": "Thermal / metabolic", "terms": [{ "item": "J4a", "weight": 0.4 }, { "item": "J4b", "weight": 0.3 }, { "item": "J1", "weight": 0.3 }] },
+    { "id": "T4", "name": "Stress expression", "terms": [{ "item": "J6", "weight": 0.7 }, { "item": "J3", "weight": 0.3 }] },
+    { "id": "T5", "name": "Regularity", "terms": [{ "item": "J7", "weight": 0.6 }, { "item": "J1", "weight": 0.4 }] },
+    { "id": "T6", "name": "Recovery capacity", "terms": [{ "item": "J8a", "weight": 0.6 }, { "item": "J2a", "weight": 0.4 }] }
+  ],
+
+  "scoring": {
+    "$comment": "Each answer is 1–5. An inverted term uses 6 − answer. Weights on an axis sum to 1, so the weighted answer is 1–5 and normalise(x) = (x − 1) / 4 × 100.",
+    "answer_min": 1,
+    "answer_max": 5
+  },
+
+  "confidence": {
+    "$comment": "The engine only personalises on a trait whose confidence clears the gate. Self-report at signup does not, so on day one the product uses population defaults, and the description is shown only because a description is not a recommendation.",
+    "gate": 0.5,
+    "sources": {
+      "self_report_onboarding": 0.4,
+      "self_report_confirmed_30d": 0.6,
+      "device_agrees": 0.85,
+      "device_contradicts": 0.3
+    },
+    "caps": { "T4": 0.6 }
+  },
+
+  "description": {
+    "$comment": "A trait produces a sentence only outside the middle band; a middling score says nothing worth saying. The most distinctive traits are read back, in trait order, up to max_fragments.",
+    "low_at_or_below": 40,
+    "high_at_or_above": 60,
+    "max_fragments": 4,
+    "fragments": {
+      "T1": { "low": "You need a runway in the morning before you're really operating.", "high": "You're up and functioning almost straight away." },
+      "T2": { "low": "Your energy comes in bursts — strong, then it drops.", "high": "You're steady all day once you're moving." },
+      "T3": { "low": "You run cool and your appetite is easygoing.", "high": "You run warm, and a delayed meal genuinely affects you." },
+      "T4": { "low": "Under pressure you tend to go quiet and work it through yourself.", "high": "Under pressure you get direct and push for a resolution." },
+      "T5": { "low": "Your rhythm varies a lot day to day at the moment.", "high": "Your body keeps a regular rhythm." },
+      "T6": { "low": "You need real recovery time after a heavy day.", "high": "You bounce back quickly from a hard day." }
+    },
+    "pairs": [
+      {
+        "id": "T1+T2",
+        "when": { "T1": "low", "T2": "high" },
+        "text": "You're a slow starter who runs steady once you're going.",
+        "$comment": "Two fragments collapse into one line because they say the same thing twice. Added in the worked example, not in the source spec: needs the author's confirmation."
+      }
+    ]
+  }
+}

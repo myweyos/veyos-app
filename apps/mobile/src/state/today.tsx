@@ -1,7 +1,7 @@
-import * as SecureStore from "expo-secure-store";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 import { ApiError, api } from "../lib/api";
+import { deviceStore } from "../lib/deviceStore";
 import { availability, grantedTypes } from "../lib/healthConnect";
 import { sync } from "../lib/sync";
 import { buildToday, type TodayModel } from "../lib/todayModel";
@@ -28,7 +28,7 @@ const DECLINED_KEY = "weyos.declined.v1";
 
 async function declinedIds(): Promise<string[]> {
   try {
-    return JSON.parse((await SecureStore.getItemAsync(DECLINED_KEY)) ?? "[]") as string[];
+    return JSON.parse((await deviceStore.getItem(DECLINED_KEY)) ?? "[]") as string[];
   } catch {
     return [];
   }
@@ -76,7 +76,7 @@ export function TodayProvider({ children }: { children: ReactNode }) {
     if (model === null) return;
     const ids = await declinedIds();
     const next = [...ids.filter((id) => id !== model.envelope.decision_id), model.envelope.decision_id].slice(-60);
-    await SecureStore.setItemAsync(DECLINED_KEY, JSON.stringify(next));
+    await deviceStore.setItem(DECLINED_KEY, JSON.stringify(next));
     await load();
   }, [model, load]);
 
@@ -91,5 +91,5 @@ export function useToday(): TodayValue {
 }
 
 export async function forgetDeclines(): Promise<void> {
-  await SecureStore.deleteItemAsync(DECLINED_KEY);
+  await deviceStore.deleteItem(DECLINED_KEY);
 }

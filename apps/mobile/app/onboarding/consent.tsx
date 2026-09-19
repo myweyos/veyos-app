@@ -40,7 +40,7 @@ export default function ConsentStep() {
     try {
       await api.recordConsents({ health_data: true, ...choices }, CONSENT_COPY_VERSION);
       await refreshMe();
-      router.push(choices.cycle_data ? "/onboarding/cycle" : "/onboarding/food");
+      router.push("/onboarding/basics");
     } catch {
       setError("Couldn’t save your choices. Check your connection and try again.");
     } finally {

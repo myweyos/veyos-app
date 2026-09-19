@@ -21,7 +21,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Card, Disclaimer, Link, TraceRow, WarnBox } from "../components/primitives";
 import type { TodayModel } from "../lib/todayModel";
-import { color, type } from "../theme/tokens";
+import { color, column, type } from "../theme/tokens";
 import { LAYER_NAMES, layerPillar, longDate } from "./copy";
 
 export function Trace({
@@ -150,7 +150,7 @@ function layerLabel(layer: number): string {
 
 const s = StyleSheet.create({
   page: { backgroundColor: color.cream },
-  content: { paddingHorizontal: 20, paddingBottom: 60 },
+  content: { ...column, paddingHorizontal: 20, paddingBottom: 60 },
   title: {
     fontSize: type.title.size,
     fontWeight: "600",

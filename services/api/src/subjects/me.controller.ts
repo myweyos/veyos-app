@@ -11,12 +11,32 @@ import {
 } from "@nestjs/common";
 
 import { AuthGuard, CurrentSubject, type AuthedSubject } from "../auth/auth.guard";
+import { BaselineRepository } from "./baseline.repository";
 import { ConsentRepository, PURPOSES, type ConsentState, type Purpose } from "./consent.repository";
 import { SubjectRepository, type Dosha, type Profile, type Region } from "./subject.repository";
 import { SupabaseAdminClient } from "./supabase-admin.client";
 
+/** In the order the A7 answers are listed: cold/dry/unsettled, overheated, heavy/sluggish. */
 const DOSHAS: readonly Dosha[] = ["vata", "pitta", "kapha"];
 const REGIONS: readonly Region[] = ["UK", "US"];
+
+/** What the client sees of the account. No constitution value, by design. */
+export interface MeView {
+  region: Region | null;
+  constitution_set: boolean;
+  consents: ConsentState;
+  onboarded: boolean;
+  /** Monthly waist re-ask (SCRUM-99): due when the last measurement is older than 30 days. */
+  waist: { due: boolean; last_measured_on: string | null };
+}
+
+const WAIST_REASK_DAYS = 30;
+
+export function waistDue(lastMeasuredOn: string | null, today: string): boolean {
+  if (lastMeasuredOn === null) return true;
+  const age = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${lastMeasuredOn}T00:00:00Z`)) / 86_400_000;
+  return age >= WAIST_REASK_DAYS;
+}
 
 /**
  * The signed-in account: profile (onboarding answers) and deletion.
@@ -31,6 +51,7 @@ export class MeController {
   constructor(
     private readonly subjects: SubjectRepository,
     private readonly consents: ConsentRepository,
+    private readonly baselines: BaselineRepository,
     private readonly admin: SupabaseAdminClient,
   ) {}
 
@@ -42,14 +63,32 @@ export class MeController {
   @Header("cache-control", "no-store")
   async me(
     @CurrentSubject() subject: AuthedSubject,
-  ): Promise<Profile & { consents: ConsentState; onboarded: boolean }> {
-    const [profile, consents] = await Promise.all([
+  ): Promise<MeView> {
+    const [profile, consents, waist] = await Promise.all([
       this.subjects.profile(subject.subjectRef),
       this.consents.current(subject.subjectRef),
+      this.baselines.waistHistory(subject.subjectRef),
     ]);
-    const onboarded =
-      profile.region !== null && profile.constitution !== null && consents.health_data;
-    return { ...profile, consents, onboarded };
+    const last = waist[waist.length - 1]?.measured_on ?? null;
+    return this.view(profile, consents, last);
+  }
+
+  /**
+   * SCRUM-91: no API surface returns a type label. The constitution is internal to the engine;
+   * the client only learns whether it has been set.
+   */
+  private view(profile: Profile, consents: ConsentState, lastWaistOn: string | null): MeView {
+    const constitution_set = profile.constitution !== null;
+    return {
+      region: profile.region,
+      constitution_set,
+      consents,
+      onboarded: profile.region !== null && constitution_set && consents.health_data,
+      waist: {
+        due: waistDue(lastWaistOn, new Date().toISOString().slice(0, 10)),
+        last_measured_on: lastWaistOn,
+      },
+    };
   }
 
   /**
@@ -74,11 +113,19 @@ export class MeController {
     return this.consents.record(subject.subjectRef, decisions, body.copy_version);
   }
 
+  /**
+   * Body: `{ region?, constitution?: { answer: 1 | 2 | 3 } }`.
+   *
+   * The food-profile question (design pack A7) has three answers, in the order the pack lists
+   * them. The client sends the answer's position; the mapping to the engine's constitution
+   * happens here, so no type label exists on the device (SCRUM-91). This step is replaced by
+   * axis thresholds in SCRUM-92.
+   */
   @Put("profile")
   async updateProfile(
     @CurrentSubject() subject: AuthedSubject,
-    @Body() body: { region?: unknown; constitution?: { dosha?: unknown } },
-  ): Promise<Profile> {
+    @Body() body: { region?: unknown; constitution?: { answer?: unknown } },
+  ): Promise<MeView> {
     const patch: { region?: Region; dosha?: Dosha } = {};
     if (body.region !== undefined) {
       if (!REGIONS.includes(body.region as Region)) {
@@ -86,14 +133,20 @@ export class MeController {
       }
       patch.region = body.region as Region;
     }
-    const dosha = body.constitution?.dosha;
-    if (dosha !== undefined) {
-      if (!DOSHAS.includes(dosha as Dosha)) {
-        throw new BadRequestException({ error: "invalid_dosha", allowed: DOSHAS });
+    const answer = body.constitution?.answer;
+    if (answer !== undefined) {
+      const dosha = typeof answer === "number" ? DOSHAS[answer - 1] : undefined;
+      if (dosha === undefined) {
+        throw new BadRequestException({ error: "invalid_constitution_answer", allowed: [1, 2, 3] });
       }
-      patch.dosha = dosha as Dosha;
+      patch.dosha = dosha;
     }
-    return this.subjects.updateProfile(subject.subjectRef, patch);
+    const [profile, consents, waist] = await Promise.all([
+      this.subjects.updateProfile(subject.subjectRef, patch),
+      this.consents.current(subject.subjectRef),
+      this.baselines.waistHistory(subject.subjectRef),
+    ]);
+    return this.view(profile, consents, waist[waist.length - 1]?.measured_on ?? null);
   }
 
   /**

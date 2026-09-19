@@ -5,6 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start --dev-client",
+    "web": "expo start --web",
+    "export:web": "expo export --platform web",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild --clean",

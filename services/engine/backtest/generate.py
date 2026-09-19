@@ -62,6 +62,17 @@ ENV_PROFILES: dict[str, dict[str, Any]] = {
     },
 }
 
+# How wide the subject's own history is, as a coefficient of variation (SD / baseline), for the
+# two signals whose baselines carry an SD. This is the axis on which the percent and z-score
+# comparison forms DIVERGE: at "stock" they coincide for the candidate value_z thresholds
+# (20% of HRV is exactly 2 SD; 5% of RHR is exactly 1 SD), so a sweep at "stock" alone can
+# never tell them apart. See SCRUM-74 and docs/adr/0010-baseline-comparison-mode.md.
+VARIABILITY_PROFILES: dict[str, dict[str, float]] = {
+    "stock": {"hrv_cv": 0.10, "rhr_cv": 0.05},
+    "steady": {"hrv_cv": 0.05, "rhr_cv": 0.025},
+    "variable": {"hrv_cv": 0.20, "rhr_cv": 0.10},
+}
+
 # Layer 5 fires only on present-AND-abnormal. "none" supplies no labs at all, which is the
 # common production case and which makes every L5 rule UNEVALUABLE rather than false.
 LAB_PROFILES: dict[str, dict[str, Any]] = {
@@ -126,6 +137,7 @@ class Axes:
     cycle_day: tuple[int | None, ...]
     env_profile: tuple[str, ...]
     lab_profile: tuple[str, ...]
+    variability: tuple[str, ...] = ("stock",)
 
     def size(self) -> int:
         return (
@@ -137,6 +149,7 @@ class Axes:
             * len(self.cycle_day)
             * len(self.env_profile)
             * len(self.lab_profile)
+            * len(self.variability)
         )
 
     def describe(self) -> dict[str, Any]:
@@ -149,6 +162,7 @@ class Axes:
             "cycle_day": list(self.cycle_day),
             "env_profile": list(self.env_profile),
             "lab_profile": list(self.lab_profile),
+            "variability": list(self.variability),
             "size": self.size(),
         }
 
@@ -229,6 +243,14 @@ def _parse_env(raw: str) -> str:
     return raw
 
 
+def _parse_variability(raw: str) -> str:
+    if raw not in VARIABILITY_PROFILES:
+        raise ValueError(
+            f"unknown variability '{raw}' (expected one of {', '.join(sorted(VARIABILITY_PROFILES))})"
+        )
+    return raw
+
+
 def _parse_lab(raw: str) -> str:
     if raw not in LAB_PROFILES:
         raise ValueError(f"unknown lab_profile '{raw}' (expected one of {', '.join(sorted(LAB_PROFILES))})")
@@ -245,6 +267,7 @@ AXIS_PARSERS: dict[str, Any] = {
     "cycle_day": _parse_optional_int,
     "env_profile": _parse_env,
     "lab_profile": _parse_lab,
+    "variability": _parse_variability,
 }
 
 
@@ -289,6 +312,7 @@ def build_snapshot(
     cycle_day: int | None,
     env_profile: str,
     lab_profile: str,
+    variability: str = "stock",
     as_of: str = SYNTHETIC_AS_OF,
 ) -> dict[str, Any]:
     """One SignalSnapshot in canonical form.
@@ -302,6 +326,13 @@ def build_snapshot(
     cycle: dict[str, Any] | None = (
         None if cycle_day is None else {"cycle_day": cycle_day, "cycle_length": 28, "tracked": True}
     )
+
+    cv = VARIABILITY_PROFILES[variability]
+    baselines = {
+        **BASELINES,
+        "hrv_sd": round(BASELINES["hrv_ms"] * cv["hrv_cv"], 3),
+        "rhr_sd": round(BASELINES["rhr_bpm"] * cv["rhr_cv"], 3),
+    }
 
     return {
         "schema_version": 1,
@@ -317,7 +348,7 @@ def build_snapshot(
             "steps": 8000,
             "source": "simulated",
         },
-        "baselines": dict(BASELINES),
+        "baselines": baselines,
         "cycle": cycle,
         "environment": dict(ENV_PROFILES[env_profile]),
         "labs": {k: dict(v) for k, v in LAB_PROFILES[lab_profile].items()},
@@ -348,8 +379,9 @@ def generate(
         axes.cycle_day,
         axes.env_profile,
         axes.lab_profile,
+        axes.variability,
     )
-    for index, (dosha, hrv, rhr, sleep, temp, cycle_day, env, lab) in enumerate(product):
+    for index, (dosha, hrv, rhr, sleep, temp, cycle_day, env, lab, variability) in enumerate(product):
         if limit is not None and index >= limit:
             return
         snapshot = build_snapshot(
@@ -362,6 +394,7 @@ def generate(
             cycle_day=cycle_day,
             env_profile=env,
             lab_profile=lab,
+            variability=variability,
             as_of=as_of,
         )
         yield f"syn{index:06d}", snapshot
