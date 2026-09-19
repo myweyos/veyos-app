@@ -9,6 +9,12 @@ import type { DecisionEnvelope, SignalSnapshot } from "@weyos/shared-schema";
 import { SchemaRegistry } from "./schema.registry";
 
 const DEFAULT_URL = "http://127.0.0.1:8000";
+
+/** What the sidecar's `/rulebook` returns. Ids, names and layers only: no thresholds. */
+export interface RulebookListing {
+  version: number;
+  rules: Array<{ id: string; name: string; layer: number; enabled: boolean }>;
+}
 /** The engine is sub-millisecond. Over a second means sick, not slow. */
 const DEFAULT_TIMEOUT_MS = 1500;
 
@@ -53,6 +59,16 @@ export class EngineClient {
       `decide ok ${Date.now() - started}ms id=${envelope.decision_id} rulebook=v${envelope.engine.rulebook_version}`,
     );
     return envelope;
+  }
+
+  async rulebook(): Promise<RulebookListing> {
+    try {
+      const response = await this.fetchWithTimeout(`${this.url}/rulebook`, { method: "GET" });
+      return (await this.mapStatus(response).json()) as RulebookListing;
+    } catch (error) {
+      if (error instanceof BadGatewayException) throw error;
+      throw new ServiceUnavailableException({ error: "engine_unavailable" });
+    }
   }
 
   async health(): Promise<{ reachable: boolean; rulebookVersion?: number }> {

@@ -19,7 +19,7 @@ export class SignalSnapshotRepository {
   /**
    * Upsert a snapshot for (subject_ref, as_of).
    *
-   * On conflict (same subject, same day) the row is overwritten. See ADR 0007 for the open
+   * On conflict (same subject, same day) the row is overwritten. See ADR 0009 for the open
    * question on same-day multi-source snapshots — this behaviour may need revision once Phase 3
    * (Native Signals) connects real wearables.
    *
@@ -179,5 +179,20 @@ export class SignalSnapshotRepository {
         AND as_of >= (${beforeDate}::date - ${windowDays} * INTERVAL '1 day')::date
       ORDER BY as_of DESC
     `;
+  }
+
+  /**
+   * How many days of history the subject has before beforeDate (exclusive): every distinct
+   * as_of with a stored snapshot, however far back. This is `days_of_history`, which the engine
+   * compares to `min_days_for_baseline` to decide cold start. It is NOT the averaging window.
+   */
+  async historyDayCount(subjectRef: string, beforeDate: string): Promise<number> {
+    const rows = await this.sql<{ days: number }[]>`
+      SELECT COUNT(DISTINCT as_of)::int AS days
+      FROM signal_snapshots
+      WHERE subject_ref = ${subjectRef}
+        AND as_of < ${beforeDate}::date
+    `;
+    return rows[0]?.days ?? 0;
   }
 }

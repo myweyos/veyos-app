@@ -59,7 +59,8 @@ intervention. See the caveat in the next section before trusting that.
 
 | Fixture | What it pins |
 |---|---|
-| **F5** | **The James gap.** RHR 26% above baseline with no temperature rise fires nothing but L3, so the app says "in balance today". Known product defect, awaiting a rule decision. |
+| F5 | RHR 26% up with **no** wrist temperature: 1.3 is unevaluable, not false, so the day is Partial rather than "in balance". |
+| **F19** | **The RHR-alone gap.** RHR 26% above baseline with a temperature that is present and normal fires nothing but L3, so the app says "in balance today". Known product defect, awaiting the rule 1.4 decision. |
 | F5b | Candidate rule 1.4 (Cardiovascular Load) would close it. `enabled: false`, xfail. |
 | **F9** | **Cross-layer precedence is real.** L5 block beats L2 mandate. |
 | **F11** | **Layer separation is real.** Elemental layer off → only L1/L2/L5 fire. |
@@ -67,6 +68,12 @@ intervention. See the caveat in the next section before trusting that.
 | F12 | Cold start degrades to `insufficient_baseline` rather than pretending. |
 | F13 | `cycle_day > 28` is undefined; no L2 rule fires and the engine says so. |
 | F14 | Missing signal → unevaluable, not false. |
+| **F16** | **A lower layer's block beats a higher layer's mandate.** Vata (L3) blocks raw on an Ovulatory (L2) day that mandates it; L3 wins. The opposite of precedence, and the one dimension that doesn't follow it — `tests/test_precedence.py` proves every other one for every layer pair. F16b is the precedence reading, xfail. Open spec question. |
+| F17 / F18 | A missing wrist temperature makes 1.3 unevaluable when RHR is elevated (F17), but not when RHR is at baseline, because all(UNKNOWN, FALSE) is FALSE (F18). |
+
+Every subject also carries unevaluable 2.x rows with no cycle and 5.x rows with no labs, which
+reads identically to a signal gap. The engine has no notion of "not applicable". See
+`docs/decision-object-contract.md` §5.
 
 Also unresolved: percentage vs z-score comparison (rulebook says one, the patent recites the
 other — both are implemented, the choice is a backtest decision), and whether rule 1.2 reads

@@ -1,112 +1,100 @@
 import { NotFoundException } from "@nestjs/common";
 import type { DecisionEnvelope } from "@weyos/shared-schema";
 
-import type { EngineClient } from "../engine/engine.client";
+import type { BaselineComputationService } from "../baseline/baseline-computation.service";
 import type { DecisionRepository } from "../store/decision.repository";
+import type { SignalSnapshotRepository } from "../store/signal-snapshot.repository";
 import { DecisionService } from "./decision.service";
-import type { PersonaSource } from "./personas.source";
 
-function makeEnvelope(id: string): DecisionEnvelope {
-  return { decision_id: id } as unknown as DecisionEnvelope;
+const ME = "sub_authed00001";
+
+function makeEnvelope(id: string, subjectRef = ME): DecisionEnvelope {
+  return {
+    decision_id: id,
+    decision: { subject_ref: subjectRef, as_of: "2026-09-14" },
+  } as unknown as DecisionEnvelope;
 }
 
-function makePersonaSource(): jest.Mocked<Pick<PersonaSource, "resolve" | "demoEnabled" | "matrix">> {
+function makeRepo(
+  overrides: Partial<Record<"findById" | "latestForSubject", jest.Mock>> = {},
+): jest.Mocked<Pick<DecisionRepository, "findById" | "latestForSubject">> {
   return {
-    demoEnabled: false,
-    resolve: jest.fn(),
-    matrix: jest.fn().mockReturnValue([]),
+    findById: overrides.findById ?? jest.fn().mockResolvedValue(null),
+    latestForSubject: overrides.latestForSubject ?? jest.fn().mockResolvedValue(null),
   };
 }
 
-function makeEngine(): jest.Mocked<Pick<EngineClient, "health" | "decide">> {
-  return {
-    health: jest.fn().mockResolvedValue({ reachable: false }),
-    decide: jest.fn(),
-  };
+function makeSnapshots(): jest.Mocked<Pick<SignalSnapshotRepository, "latestForSubject">> {
+  return { latestForSubject: jest.fn().mockResolvedValue(null) };
 }
 
-function makeRepo(): jest.Mocked<Pick<DecisionRepository, "findById" | "save">> {
-  return {
-    findById: jest.fn(),
-    save: jest.fn().mockResolvedValue(undefined),
-  };
+function makeRedis(value: string | null = null): { get: jest.Mock; set: jest.Mock } {
+  return { get: jest.fn().mockResolvedValue(value), set: jest.fn().mockResolvedValue("OK") };
 }
+
+function service(
+  repo = makeRepo(),
+  redis?: { get: jest.Mock; set: jest.Mock },
+  snapshots = makeSnapshots(),
+): DecisionService {
+  const baselines = { computeFor: jest.fn().mockResolvedValue(undefined) };
+  return new DecisionService(
+    repo as unknown as DecisionRepository,
+    snapshots as unknown as SignalSnapshotRepository,
+    baselines as unknown as BaselineComputationService,
+    redis as never,
+  );
+}
+
+describe("DecisionService.today()", () => {
+  it("serves the subject's latest STORED decision and never calls the engine", async () => {
+    const envelope = makeEnvelope("stored0000000001");
+    const repo = makeRepo({ latestForSubject: jest.fn().mockResolvedValue(envelope) });
+    expect(await service(repo).today(ME)).toBe(envelope);
+    expect(repo.latestForSubject).toHaveBeenCalledWith(ME);
+  });
+
+  it("404s with no_decision_yet for a subject who has never ingested", async () => {
+    await expect(service().today(ME)).rejects.toThrow(NotFoundException);
+  });
+});
 
 describe("DecisionService.byDecisionId()", () => {
-  it("returns the envelope directly from the in-memory cache (no DB call)", async () => {
-    const envelope = makeEnvelope("cached-id");
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-    );
-    // Seed the private cache by writing to it through the public map interface
-    (service as unknown as { byId: Map<string, DecisionEnvelope> }).byId.set(
-      "cached-id",
-      envelope,
-    );
-
-    const result = await service.byDecisionId("cached-id");
-
-    expect(result).toBe(envelope);
+  it("returns the subject's own decision from the store and caches it", async () => {
+    const envelope = makeEnvelope("mine000000000001");
+    const redis = makeRedis();
+    const repo = makeRepo({ findById: jest.fn().mockResolvedValue(envelope) });
+    expect(await service(repo, redis).byDecisionId("mine000000000001", ME)).toBe(envelope);
+    expect(redis.set).toHaveBeenCalled();
   });
 
-  it("falls through to the DecisionRepository on a cache miss", async () => {
-    const envelope = makeEnvelope("db-id");
+  it("serves a cache hit without touching Postgres", async () => {
+    const envelope = makeEnvelope("cached0000000001");
     const repo = makeRepo();
-    repo.findById.mockResolvedValue(envelope);
-
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-      repo as unknown as DecisionRepository,
+    const result = await service(repo, makeRedis(JSON.stringify(envelope))).byDecisionId(
+      "cached0000000001",
+      ME,
     );
-
-    const result = await service.byDecisionId("db-id");
-
-    expect(repo.findById).toHaveBeenCalledWith("db-id");
-    expect(result).toBe(envelope);
-  });
-
-  it("throws NotFoundException when neither cache nor DB has the id", async () => {
-    const repo = makeRepo();
-    repo.findById.mockResolvedValue(null);
-
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-      repo as unknown as DecisionRepository,
-    );
-
-    await expect(service.byDecisionId("ghost-id")).rejects.toThrow(NotFoundException);
-  });
-
-  it("throws NotFoundException when no repo is injected and cache misses", async () => {
-    // Without a DB (e.g. unit-test environment), a cache miss must still 404 cleanly.
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-      // no repo
-    );
-
-    await expect(service.byDecisionId("any-id")).rejects.toThrow(NotFoundException);
-  });
-
-  it("does not call the repo when the id is found in cache", async () => {
-    const envelope = makeEnvelope("cached-only");
-    const repo = makeRepo();
-
-    const service = new DecisionService(
-      makeEngine() as unknown as EngineClient,
-      makePersonaSource() as unknown as PersonaSource,
-      repo as unknown as DecisionRepository,
-    );
-    (service as unknown as { byId: Map<string, DecisionEnvelope> }).byId.set(
-      "cached-only",
-      envelope,
-    );
-
-    await service.byDecisionId("cached-only");
-
+    expect(result.decision_id).toBe("cached0000000001");
     expect(repo.findById).not.toHaveBeenCalled();
+  });
+
+  it("404s on someone else's decision id: never reveals that it exists", async () => {
+    const theirs = makeEnvelope("theirs0000000001", "sub_someoneelse01");
+    const repo = makeRepo({ findById: jest.fn().mockResolvedValue(theirs) });
+    await expect(service(repo).byDecisionId("theirs0000000001", ME)).rejects.toThrow(
+      NotFoundException,
+    );
+    const cached = makeRedis(JSON.stringify(theirs));
+    await expect(service(makeRepo(), cached).byDecisionId("theirs0000000001", ME)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it("treats a broken cache as a miss, not an outage", async () => {
+    const envelope = makeEnvelope("mine000000000002");
+    const redis = { get: jest.fn().mockRejectedValue(new Error("down")), set: jest.fn() };
+    const repo = makeRepo({ findById: jest.fn().mockResolvedValue(envelope) });
+    expect(await service(repo, redis).byDecisionId("mine000000000002", ME)).toBe(envelope);
   });
 });

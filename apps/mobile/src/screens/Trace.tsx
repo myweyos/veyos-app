@@ -10,23 +10,38 @@
  * The title changes with the outcome: "Why nothing changed" when no live rule fired, "Why
  * tonight changed" when one did. Both are honest; only one of them is true on a given day.
  *
- * "Not applied" and "couldn't be checked" are rendered as separate blocks. Collapsing them
- * would be the exact dishonesty three-valued evaluation exists to prevent.
+ * Rules that couldn't be evaluated are split by layer, as the pack draws them. A live signal
+ * that didn't come through is "couldn't be checked". Cycle rules for someone who doesn't track
+ * a cycle, and lab rules with no values on file, are "not applicable" rather than a gap. The
+ * engine can't tell those apart yet (open question partial-is-narrowed-to-layer-1); the
+ * client knows which data the subject chose to share, so it labels them. It decides nothing.
  */
 
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import type { DemoDay } from "@weyos/demo-fixtures";
-
 import { Card, Disclaimer, Link, TraceRow, WarnBox } from "../components/primitives";
-import { color, space, type } from "../theme/tokens";
+import type { TodayModel } from "../lib/todayModel";
+import { color, type } from "../theme/tokens";
 import { LAYER_NAMES, layerPillar, longDate } from "./copy";
 
-export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
-  const decision = day.decision;
+export function Trace({
+  model,
+  tracksCycle,
+  onBack,
+}: {
+  model: TodayModel;
+  tracksCycle: boolean;
+  onBack: () => void;
+}) {
+  const decision = model.decision;
   const fired = [...decision.fired_rules].sort((a, b) => a.layer - b.layer);
   const warnings = decision.warnings ?? [];
   const validatedOnly = decision.elemental_layer_enabled === false;
+  const unevaluable = model.envelope.presentation.unevaluable_rule_ids;
+  const inLayer = (layer: number) => unevaluable.filter((id) => model.layerOf.get(id) === layer);
+  const liveGaps = inLayer(1);
+  const cycleRules = inLayer(2);
+  const labRules = inLayer(5);
 
   // A live-biometric rule firing is what makes tonight "changed" rather than "unchanged".
   const liveRuleFired = fired.some((r) => r.layer === 1);
@@ -51,19 +66,39 @@ export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
 
       {/* Absence is information. A trace that lists only hits reads as a justification
           rather than a record. */}
-      {day.unevaluable.length > 0 && (
-        <>
-          <Text style={s.sect}>Not applied</Text>
-          <TraceRow
-            name="Couldn't be checked"
-            layerLabel={`${day.unevaluable.length} rule${day.unevaluable.length === 1 ? "" : "s"} · unevaluable`}
-            evidence={
-              "A reading these need hasn't come through, so I left them alone rather than " +
-              "assuming everything was fine."
-            }
-            off
-          />
-        </>
+      {(liveGaps.length > 0 || cycleRules.length > 0 || labRules.length > 0) && (
+        <Text style={s.sect}>Not applied</Text>
+      )}
+      {liveGaps.length > 0 && (
+        <TraceRow
+          name="Couldn't be checked"
+          layerLabel={`${LAYER_NAMES[1]} · ${plural(liveGaps.length)} unevaluable`}
+          evidence={
+            "A reading these need hasn't come through, so I left them alone rather than " +
+            "assuming everything was fine."
+          }
+          off
+        />
+      )}
+      {cycleRules.length > 0 && (
+        <TraceRow
+          name={LAYER_NAMES[2] ?? "Cycle phase"}
+          layerLabel="Layer 2"
+          evidence={
+            tracksCycle
+              ? "Your cycle day hasn't come through, so cycle guidance couldn't be checked."
+              : "Not applicable to you."
+          }
+          off
+        />
+      )}
+      {labRules.length > 0 && (
+        <TraceRow
+          name={LAYER_NAMES[5] ?? "Lab results"}
+          layerLabel="Layer 5"
+          evidence="No lab values on file."
+          off
+        />
       )}
 
       {validatedOnly && (
@@ -89,24 +124,24 @@ export function Trace({ day, onBack }: { day: DemoDay; onBack: () => void }) {
           <Text style={s.techHead}>Technical detail</Text>
           <Text style={s.mono}>
             {fired.map((r) => `${r.rule_id} L${r.layer} p${r.priority}`).join("  ·  ")}
-            {day.unevaluable.length > 0
-              ? `\nunevaluable: ${day.unevaluable.join(", ")}`
-              : ""}
+            {unevaluable.length > 0 ? `\nunevaluable: ${unevaluable.join(", ")}` : ""}
             {validatedOnly ? "\nvalidated_only_layers = [1,2,5]" : ""}
           </Text>
         </Card>
       </View>
 
-      {/* Boring, and the reason the screen is auditable. The pack shows a decision id here;
-          decision.schema.json carries none today — Phase 3 adds it as a content hash. */}
+      {/* Boring, and the reason the screen is auditable: the rulebook version and the
+          content-hash decision id (ADR 0006) identify exactly what was decided. */}
       <Disclaimer
-        extra={`Rulebook v${decision.rulebook_version} · ${longDate(decision.as_of)}${
-          validatedOnly ? " · validated signals only" : ""
-        }`}
+        extra={`Rulebook v${decision.rulebook_version} · decision ${model.envelope.decision_id} · ${longDate(
+          decision.as_of,
+        )}${validatedOnly ? " · validated signals only" : ""}`}
       />
     </ScrollView>
   );
 }
+
+const plural = (n: number): string => `${n} rule${n === 1 ? "" : "s"}`;
 
 function layerLabel(layer: number): string {
   const name = LAYER_NAMES[layer] ?? `Layer ${layer}`;

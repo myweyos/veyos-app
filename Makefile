@@ -15,19 +15,13 @@ engine-test: ## Golden fixtures. This suite must never go red.
 	cd services/engine && python3 -m pytest
 
 engine-lint: ## ruff + mypy on the engine
-	cd services/engine && python3 -m ruff check . && python3 -m mypy weyos_engine backtest demo_driver
+	cd services/engine && python3 -m ruff check . && python3 -m mypy weyos_engine backtest
 
 backtest: ## Rulebook backtest over the synthetic sweep, e.g. make backtest GRID=quick
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary)
 
 backtest-validated: ## Same, in validated-biometrics-only mode
 	cd services/engine && python3 -m backtest run --synthetic --grid $(or $(GRID),boundary) --no-elemental
-
-demo: ## Walk the scripted demo scenarios, e.g. make demo PERSONA=james
-	cd services/engine && python3 -m demo_driver $(if $(PERSONA),--persona $(PERSONA),--all)
-
-demo-regenerate: ## Rebuild demo-fixtures expected/ + decisions/ after a scenario or rulebook change
-	cd services/engine && python3 -m demo_driver --generate
 
 web: ## Run the app on the Android Studio emulator (expo run:android)
 	npm run android --workspace @weyos/mobile
@@ -48,11 +42,11 @@ boundaries: ## Enforce service boundaries (no cross-imports except via shared pa
 	python3 -m unittest discover -s tools/tests
 	python3 tools/check_service_boundaries.py
 
-decision: ## Print a decision trace, e.g. make decision PERSONA=alex STATE=crash
-	cd services/engine && python3 -m weyos_engine.cli --persona $(or $(PERSONA),sarah) --state $(or $(STATE),crash)
+decision: ## Print a decision trace, e.g. make decision SNAPSHOT=packages/test-fixtures/snapshots/pitta-heat.json
+	python3 -m weyos_engine.cli --snapshot $(or $(SNAPSHOT),packages/test-fixtures/snapshots/vata-cycling.json)
 
 decision-validated: ## Same, in validated-biometrics-only mode
-	cd services/engine && python3 -m weyos_engine.cli --persona $(or $(PERSONA),alex) --state $(or $(STATE),crash) --no-elemental
+	python3 -m weyos_engine.cli --snapshot $(or $(SNAPSHOT),packages/test-fixtures/snapshots/pitta-heat.json) --no-elemental
 
 infra-up: ## Postgres/Timescale + Redis
 	docker compose up -d
@@ -63,4 +57,4 @@ infra-down:
 dev: infra-up ## Infra + API in watch mode
 	npm run dev --workspace @weyos/api
 
-.PHONY: help setup test engine-test engine-lint api-test typecheck boundaries decision decision-validated backtest backtest-validated demo demo-regenerate web sidecar sidecar-test infra-up infra-down dev
+.PHONY: help setup test engine-test engine-lint api-test typecheck boundaries decision decision-validated backtest backtest-validated web sidecar sidecar-test infra-up infra-down dev

@@ -20,12 +20,16 @@ from weyos_engine.engine import decide
 from weyos_engine.models import Snapshot
 
 FIXTURES = Path(__file__).parent / "fixtures"
-# Persona baselines are shared across three surfaces and live in packages/demo-fixtures.
-# The golden EXPECTATIONS stay here — those are the engine's regression net and nothing
-# else consumes them.
-DEMO_FIXTURES = Path(__file__).resolve().parents[3] / "packages" / "demo-fixtures"
-PERSONAS = json.loads((DEMO_FIXTURES / "personas.json").read_text(encoding="utf-8"))
+# Synthetic base snapshots are shared test data (engine, sidecar, API) and live in
+# packages/test-fixtures. The golden EXPECTATIONS stay here — those are the engine's
+# regression net and nothing else consumes them.
+SNAPSHOTS = Path(__file__).resolve().parents[3] / "packages" / "test-fixtures" / "snapshots"
 GOLDEN = yaml.safe_load((FIXTURES / "golden.yaml").read_text(encoding="utf-8"))
+
+
+def load_base(name: str) -> dict[str, Any]:
+    raw: dict[str, Any] = json.loads((SNAPSHOTS / f"{name}.json").read_text(encoding="utf-8"))
+    return raw
 
 
 def _strip_comments(value: Any) -> Any:
@@ -47,13 +51,11 @@ def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_snapshot(fixture: dict[str, Any]) -> dict[str, Any]:
-    persona = PERSONAS[fixture["persona"]]
-    raw = _strip_comments(persona["calm"])
-    if fixture.get("state") == "crash":
-        raw = _deep_merge(raw, _strip_comments(persona["crash"]))
+    raw = _strip_comments(load_base(fixture["base"]))
     if fixture.get("overrides"):
         raw = _deep_merge(raw, _strip_comments(fixture["overrides"]))
-    return raw
+    result: dict[str, Any] = raw
+    return result
 
 
 def run(fixture: dict[str, Any]) -> dict[str, Any]:
@@ -142,6 +144,17 @@ def test_golden(fixture: dict[str, Any]) -> None:
     if "trace_match" in expect:
         assert any(expect["trace_match"] in t["detail"] for t in decision["trace"]), \
             f"{where}: no trace entry matching {expect['trace_match']!r}"
+
+    # UNKNOWN is not FALSE: an unevaluable rule gets an "unevaluable" evaluate row; a FALSE one
+    # gets none. This is the set the sidecar projects as presentation.unevaluable_rule_ids.
+    unevaluable = {
+        t["rule_id"] for t in decision["trace"]
+        if t["step"] == "evaluate" and t["detail"].startswith("unevaluable")
+    }
+    for rid in expect.get("unevaluable_include", []):
+        assert rid in unevaluable, f"{where}: expected {rid} to be unevaluable"
+    for rid in expect.get("unevaluable_exclude", []):
+        assert rid not in unevaluable, f"{where}: {rid} should have evaluated"
 
 
 def test_every_fired_output_is_traceable() -> None:

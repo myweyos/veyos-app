@@ -9,7 +9,7 @@
 -- the partition column in every UNIQUE constraint or index. Since decision_id is opaque and
 -- not time-based, a UNIQUE INDEX on decision_id alone is rejected by TimescaleDB. A regular
 -- (non-unique) index is used instead. Idempotency is enforced at the application layer.
--- See ADR 0007 for full rationale.
+-- See ADR 0009 for full rationale.
 --
 -- Idempotency: application-layer only. DecisionRepository.save() checks for an existing row
 -- by decision_id before inserting; content-addressed ids make the same decision a safe no-op.

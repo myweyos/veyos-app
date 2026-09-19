@@ -24,11 +24,10 @@ export function repoRoot(from: string = __dirname): string {
     current = parent;
   }
   throw new Error(
-    `could not locate the repo root walking up from ${from}. The API resolves schemas and ` +
-      `fixtures off the monorepo layout; a container copying only services/api will fail here, ` +
+    `could not locate the repo root walking up from ${from}. The API resolves schemas off ` +
+      `the monorepo layout; a container copying only services/api will fail here, ` +
       `at boot, which is the right time to find out.`,
   );
 }
 
 export const SCHEMA_DIR = join(repoRoot(), "packages", "shared-schema", "schemas");
-export const DEMO_FIXTURES_DIR = join(repoRoot(), "packages", "demo-fixtures");

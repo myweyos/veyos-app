@@ -1,0 +1,26 @@
+{
+  "$comment": "Synthetic base snapshot for tests. Vata constitution, cycle tracking on (day 20, luteal), temperate day, every biometric at baseline. Golden fixtures deep-merge overrides onto it. SIMULATED values only; no real subject data may ever be committed.",
+  "schema_version": 1,
+  "subject_ref": "sub_fixture01",
+  "as_of": "2026-09-01",
+  "timezone": "Europe/London",
+  "constitution": { "dosha": "vata" },
+  "biometrics": { "hrv_ms": 61, "rhr_bpm": 57, "sleep_deep_rem_pct": 71, "wrist_temp_delta_c": 0.0, "steps": 9400, "source": "simulated" },
+  "baselines": { "hrv_ms": 60, "hrv_sd": 6, "rhr_bpm": 57, "rhr_sd": 3, "sleep_deep_rem_pct": 72, "days_of_history": 90, "window_days": 14 },
+  "cycle": { "cycle_day": 20, "cycle_length": 28, "tracked": true },
+  "environment": { "ambient_temp_c": 17, "moon_phase": "waxing", "season": "summer", "wind_kph": 9 },
+  "planned_activity": { "type": "hiit", "intensity": "high", "location": "indoor" },
+  "planned_meals": [
+    { "slot": "breakfast", "items": [
+      { "name": "overnight oats", "tags": ["cold", "complex_carbs"] },
+      { "name": "black coffee", "tags": ["caffeine"] }
+    ] },
+    { "slot": "lunch", "items": [
+      { "name": "kale salad", "tags": ["raw", "cold", "astringent"] },
+      { "name": "lentil soup", "tags": ["warm", "grounding", "high_protein"] }
+    ] },
+    { "slot": "dinner", "items": [
+      { "name": "sweet potato mash", "tags": ["warm", "heavy", "complex_carbs"] }
+    ] }
+  ]
+}

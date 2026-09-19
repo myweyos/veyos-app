@@ -1,0 +1,25 @@
+{
+  "$comment": "Synthetic base snapshot for tests. Pitta constitution, no cycle data, a 30 °C day (heat-wave rule 4.2 fires), US timezone, every biometric at baseline. sleep_score is a vendor composite carried display-only; rules read sleep_deep_rem_pct. Golden fixtures deep-merge overrides onto it. SIMULATED values only.",
+  "schema_version": 1,
+  "subject_ref": "sub_fixture03",
+  "as_of": "2026-09-01",
+  "timezone": "America/New_York",
+  "constitution": { "dosha": "pitta" },
+  "biometrics": { "hrv_ms": 71, "rhr_bpm": 60, "sleep_deep_rem_pct": 80, "sleep_score": 84, "wrist_temp_delta_c": 0.0, "steps": 8700, "source": "simulated" },
+  "baselines": { "hrv_ms": 70, "hrv_sd": 7, "rhr_bpm": 60, "rhr_sd": 3, "sleep_deep_rem_pct": 82, "days_of_history": 150, "window_days": 14 },
+  "cycle": null,
+  "environment": { "ambient_temp_c": 30, "moon_phase": "new", "season": "summer", "wind_kph": 6 },
+  "planned_activity": { "type": "lifting", "intensity": "high", "location": "outdoor_midday" },
+  "planned_meals": [
+    { "slot": "breakfast", "items": [
+      { "name": "chilli scrambled eggs", "tags": ["spicy", "hot", "high_protein"] }
+    ] },
+    { "slot": "lunch", "items": [
+      { "name": "kimchi rice bowl", "tags": ["fermented", "spicy", "complex_carbs"] },
+      { "name": "cucumber salad", "tags": ["cooling", "hydrating", "raw"] }
+    ] },
+    { "slot": "dinner", "items": [
+      { "name": "grilled chicken", "tags": ["high_protein", "warm"] }
+    ] }
+  ]
+}

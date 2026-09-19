@@ -70,14 +70,14 @@ half-done story imported as Done is worse than one imported as To Do.
 | Status | Story | Evidence / what's missing |
 |---|---|---|
 | ✅ | Rulebook loader hardening and versioning | Fatal on duplicate ids, duplicate priorities, unknown layers, unknown food tags. Rulebook version travels with every decision. |
-| ✅ | Three-valued evaluation and precedence | TRUE/FALSE/UNKNOWN preserved end to end; a missing signal is unevaluable, not false. Precedence covered by fixtures. |
+| 🟡 | Three-valued evaluation and precedence | TRUE/FALSE/UNKNOWN preserved end to end, engine → sidecar `presentation.unevaluable_rule_ids` (`test_three_valued.py`, F14/F17/F18, sidecar tests). Precedence covered for every layer pair (`test_precedence.py`) **except one dimension that does not follow it**: a lower layer's block suppresses a higher layer's mandate (F16, reachable in v1 on L2 vs L3). Open spec question. "Not applicable" is also indistinguishable from "unevaluable". SCRUM-79. |
 | ✅ | Food resolution chain and collision warnings | Strict reverse precedence L4→L3→L2→L5→L1. F9 and F10 both pass. |
 | 🟡 | Decision trace object and schema | Applied, suppressed and unevaluable are representable ✅; trace is in the published schema ✅. **"Not-applied" is NOT representable** — a rule evaluating FALSE produces no trace row at all (`engine.py:61-65`), so absence is inferred rather than recorded. The AC asks for all four. |
-| 🚫 | Rule 1.4 — elevated RHR alone | Correctly not built. See the James note below. |
+| 🚫 | Rule 1.4 — elevated RHR alone | Correctly not built. See the RHR-alone note below. |
 | 🚫 | Rule 4.4 — pollen / air quality | Correctly not built; `enabled: false`, reported as disabled with null rates. |
-| 🟡 | Layer 2 — cycle logic | Exactly one rule fires per cycle day ✅; menstrual overrides follicular via priority 29 ✅. **The "in balance is unreachable with cycle data" question is raised, not resolved** — and the AC says resolve before shipping. |
+| 🟡 | Layer 2 — cycle logic | Exactly one rule fires per cycle day ✅ and menstrual beats follicular on days 1–5 ✅, now asserted for every day 1–28 in `tests/test_cycle_layer.py`. Correction: it is the **non-overlapping ranges** that make menstrual win, not priority 29. If the ranges overlapped, both rules would fire and the engine would warn. **The "in balance is unreachable with cycle data" question (plan v2 §9.7) is raised, not resolved**, and the AC says resolve before shipping. Current behaviour is pinned. SCRUM-84. |
 | ✅ | Layer 5 — lab overrides | Fires only present-and-abnormal, outranks cycle/constitution/environment, F9 passes. |
-| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. **Fixtures do not cover every precedence pair**, and the backtest runs on synthetic sweeps, not recorded signal history. |
+| 🟡 | Golden fixture expansion and backtest harness | Harness ✅ — per-rule fire rates, co-firing, boundary-straddling grid, CI smoke run. Every precedence pair is now covered, on a test-only arbitration rulebook (`test_precedence.py`, SCRUM-79). **The backtest runs on synthetic sweeps, not recorded signal history.** |
 | 🟡 | Engine invocation from the API | Sidecar ✅, engine stays pure ✅. **Decision is not persisted** before dispatch — no storage exists. |
 
 ## Baseline Phenotype & Onboarding
@@ -108,7 +108,7 @@ every persona value.
 
 | Status | Item | Note |
 |---|---|---|
-| ⬜ | Copy lint in CI | **Not built.** CI has guardrail greps for biometrics-in-logs and rule-logic-outside-the-engine, but **no banned-vocabulary lint**. I checked the app copy by hand; that is not the same as enforcing it. |
+| 🟡 | Copy lint in CI | `tools/copy-lint/` plus the CI `copy` job ✅. It parses `apps/mobile` with the TypeScript compiler (comments and field names are never scanned) and reads the user-visible rulebook fields. The reviewed exception list is `exceptions.json`, with one entry: the disclaimer. **In review**: the list and its inflections need a human sign-off, and the `copy` job isn't a required check until branch protection names it. SCRUM-123. |
 | 🚫 | All eight DECISION tasks | Still pending. Three are now answerable with evidence — see below. |
 | ⬜ | Everything else (intended-purpose statement, claims audit, DPIA, IEC 62304, ISO 14971, consultant) | Non-engineering, not started. |
 
@@ -145,10 +145,11 @@ Four things exist in the repo with nowhere to log them:
 - **Percent vs z-score.** No rule condition defines `value_z`, so z-score silently falls back to
   percent and the two modes are indistinguishable by any backtest. Someone must author z-score
   thresholds before the decision can be made at all.
-- **Rule 1.4 / the James gap.** The design pack gives James a *missing* wrist temperature, which
-  makes 1.3 unevaluable and puts him in Partial. `personas.json` gives him `0.1` — present and
-  normal — so 1.3 resolves FALSE and he lands in "in balance today". **The false reassurance is
-  partly a fixture artefact**, and under the pack's data three-valued evaluation already does the
-  right thing without rule 1.4.
+- **Rule 1.4 / the RHR-alone gap.** With RHR 26% up and the wrist temperature *missing* (F5, as the
+  design pack draws it), 1.3 is unevaluable and the day is Partial. With the temperature present and
+  normal (F19), 1.3 resolves FALSE and the app says "in balance today". The personas are gone (PR
+  #19) and both cases are pinned on synthetic snapshots. The remaining defect is F19, and it's what
+  rule 1.4 would be for. On Android every day is F5's case, because Health Connect has no wrist
+  temperature.
 - **"In balance" unreachable with cycle data.** Confirmed programmatically: L2 covers days 1–28
   with no gaps and `calm` means only-always-on-L3-fired, so a cycle-tracking subject is never calm.

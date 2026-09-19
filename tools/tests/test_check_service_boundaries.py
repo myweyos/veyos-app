@@ -23,7 +23,7 @@ _spec.loader.exec_module(boundaries)
 def _write(root: Path, rel: str, text: str) -> None:
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
 
 
 def _base_repo(root: Path) -> None:

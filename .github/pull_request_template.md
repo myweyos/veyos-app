@@ -9,6 +9,7 @@
   - [ ] Backtest run and result linked below
   - [ ] Golden fixture added or updated
   - [ ] Rulebook version bumped if any existing fixture's expected output changed
+  - [ ] Risk file (`docs/regulatory/risk-file.md`) reviewed for the rules touched
 
 ## Contract impact
 
@@ -21,6 +22,7 @@
 - [ ] No raw biometric values in logs, error messages or trace strings
 - [ ] No rule logic added outside `services/engine`
 - [ ] Open spec questions in CLAUDE.md were not silently resolved in code
+- [ ] Lifecycle: software items touched and risk-file rows affected are named above (or "none") — `docs/regulatory/lifecycle/`
 
 ## Notes for review
 

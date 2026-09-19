@@ -2,12 +2,14 @@ import { Controller, Get, ServiceUnavailableException } from "@nestjs/common";
 
 import { DatabaseHealthIndicator } from "../database/database.health";
 import { EngineClient } from "../engine/engine.client";
+import { RedisHealthIndicator } from "../redis/redis.health";
 
 @Controller("health")
 export class HealthController {
   constructor(
     private readonly engine: EngineClient,
     private readonly db: DatabaseHealthIndicator,
+    private readonly redis: RedisHealthIndicator,
   ) {}
 
   /** Liveness only. Says nothing about whether the service can actually do its job. */
@@ -31,17 +33,20 @@ export class HealthController {
     status: "ok";
     engine: { reachable: true; rulebook_version?: number };
     db: { reachable: true };
+    redis: { reachable: true };
   }> {
-    const [engine, db] = await Promise.all([
+    const [engine, db, redis] = await Promise.all([
       this.engine.health(),
       this.db.ping(),
+      this.redis.ping(),
     ]);
 
-    if (!engine.reachable || !db.reachable) {
+    if (!engine.reachable || !db.reachable || !redis.reachable) {
       throw new ServiceUnavailableException({
         status: "unavailable",
         engine: { reachable: engine.reachable },
         db: { reachable: db.reachable },
+        redis: { reachable: redis.reachable },
       });
     }
 
@@ -51,6 +56,6 @@ export class HealthController {
     if (engine.rulebookVersion !== undefined)
       enginePayload.rulebook_version = engine.rulebookVersion;
 
-    return { status: "ok", engine: enginePayload, db: { reachable: true } };
+    return { status: "ok", engine: enginePayload, db: { reachable: true }, redis: { reachable: true } };
   }
 }

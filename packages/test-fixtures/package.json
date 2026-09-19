@@ -1,0 +1,7 @@
+{
+  "name": "@weyos/test-fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Synthetic signal snapshots for automated tests. Never a runtime data source.",
+  "files": ["snapshots"]
+}

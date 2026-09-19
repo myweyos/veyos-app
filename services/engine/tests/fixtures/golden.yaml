@@ -1,17 +1,20 @@
 # Golden fixtures — the regression net for a system that gives health-adjacent advice.
 #
-# Every rulebook change ships with a fixture. A fixture is DATA: persona + state +
-# overrides + expectations. If you find yourself wanting to express an expectation this
-# format can't hold, extend the runner (tests/test_golden.py), don't write a bespoke test.
+# Every rulebook change ships with a fixture. A fixture is DATA: a synthetic base snapshot
+# from packages/test-fixtures/snapshots/ + overrides + expectations. The overrides are the
+# point of the fixture, so they state every signal value that matters. If you find yourself
+# wanting to express an expectation this format can't hold, extend the runner
+# (tests/test_golden.py), don't write a bespoke test.
 #
 # `xfail` marks behaviour that is WRONG BUT CURRENT. These are the open spec questions.
 # An xfail that starts passing is a signal that someone resolved a spec question in code —
 # the runner fails loudly on that (strict xfail).
 
 - id: F1
-  description: "Sarah, crash day. Canonical multi-layer intervention: sympathetic overload + luteal + Vata."
-  persona: sarah
-  state: crash
+  description: "Canonical multi-layer intervention: sympathetic overload (HRV 22% down) + luteal + Vata."
+  base: vata-cycling
+  overrides:
+    biometrics: { hrv_ms: 46.8, rhr_bpm: 62, sleep_deep_rem_pct: 68, wrist_temp_delta_c: 0.1, steps: 3100 }
   expect:
     state: intervention
     fired: ["1.1", "2.3", "3.1"]
@@ -23,9 +26,8 @@
     food_removed_include: ["kale salad", "overnight oats"]
 
 - id: F2
-  description: "James, ordinary day. TRUE calm state — only the always-on L3 dosha fires."
-  persona: james
-  state: calm
+  description: "An ordinary day with no cycle data. TRUE calm state — only the always-on L3 dosha fires."
+  base: kapha-no-cycle
   expect:
     state: calm
     fired: ["3.3"]
@@ -34,8 +36,7 @@
 
 - id: F3
   description: "Menstrual beats follicular on day 3. Resolves the 1–13 vs 6–13 ambiguity in the source doc."
-  persona: sarah
-  state: calm
+  base: vata-cycling
   overrides:
     cycle: { cycle_day: 3 }
   expect:
@@ -46,8 +47,7 @@
 
 - id: F4
   description: "Follicular day 10 allows planned intensity — L2 can permit as well as restrict."
-  persona: sarah
-  state: calm
+  base: vata-cycling
   overrides:
     cycle: { cycle_day: 10 }
   expect:
@@ -58,21 +58,27 @@
 
 - id: F5
   description: >
-    THE JAMES GAP. RHR 26% above baseline, steps collapsed, but only L3 fires because 1.3
-    needs temperature AND RHR. The engine therefore reports 'in balance today' to a man
-    whose cardiovascular signal is clearly off. This fixture asserts the CURRENT behaviour
-    so it cannot change silently — it is a known product defect awaiting a rule decision,
-    not a passing test to feel good about.
-  persona: james
-  state: crash
+    RHR 26% above baseline, steps collapsed, and NO wrist temperature (as the design pack
+    draws it). Rule 1.3 needs temperature AND RHR, so with temperature missing it is
+    UNEVALUABLE, not FALSE. Only L3 fires, but the decision carries the gap and the app shows
+    Partial rather than 'in balance'. The defect that remains when temperature IS present
+    is F19.
+  base: kapha-no-cycle
+  overrides:
+    biometrics: { hrv_ms: 53, rhr_bpm: 78, wrist_temp_delta_c: null, steps: 2100 }
+    environment: { pollen_index: 8 }
   expect:
     state: calm
     fired: ["3.3"]
+    trace_match: "unevaluable: wrist_temp_delta_c not available"
+    unevaluable_include: ["1.3"]
 
 - id: F5b
-  description: "Candidate rule 1.4 (Cardiovascular Load) would close the James gap. Rule is disabled pending sign-off."
-  persona: james
-  state: crash
+  description: "Candidate rule 1.4 (Cardiovascular Load) would fire on elevated RHR alone. Rule is disabled pending sign-off."
+  base: kapha-no-cycle
+  overrides:
+    biometrics: { hrv_ms: 53, rhr_bpm: 78, wrist_temp_delta_c: null, steps: 2100 }
+    environment: { pollen_index: 8 }
   xfail: "rule 1.4 is proposed and disabled — enable it in the rulebook to make this pass"
   expect:
     state: intervention
@@ -80,9 +86,8 @@
     activity_verdict: substitute
 
 - id: F6
-  description: "Heat-wave relocates rather than cancels. Alex on a 30C day."
-  persona: alex
-  state: calm
+  description: "Heat-wave relocates rather than cancels, on a 30 °C day."
+  base: pitta-heat
   expect:
     state: intervention
     fired: ["3.2", "4.2"]
@@ -93,8 +98,7 @@
 
 - id: F7
   description: "Full moon applies a modifier without touching activity."
-  persona: james
-  state: calm
+  base: kapha-no-cycle
   overrides:
     environment: { moon_phase: full }
   expect:
@@ -105,8 +109,7 @@
 
 - id: F8
   description: "Lab layer fires only on a present-and-abnormal value, and contributes supplements plus a constraint."
-  persona: james
-  state: calm
+  base: kapha-no-cycle
   overrides:
     labs: { pm_cortisol: { status: high, value: 8.1, unit: "ng/mL" } }
   expect:
@@ -121,9 +124,9 @@
     L5 outranks L2, so the carbs are blocked and the mandate is withdrawn. This proves
     cross-layer precedence is real rather than decorative — if F9 goes red the arbitration
     is broken no matter what else passes.
-  persona: sarah
-  state: crash
+  base: vata-cycling
   overrides:
+    biometrics: { hrv_ms: 46.8, rhr_bpm: 62, sleep_deep_rem_pct: 68, wrist_temp_delta_c: 0.1, steps: 3100 }
     labs: { hba1c: { status: high, value: 6.1, unit: "%" } }
   expect:
     state: intervention
@@ -139,8 +142,9 @@
     GINGER FOR A PITTA. L1's immunity basket mandates warming ginger while L3 Pitta blocks
     hot foods. L1 outranks L3 so the ginger stays — correct per spec, reads badly in the UI
     on a 30C day. The engine must SURFACE the collision, not resolve it silently.
-  persona: alex
-  state: crash
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 66, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: 0.8, steps: 4200 }
   expect:
     state: intervention
     fired: ["1.1", "1.3", "3.2", "4.2"]
@@ -151,12 +155,13 @@
 
 - id: F11
   description: >
-    PROTECT THIS ONE. Alex's exact state with the elemental layer OFF. Only L1/L2/L5 may
+    PROTECT THIS ONE. F10's exact state with the elemental layer OFF. Only L1/L2/L5 may
     fire — no dosha, no heat-wave, no moon. This is the 'validated biometrics only' mode
-    shown to clinical, regulatory and investor audiences. If F11 goes red, the layer
-    separation has leaked and the claim is no longer true.
-  persona: alex
-  state: crash
+    shown to clinical and regulatory audiences. If F11 goes red, the layer separation has
+    leaked and the claim is no longer true.
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 66, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: 0.8, steps: 4200 }
   elemental_layer: false
   expect:
     state: intervention
@@ -167,8 +172,7 @@
 
 - id: F12
   description: "Cold start. Fewer days of history than the baseline minimum degrades to insufficient_baseline rather than pretending."
-  persona: sarah
-  state: calm
+  base: vata-cycling
   overrides:
     baselines: { days_of_history: 10 }
   expect:
@@ -177,8 +181,7 @@
 
 - id: F13
   description: "cycle_day 31 is undefined in the 28-day model. No L2 rule fires and the engine says so instead of guessing."
-  persona: sarah
-  state: calm
+  base: vata-cycling
   overrides:
     cycle: { cycle_day: 31 }
   expect:
@@ -188,10 +191,9 @@
 
 - id: F14
   description: "Missing HRV makes 1.1 unevaluable, not false. The rule is skipped and the gap is traced."
-  persona: sarah
-  state: crash
+  base: vata-cycling
   overrides:
-    biometrics: { hrv_ms: null }
+    biometrics: { hrv_ms: null, rhr_bpm: 62, sleep_deep_rem_pct: 68, wrist_temp_delta_c: 0.1, steps: 3100 }
   expect:
     state: intervention
     fired: ["2.3", "3.1"]
@@ -199,8 +201,7 @@
 
 - id: F15
   description: "Blood sugar override sets macro floors and blocks high-glycaemic items independently of any hormonal input."
-  persona: james
-  state: calm
+  base: kapha-no-cycle
   overrides:
     labs: { fasting_glucose: { status: high, value: 6.4, unit: "mmol/L" } }
   expect:
@@ -209,3 +210,77 @@
     min_protein_g: 30
     min_fiber_g: 10
     blocked_tags_include: [high_glycemic]
+
+- id: F16
+  description: >
+    L2 VS L3 ON THE SAME TAG. A Vata subject (3.1 blocks raw) on cycle day 14, Ovulatory (2.2
+    mandates raw). L2 outranks L3, but the food chain runs L3 first and a mandate for an
+    already-blocked tag is suppressed whatever layer it comes from, so the LOWER layer wins.
+    Pinned as current behaviour. Whether a lower block may withdraw a higher mandate is an open
+    spec question; the same thing happens on Follicular (2.1 fermented) vs Pitta (3.2).
+    tests/test_precedence.py shows it holds for every pair of layers, not only this one.
+  base: vata-cycling
+  overrides:
+    cycle: { cycle_day: 14 }
+  expect:
+    state: intervention
+    fired: ["2.2", "3.1"]
+    blocked_tags_include: [raw]
+    mandated_tags_exclude: [raw]
+    mandated_tags_include: [cooling]
+    trace_match: "mandate 'raw' suppressed — blocked by 3.1"
+
+- id: F16b
+  description: "The precedence reading of F16: L2's raw mandate survives L3's block. Open spec question."
+  base: vata-cycling
+  overrides:
+    cycle: { cycle_day: 14 }
+  xfail: "a lower layer's block withdrawing a higher layer's mandate is undecided — see F16"
+  expect:
+    mandated_tags_include: [raw]
+
+- id: F17
+  description: >
+    A missing signal makes a rule UNEVALUABLE, not false. F10's stressed day with no wrist
+    temperature: 1.3 needs temperature AND RHR, has RHR elevated and temperature unknown, so it
+    cannot be evaluated and does not fire. 1.2 is unevaluable too (no deep/REM stage data, only
+    a composite score). Without 1.3 the rest day becomes 1.1's substitute.
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 66, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: null, steps: 4200 }
+  expect:
+    state: intervention
+    fired: ["1.1", "3.2", "4.2"]
+    unevaluable_include: ["1.2", "1.3"]
+    activity_verdict: substitute
+    activity_decided_by: "1.1"
+    activity_location: indoor
+
+- id: F18
+  description: >
+    ...but a FALSE condition still decides. Same missing temperature, RHR back at baseline:
+    1.3 is all(UNKNOWN, FALSE), which is FALSE, because no temperature reading could make it
+    fire. It is not reported as unevaluable. UNKNOWN only surfaces where it could change the
+    answer.
+  base: pitta-heat
+  overrides:
+    biometrics: { hrv_ms: 50.4, rhr_bpm: 60, sleep_deep_rem_pct: null, sleep_score: 48, wrist_temp_delta_c: null, steps: 4200 }
+  expect:
+    fired: ["1.1", "3.2", "4.2"]
+    unevaluable_include: ["1.2"]
+    unevaluable_exclude: ["1.3"]
+
+- id: F19
+  description: >
+    THE RHR-ALONE GAP. RHR 26% above baseline, steps collapsed, and a wrist temperature that
+    is PRESENT and normal (+0.1 °C): 1.3's dual gate evaluates cleanly to FALSE. Only L3
+    fires, with no warnings and no unevaluable Layer 1 row, so the app says 'in balance
+    today' to someone whose cardiovascular signal is clearly off. Known product defect
+    awaiting the rule 1.4 decision (plan v2 §9.3), pinned so it cannot change silently.
+  base: kapha-no-cycle
+  overrides:
+    biometrics: { hrv_ms: 53, rhr_bpm: 78, wrist_temp_delta_c: 0.1, steps: 2100 }
+    environment: { pollen_index: 8 }
+  expect:
+    state: calm
+    fired: ["3.3"]

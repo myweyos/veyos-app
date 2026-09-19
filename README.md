@@ -48,7 +48,7 @@ a backend. Keep it that way.
 cd services/engine
 pytest -q                       # all fixtures
 pytest -q -k "F9 or F11"        # the two fixtures worth protecting above all others
-python -m weyos_engine.cli --persona sarah --state crash   # human-readable decision trace
+python -m weyos_engine.cli --snapshot packages/test-fixtures/snapshots/vata-cycling.json   # human-readable decision trace
 ```
 
 ## Backtesting a rulebook change

@@ -5,6 +5,13 @@ honestly to humans too.
 
 ## Current plan — read this before picking up any ticket
 
+> **2026-09-14, from John: no demo mode and no MVP. We build the full working version only.**
+> Don't build anything whose purpose is to look like it works: no demo paths, no fixture-backed
+> screens, no simulated data a user could reach. Don't treat "MVP" as a reason to build a thinner
+> version of something. Where older docs (including the rest of this file and the plan) say
+> "MVP", read it as "the product". Scope still comes from the plan and its §9 decisions. If
+> something is marked out of scope or post-MVP, ask; don't assume it's in or out.
+
 **As of 2026-09-10 the plan is `docs/build-plan-v2-direct-to-product.md`. It supersedes
 `docs/build-plan-stage1-wrapper.md`, which is retained for history only.**
 
@@ -65,15 +72,15 @@ threshold Z".
 
 ## Known open spec questions — do NOT silently resolve these in code
 
-These came out of hand-tracing the personas against the rulebook. If your change touches
+These came out of hand-tracing test snapshots against the rulebook. If your change touches
 one, raise it rather than picking an answer:
 
 - **No rule fires on elevated RHR alone.** Rule 1.3 requires temp ≥ +0.5 °C *and* elevated
-  RHR. James's crash state therefore fires only L3 → the app would say "in balance today"
+  RHR. RHR 26% above baseline with a normal temperature (golden F19) therefore fires only L3 → the app would say "in balance today"
   while his RHR sits 26% above baseline. Candidate rule 1.4 (Cardiovascular Load) is
   proposed but unapproved. Tracked as `xfail` in the fixture suite.
 - **Pollen / air quality is not a signal in the model at all.** Candidate 4.4.
-- **Rule 1.2 ambiguity:** written about deep/REM *stage* percentages, but the persona data
+- **Rule 1.2 ambiguity:** written about deep/REM *stage* percentages, but some vendors
   supplies a composite sleep score. Different measurements, different platform availability.
 - **Percentage vs z-score:** the rulebook uses % below baseline; the patent recites
   `(current − trailing MA) ÷ historical SD`. Config supports both forms; the default is
@@ -84,7 +91,7 @@ one, raise it rather than picking an answer:
   per-item substitution in L1 effects.
 
 - **Dosha vs baseline phenotype.** The Baseline Phenotype epic *replaces* the dosha model, while
-  rules 3.1–3.3 fire on dosha membership today and the personas, fixtures, L3 trace rows and food
+  rules 3.1–3.3 fire on dosha membership today and the test snapshots, fixtures, L3 trace rows and food
   chain all assume it. Largest source of rework in the backlog. Do not start either side of it
   without an answer.
 
